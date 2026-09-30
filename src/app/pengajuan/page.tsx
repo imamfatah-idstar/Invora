@@ -34,9 +34,12 @@ export default async function DaftarPengajuan() {
         <a href="/dashboard" className="back-link">&larr; Dashboard</a>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
           <h1>Daftar Pengajuan</h1>
-          {userLogin.role === "petugas" && (
-            <a href="/pengajuan/baru" className="btn btn-primary">+ Buat Pengajuan</a>
-          )}
+          <div style={{ display: "flex", gap: 10 }}>
+            <a href="/api/rekon-invoice" className="btn">⬇ Download Rekon Invoice (.xlsx)</a>
+            {userLogin.role === "petugas" && (
+              <a href="/pengajuan/baru" className="btn btn-primary">+ Buat Pengajuan</a>
+            )}
+          </div>
         </div>
 
         {userLogin.role === "checker" && jumlahMenungguChecker > 0 && (

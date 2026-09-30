@@ -2,7 +2,7 @@ import { db } from "@/db";
 import { pemetaanPersonelPo, personel, po, poLineItem } from "@/db/schema";
 import { desc, eq } from "drizzle-orm";
 import FormTambahPemetaan from "./pemetaan-form";
-import TombolHapus from "./hapus-button";
+import TabelPemetaan from "./pemetaan-table";
 
 export default async function HalamanPemetaan() {
   const daftarPersonel = await db.select().from(personel);
@@ -28,27 +28,7 @@ export default async function HalamanPemetaan() {
         daftarPo={daftarPo.map((p) => ({ id: p.id, label: p.nomorPo }))}
         daftarLine={daftarLine.map((l) => ({ id: l.id, poId: l.poId, label: `Line ${l.nomorLine} — ${l.shortText}` }))}
       />
-      <div className="table-wrap">
-        <table>
-          <thead><tr>
-            <th>Personel</th><th>PO</th><th>PO Line</th>
-            <th>Berlaku Dari</th><th>Berlaku Sampai</th><th></th>
-          </tr></thead>
-          <tbody>
-            {daftar.map((m) => (
-              <tr key={m.id}>
-                <td>{m.namaPersonel}</td>
-                <td>{m.nomorPo}</td>
-                <td>{m.poLineText ? `Line ${m.poLineNomor} — ${m.poLineText}` : "-"}</td>
-                <td>{m.berlakuDari}</td>
-                <td>{m.berlakuSampai ?? "masih berlaku"}</td>
-                <td><TombolHapus url={`/api/pemetaan/${m.id}`} konfirmasi="Hapus pemetaan ini?" /></td>
-              </tr>
-            ))}
-            {daftar.length === 0 && <tr><td colSpan={6} className="table-empty">Belum ada data.</td></tr>}
-          </tbody>
-        </table>
-      </div>
+      <TabelPemetaan daftar={daftar} />
     </div>
   );
 }

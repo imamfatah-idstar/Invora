@@ -1,6 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import TombolHapus from "./hapus-button";
+import HapusTerpilih from "@/components/hapus-terpilih";
 
 type BarisRateCard = {
   id: number;
@@ -20,6 +21,7 @@ function formatRupiah(nilai: string) {
 export default function TabelRateCard({ daftar }: { daftar: BarisRateCard[] }) {
   const [kolom, setKolom] = useState<KolomSort>("namaPersonel");
   const [arah, setArah] = useState<ArahSort>("asc");
+  const [terpilih, setTerpilih] = useState<Set<number>>(new Set());
 
   function urutkanDari(k: KolomSort) {
     if (k === kolom) setArah((a) => (a === "asc" ? "desc" : "asc"));
@@ -33,8 +35,6 @@ export default function TabelRateCard({ daftar }: { daftar: BarisRateCard[] }) {
       if (kolom === "nilaiRate") {
         hasil = Number(a.nilaiRate) - Number(b.nilaiRate);
       } else if (kolom === "berlakuSampai") {
-        // "masih berlaku" (null) dianggap paling besar/paling akhir supaya konsisten
-        // dengan urutan tanggal.
         const av = a.berlakuSampai ?? "9999-99-99";
         const bv = b.berlakuSampai ?? "9999-99-99";
         hasil = av.localeCompare(bv);
@@ -45,6 +45,13 @@ export default function TabelRateCard({ daftar }: { daftar: BarisRateCard[] }) {
     });
     return salinan;
   }, [daftar, kolom, arah]);
+
+  function toggle(id: number) {
+    setTerpilih((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  }
+  function toggleSemua() {
+    setTerpilih((s) => (s.size === daftarUrut.length && daftarUrut.length > 0 ? new Set() : new Set(daftarUrut.map((d) => d.id))));
+  }
 
   function Th({ label, k }: { label: string; k: KolomSort }) {
     const aktif = kolom === k;
@@ -59,35 +66,46 @@ export default function TabelRateCard({ daftar }: { daftar: BarisRateCard[] }) {
   }
 
   return (
-    <div className="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <Th label="Personel" k="namaPersonel" />
-            <Th label="Rate" k="nilaiRate" />
-            <Th label="Berlaku Dari" k="berlakuDari" />
-            <Th label="Berlaku Sampai" k="berlakuSampai" />
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {daftarUrut.map((r) => (
-            <tr key={r.id}>
-              <td>{r.namaPersonel}</td>
-              <td>{formatRupiah(r.nilaiRate)}</td>
-              <td>{r.berlakuDari}</td>
-              <td>{r.berlakuSampai ?? "masih berlaku"}</td>
-              <td style={{ display: "flex", gap: 8 }}>
-                <a href={`/data-referensi/rate-card/${r.id}/edit`} className="btn-text">Edit</a>
-                <TombolHapus url={`/api/rate-card/${r.id}`} konfirmasi={`Hapus rate card ini?`} />
-              </td>
+    <div>
+      {terpilih.size > 0 && (
+        <div style={{ margin: "8px 0" }}>
+          <HapusTerpilih jumlah={terpilih.size} urlUntuk={() => [...terpilih].map((id) => `/api/rate-card/${id}`)} />
+        </div>
+      )}
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style={{ width: 28 }}>
+                <input type="checkbox" checked={terpilih.size === daftarUrut.length && daftarUrut.length > 0} onChange={toggleSemua} />
+              </th>
+              <Th label="Personel" k="namaPersonel" />
+              <Th label="Rate" k="nilaiRate" />
+              <Th label="Berlaku Dari" k="berlakuDari" />
+              <Th label="Berlaku Sampai" k="berlakuSampai" />
+              <th></th>
             </tr>
-          ))}
-          {daftarUrut.length === 0 && (
-            <tr><td colSpan={5} className="table-empty">Belum ada data.</td></tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {daftarUrut.map((r) => (
+              <tr key={r.id}>
+                <td><input type="checkbox" checked={terpilih.has(r.id)} onChange={() => toggle(r.id)} /></td>
+                <td>{r.namaPersonel}</td>
+                <td>{formatRupiah(r.nilaiRate)}</td>
+                <td>{r.berlakuDari}</td>
+                <td>{r.berlakuSampai ?? "masih berlaku"}</td>
+                <td style={{ display: "flex", gap: 8 }}>
+                  <a href={`/data-referensi/rate-card/${r.id}/edit`} className="btn-text">Edit</a>
+                  <TombolHapus url={`/api/rate-card/${r.id}`} konfirmasi={`Hapus rate card ini?`} />
+                </td>
+              </tr>
+            ))}
+            {daftarUrut.length === 0 && (
+              <tr><td colSpan={6} className="table-empty">Belum ada data.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

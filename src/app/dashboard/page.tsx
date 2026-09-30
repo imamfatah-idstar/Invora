@@ -44,6 +44,12 @@ export default async function Dashboard() {
               <p className="subtitle" style={{ marginBottom: 0 }}>Daftarkan email, atur peran (Input Data / Checker), aktifkan/nonaktifkan akun.</p>
             </a>
           )}
+          {(user.role === "petugas" || user.role === "admin") && (
+            <a href="/kelola-data" className="card" style={{ display: "block" }}>
+              <h3>Kelola Data</h3>
+              <p className="subtitle" style={{ marginBottom: 0 }}>Reset massal data uji/salah unggah (Personel, PO, Rate Card, Pengajuan, dll).</p>
+            </a>
+          )}
         </div>
       </main>
     </>

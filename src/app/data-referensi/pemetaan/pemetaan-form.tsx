@@ -50,9 +50,12 @@ export default function FormTambahPemetaan({
       </div>
       <div className="field">
         <label>PO</label>
-        <select value={poId} onChange={(e) => { setPoId(Number(e.target.value)); setPoLineItemId(""); }}>
-          {daftarPo.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
-        </select>
+        <ComboSelect
+          value={poId}
+          onChange={(v) => { setPoId(Number(v)); setPoLineItemId(""); }}
+          opsi={daftarPo.map((p) => ({ value: p.id, label: p.label }))}
+          placeholderCari="Cari nomor PO..."
+        />
       </div>
       <div className="field">
         <label>PO Line (opsional)</label>
