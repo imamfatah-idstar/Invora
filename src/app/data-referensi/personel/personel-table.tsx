@@ -4,7 +4,7 @@ import TombolHapus from "./hapus-button";
 import HapusTerpilih from "@/components/hapus-terpilih";
 
 type BarisPersonel = { id: number; nama: string; status: string; penempatan: string | null };
-type KolomSort = "nama" | "status" | "penempatan";
+type KolomSort = "nama" | "status";
 type ArahSort = "asc" | "desc";
 
 export default function TabelPersonel({ daftar }: { daftar: BarisPersonel[] }) {
@@ -60,7 +60,6 @@ export default function TabelPersonel({ daftar }: { daftar: BarisPersonel[] }) {
                 <input type="checkbox" checked={terpilih.size === daftarUrut.length && daftarUrut.length > 0} onChange={toggleSemua} />
               </th>
               <Th label="Nama" k="nama" />
-              <Th label="Penempatan" k="penempatan" />
               <Th label="Status" k="status" />
               <th></th>
             </tr>
@@ -70,7 +69,6 @@ export default function TabelPersonel({ daftar }: { daftar: BarisPersonel[] }) {
               <tr key={p.id}>
                 <td><input type="checkbox" checked={terpilih.has(p.id)} onChange={() => toggle(p.id)} /></td>
                 <td>{p.nama}</td>
-                <td>{p.penempatan ?? <span style={{ color: "var(--color-muted, #999)" }}>-</span>}</td>
                 <td><span className={`badge ${p.status === "aktif" ? "badge-siap_diajukan" : "badge-draft"}`}>{p.status}</span></td>
                 <td style={{ display: "flex", gap: 8 }}>
                   <a href={`/data-referensi/personel/${p.id}/edit`} className="btn-text">Edit</a>
@@ -79,7 +77,7 @@ export default function TabelPersonel({ daftar }: { daftar: BarisPersonel[] }) {
               </tr>
             ))}
             {daftarUrut.length === 0 && (
-              <tr><td colSpan={5} className="table-empty">Belum ada data.</td></tr>
+              <tr><td colSpan={4} className="table-empty">Belum ada data.</td></tr>
             )}
           </tbody>
         </table>

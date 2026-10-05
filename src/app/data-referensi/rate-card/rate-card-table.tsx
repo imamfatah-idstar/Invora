@@ -6,12 +6,14 @@ import HapusTerpilih from "@/components/hapus-terpilih";
 type BarisRateCard = {
   id: number;
   namaPersonel: string;
+  klien: string | null;
+  noPo: string | null;
   nilaiRate: string;
   berlakuDari: string;
   berlakuSampai: string | null;
 };
 
-type KolomSort = "namaPersonel" | "nilaiRate" | "berlakuDari" | "berlakuSampai";
+type KolomSort = "namaPersonel" | "klien" | "noPo" | "nilaiRate" | "berlakuDari" | "berlakuSampai";
 type ArahSort = "asc" | "desc";
 
 function formatRupiah(nilai: string) {
@@ -39,7 +41,7 @@ export default function TabelRateCard({ daftar }: { daftar: BarisRateCard[] }) {
         const bv = b.berlakuSampai ?? "9999-99-99";
         hasil = av.localeCompare(bv);
       } else {
-        hasil = String(a[kolom]).localeCompare(String(b[kolom]), "id");
+        hasil = String(a[kolom] ?? "").localeCompare(String(b[kolom] ?? ""), "id");
       }
       return arah === "asc" ? hasil : -hasil;
     });
@@ -80,6 +82,8 @@ export default function TabelRateCard({ daftar }: { daftar: BarisRateCard[] }) {
                 <input type="checkbox" checked={terpilih.size === daftarUrut.length && daftarUrut.length > 0} onChange={toggleSemua} />
               </th>
               <Th label="Personel" k="namaPersonel" />
+              <Th label="Klien" k="klien" />
+              <Th label="No PO" k="noPo" />
               <Th label="Rate" k="nilaiRate" />
               <Th label="Berlaku Dari" k="berlakuDari" />
               <Th label="Berlaku Sampai" k="berlakuSampai" />
@@ -91,6 +95,8 @@ export default function TabelRateCard({ daftar }: { daftar: BarisRateCard[] }) {
               <tr key={r.id}>
                 <td><input type="checkbox" checked={terpilih.has(r.id)} onChange={() => toggle(r.id)} /></td>
                 <td>{r.namaPersonel}</td>
+                <td>{r.klien ?? <span style={{ color: "var(--color-muted, #999)" }}>-</span>}</td>
+                <td>{r.noPo ?? <span style={{ color: "var(--color-muted, #999)" }}>-</span>}</td>
                 <td>{formatRupiah(r.nilaiRate)}</td>
                 <td>{r.berlakuDari}</td>
                 <td>{r.berlakuSampai ?? "masih berlaku"}</td>
@@ -101,7 +107,7 @@ export default function TabelRateCard({ daftar }: { daftar: BarisRateCard[] }) {
               </tr>
             ))}
             {daftarUrut.length === 0 && (
-              <tr><td colSpan={6} className="table-empty">Belum ada data.</td></tr>
+              <tr><td colSpan={8} className="table-empty">Belum ada data.</td></tr>
             )}
           </tbody>
         </table>
