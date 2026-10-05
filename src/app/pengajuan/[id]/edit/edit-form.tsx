@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import InputTagihanTahap, { BarisTahapUi, nilaiManualTerisi, totalNilaiTahap } from "@/components/input-tagihan-tahap";
 
 type BarisHitung = {
   personelId: number; namaPersonel: string;
@@ -20,14 +21,21 @@ function formatRupiah(nilai: string) {
 }
 
 export default function FormEditPengajuan({
-  pengajuanId, poId, periode, personelIdsAwal,
-}: { pengajuanId: number; poId: number; periode: string; personelIdsAwal: number[] }) {
+  pengajuanId, poId, periode, personelIdsAwal, jenisTagihan, keteranganTahapAwal, nilaiTahapAwal,
+}: {
+  pengajuanId: number; poId: number; periode: string; personelIdsAwal: number[];
+  jenisTagihan: string; keteranganTahapAwal: string; nilaiTahapAwal: Record<number, string>;
+}) {
   const router = useRouter();
   const [baris, setBaris] = useState<BarisHitung[] | null>(null);
   const [dipilih, setDipilih] = useState<Set<number>>(new Set(personelIdsAwal));
   const [error, setError] = useState<string | null>(null);
   const [loadingHitung, setLoadingHitung] = useState(true);
   const [loadingSimpan, setLoadingSimpan] = useState(false);
+  const modeTahap = jenisTagihan === "tahap";
+  const [barisTahap, setBarisTahap] = useState<BarisTahapUi[] | null>(null);
+  const [nilaiTahap, setNilaiTahap] = useState<Record<number, string>>(nilaiTahapAwal);
+  const [keteranganTahap, setKeteranganTahap] = useState(keteranganTahapAwal);
 
   useEffect(() => {
     (async () => {
@@ -40,6 +48,7 @@ export default function FormEditPengajuan({
       setLoadingHitung(false);
       if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Gagal memuat pratinjau."); return; }
       const data = await res.json();
+      if (data.jenis === "tahap") { setBarisTahap(data.baris); return; }
       setBaris(data.baris);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -58,7 +67,11 @@ export default function FormEditPengajuan({
     const res = await fetch(`/api/pengajuan/${pengajuanId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ personelIds: Array.from(dipilih) }),
+      body: JSON.stringify(
+        modeTahap
+          ? { personelIds: [], nilaiManual: nilaiManualTerisi(nilaiTahap), keteranganTahap }
+          : { personelIds: Array.from(dipilih) }
+      ),
     });
     setLoadingSimpan(false);
     if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Gagal menyimpan."); return; }
@@ -71,7 +84,34 @@ export default function FormEditPengajuan({
     .reduce((acc, b) => acc + Number(b.akanDitagihkan), 0);
 
   if (loadingHitung) return <p className="subtitle">Memuat pratinjau perhitungan...</p>;
-  if (error && !baris) return <div className="alert alert-danger">{error}</div>;
+  if (error && !baris && !barisTahap) return <div className="alert alert-danger">{error}</div>;
+
+  if (modeTahap && barisTahap) {
+    return (
+      <div>
+        <InputTagihanTahap
+          baris={barisTahap}
+          nilai={nilaiTahap}
+          onNilai={(id, v) => setNilaiTahap((prev) => ({ ...prev, [id]: v }))}
+          keterangan={keteranganTahap}
+          onKeterangan={setKeteranganTahap}
+        />
+        {error && <div className="alert alert-danger">{error}</div>}
+        <div>
+          <button
+            onClick={simpan}
+            disabled={loadingSimpan || totalNilaiTahap(nilaiTahap) <= 0 || !keteranganTahap.trim()}
+            className="btn btn-primary"
+          >
+            {loadingSimpan ? "Menyimpan..." : "Simpan Revisi"}
+          </button>
+          <p className="subtitle" style={{ marginTop: 8 }}>
+            Setelah disimpan, Anda masih perlu menekan <b>&quot;Konfirmasi Pengajuan Ini&quot;</b> di halaman detail supaya masuk lagi ke antrean Checker.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>

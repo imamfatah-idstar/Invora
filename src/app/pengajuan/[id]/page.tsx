@@ -35,7 +35,7 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
       id: pengajuan.id, periode: pengajuan.periode, status: pengajuan.status, versi: pengajuan.versi,
       nomorPo: po.nomorPo, namaProyek: po.namaProyek, namaUserXl: userXl.nama,
       namaFilePoAsli: po.namaFilePoAsli,
-      klien: po.klien,
+      klien: po.klien, keteranganTahap: pengajuan.keteranganTahap,
       tanggalSubmitCac: pengajuan.tanggalSubmitCac,
       tanggalCacApproved: pengajuan.tanggalCacApproved,
       tanggalRequestGr: pengajuan.tanggalRequestGr,
@@ -157,6 +157,9 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
               </span>
             </>
           )}
+          {header.keteranganTahap && (
+            <> &middot; Tagihan tahap: <b>{header.keteranganTahap}</b></>
+          )}
         </p>
         {(header.approvalAlokasiUserXlPemberi || header.approvalAlokasiTanggal || header.approvalAlokasiReferensi) && (
           <p className="subtitle">
@@ -179,10 +182,10 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
                 <tr key={r.id}>
                   <td>{r.namaPersonel}</td>
                   <td>{formatRupiah(r.nilaiRateDipakai)}</td>
-                  <td>{r.hariKerjaDapatDitagihkan} / {r.hariKerjaAcuanBulan}</td>
+                  <td>{r.sumberHitung === "manual" ? "-" : `${r.hariKerjaDapatDitagihkan} / ${r.hariKerjaAcuanBulan}`}</td>
                   <td>
                     <span className={`badge ${r.sumberHitung === "timesheet" ? "badge-siap_diajukan" : ""}`}>
-                      {r.sumberHitung === "timesheet" ? "Timesheet" : "Kalender"}
+                      {r.sumberHitung === "timesheet" ? "Timesheet" : r.sumberHitung === "manual" ? "Manual (tahap)" : "Kalender"}
                     </span>
                   </td>
                   <td>

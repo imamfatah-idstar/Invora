@@ -162,6 +162,9 @@ export const pengajuan = pgTable("pengajuan", {
   // status: draft | menunggu_checker | perlu_revisi | siap_diajukan | diajukan
   versi: integer("versi").notNull().default(1),
   dibuatPada: text("dibuat_pada").notNull().default(sql`now()::text`),
+  // Keterangan tahap/milestone untuk PO jenisTagihan="tahap" (bagian 53),
+  // teks bebas diisi Petugas, mis. "Tahap I (50%)". Null untuk PO "bulanan".
+  keteranganTahap: text("keterangan_tahap"),
   // Nomor GR Slip/ES Slip — diterbitkan XL sendiri setelah User XL memproses
   // Goods Receipt di SAP (format SAP4HANA: 6xxxxxxxxx-0000x-20yy), dikirim ke
   // Input Data lewat email/WA di luar aplikasi ini. Dicatat manual begitu
@@ -241,7 +244,7 @@ export const pengajuanDetail = pgTable("pengajuan_detail", {
   // kalender kerja (default, saat belum ada timesheet). Sebelum kolom ini
   // ada, sumbernya tidak tersimpan — hanya kelihatan sesaat di layar
   // pratinjau "Buat Pengajuan", hilang begitu pengajuan disimpan.
-  sumberHitung: text("sumber_hitung").notNull().default("kalender"), // "timesheet" | "kalender"
+  sumberHitung: text("sumber_hitung").notNull().default("kalender"), // "timesheet" | "kalender" | "manual" (tagihan tahap, bagian 53)
 });
 
 // =========================================================================

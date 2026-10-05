@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import UnggahTimesheetModal from "./unggah-timesheet-modal";
 import ComboSelect from "@/components/combo-select";
+import InputTagihanTahap, { BarisTahapUi, nilaiManualTerisi, totalNilaiTahap } from "@/components/input-tagihan-tahap";
 
 type Opsi = { id: number; label: string };
 type BarisHitung = {
@@ -37,6 +38,11 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
   const [approvalPemberi, setApprovalPemberi] = useState("");
   const [approvalTanggal, setApprovalTanggal] = useState("");
   const [approvalReferensi, setApprovalReferensi] = useState("");
+  // PO tagihan "tahap" (bagian 53): nilai manual per personel + keterangan tahap.
+  const [jenis, setJenis] = useState<"bulanan" | "tahap">("bulanan");
+  const [barisTahap, setBarisTahap] = useState<BarisTahapUi[] | null>(null);
+  const [nilaiTahap, setNilaiTahap] = useState<Record<number, string>>({});
+  const [keteranganTahap, setKeteranganTahap] = useState("");
 
   async function hitungPratinjau() {
     setError(null);
@@ -50,6 +56,14 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
     setLoadingHitung(false);
     if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Gagal menghitung."); return; }
     const data = await res.json();
+    if (data.jenis === "tahap") {
+      setJenis("tahap");
+      setBarisTahap(data.baris);
+      setBaris(null);
+      return;
+    }
+    setJenis("bulanan");
+    setBarisTahap(null);
     setBaris(data.baris);
     setDipilih(new Set(
       data.baris
@@ -73,6 +87,7 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         poId, userXlId, periode, personelIds: Array.from(dipilih),
+        ...(jenis === "tahap" ? { nilaiManual: nilaiManualTerisi(nilaiTahap), keteranganTahap } : {}),
         approvalAlokasiUserXlPemberi: approvalPemberi || undefined,
         approvalAlokasiTanggal: approvalTanggal || undefined,
         approvalAlokasiReferensi: approvalReferensi || undefined,
@@ -99,7 +114,7 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
           <label>PO</label>
           <ComboSelect
             value={poId}
-            onChange={(v) => { setPoId(Number(v)); setBaris(null); }}
+            onChange={(v) => { setPoId(Number(v)); setBaris(null); setBarisTahap(null); }}
             opsi={daftarPo.map((p) => ({ value: p.id, label: p.label }))}
             placeholderCari="Cari nomor PO atau nama proyek..."
           />
@@ -112,14 +127,35 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
         </div>
         <div className="field">
           <label>Periode</label>
-          <input type="month" value={periode} onChange={(e) => { setPeriode(e.target.value); setBaris(null); }} />
+          <input type="month" value={periode} onChange={(e) => { setPeriode(e.target.value); setBaris(null); setBarisTahap(null); }} />
         </div>
         <button onClick={hitungPratinjau} disabled={loadingHitung} className="btn btn-primary">{loadingHitung ? "Menghitung..." : "Hitung Pratinjau"}</button>
       </div>
 
       {error && <div className="alert alert-danger">{error}</div>}
 
-      {baris && (
+      {jenis === "tahap" && barisTahap && (
+        <>
+          <InputTagihanTahap
+            baris={barisTahap}
+            nilai={nilaiTahap}
+            onNilai={(id, v) => setNilaiTahap((prev) => ({ ...prev, [id]: v }))}
+            keterangan={keteranganTahap}
+            onKeterangan={setKeteranganTahap}
+          />
+          <div>
+            <button
+              onClick={simpan}
+              disabled={loadingSimpan || totalNilaiTahap(nilaiTahap) <= 0 || !keteranganTahap.trim()}
+              className="btn btn-primary"
+            >
+              {loadingSimpan ? "Menyimpan..." : "Simpan sebagai Draft"}
+            </button>
+          </div>
+        </>
+      )}
+
+      {jenis === "bulanan" && baris && (
         <>
           <div className="table-wrap">
             <table>

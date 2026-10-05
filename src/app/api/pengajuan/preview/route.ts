@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { po } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { wajibRoleApi } from "@/lib/require-role-api";
-import { hitungSemuaPersonelUntukPo, terapkanAlokasiLintasPo } from "@/lib/hitung-pengajuan";
+import { hitungSemuaPersonelUntukPo, terapkanAlokasiLintasPo, daftarPersonelTahap } from "@/lib/hitung-pengajuan";
 
 export async function POST(request: NextRequest) {
   const gagal = await wajibRoleApi(["petugas"]);
@@ -20,11 +20,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "PO tidak ditemukan." }, { status: 404 });
   }
 
+  // PO "tahap" (bagian 53): tidak ada hitung otomatis — kembalikan daftar
+  // personel saja, nilai diisi manual oleh Petugas di form.
+  if (poRow.jenisTagihan === "tahap") {
+    const barisTahap = await daftarPersonelTahap(poId, body.periode);
+    return NextResponse.json({ jenis: "tahap", baris: barisTahap });
+  }
+
   const barisMentah = await hitungSemuaPersonelUntukPo(poId, body.periode);
   // Alokasi lintas-PO (bagian 35) — kalau personel sudah pernah ditagihkan
   // sebagian ke PO lain di periode yang sama, sisanya dihitung dan dibatasi
   // ke saldo PO ini yang tersisa (saldoSebelumPpn), sisanya lagi jadi
   // "belum tertagih di sini" untuk pengajuan berikutnya di PO lain.
   const baris = await terapkanAlokasiLintasPo(barisMentah, poId, body.periode, poRow.saldoSebelumPpn);
-  return NextResponse.json({ baris });
+  return NextResponse.json({ jenis: "bulanan", baris });
 }

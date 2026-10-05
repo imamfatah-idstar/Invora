@@ -30,17 +30,23 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: "Tanggal PO tidak valid." }, { status: 400 });
   }
 
+  if (body.jenisTagihan !== undefined && body.jenisTagihan !== "bulanan" && body.jenisTagihan !== "tahap") {
+    return NextResponse.json({ error: "Jenis tagihan harus \"bulanan\" atau \"tahap\"." }, { status: 400 });
+  }
+
   await db.update(po).set({
     namaProyek: String(body.namaProyek).trim(),
     saldoSebelumPpn: body.saldoSebelumPpn,
     tahun: Number(body.tahun),
     nilaiGr: body.nilaiGr,
     tanggalPo: body.tanggalPo || null,
+    ...(body.jenisTagihan !== undefined ? { jenisTagihan: body.jenisTagihan } : {}),
+    ...(body.klien !== undefined ? { klien: typeof body.klien === "string" && body.klien.trim() ? body.klien.trim() : null } : {}),
   }).where(eq(po.id, Number(id)));
 
   await catatAudit({
     entitas: "po", entitasId: Number(id),
-    perubahan: `Ubah PO: nama="${body.namaProyek}", saldo=${body.saldoSebelumPpn}, tahun=${body.tahun}, nilaiGr=${body.nilaiGr}`,
+    perubahan: `Ubah PO: nama="${body.namaProyek}", saldo=${body.saldoSebelumPpn}, tahun=${body.tahun}, nilaiGr=${body.nilaiGr}, klien=${body.klien ?? "(tidak diubah)"}, jenisTagihan=${body.jenisTagihan ?? "(tidak diubah)"}`,
     userId: user!.id,
   });
 

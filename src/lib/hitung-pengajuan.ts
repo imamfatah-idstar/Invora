@@ -4,6 +4,7 @@ import { eq, and, lte, or, gte, isNull, ne, inArray } from "drizzle-orm";
 import Decimal from "decimal.js";
 import { hitungProrata, PembagiNolError } from "@/lib/perhitungan";
 import { batasPeriode } from "@/lib/kalender";
+import { angkaDesimalValid } from "@/lib/validasi";
 
 export type BarisHitung = {
   personelId: number;
@@ -230,4 +231,78 @@ export async function terapkanAlokasiLintasPo(
   }
 
   return hasil;
+}
+
+
+// ====== Tagihan "tahap" / milestone (bagian 53) ======
+// Untuk PO jenisTagihan = "tahap", nilai tagihan TIDAK dihitung otomatis
+// (keputusan bagian 41) — Petugas mengetik nominal per personel. Fungsi ini
+// hanya mengembalikan daftar personel yang terpetakan ke PO pada periode itu
+// (plus rate card aktif sebagai snapshot opsional, bukan dasar hitung).
+export type BarisTahap = {
+  personelId: number;
+  namaPersonel: string;
+  poLineItemId: number | null;
+  nilaiRateAcuan: string | null;
+};
+
+export async function daftarPersonelTahap(poId: number, periode: string): Promise<BarisTahap[]> {
+  const { awal, akhir } = batasPeriode(periode);
+  const pemetaan = await db
+    .select({
+      personelId: pemetaanPersonelPo.personelId,
+      namaPersonel: personel.nama,
+      poLineItemId: pemetaanPersonelPo.poLineItemId,
+    })
+    .from(pemetaanPersonelPo)
+    .innerJoin(personel, eq(pemetaanPersonelPo.personelId, personel.id))
+    .where(
+      and(
+        eq(pemetaanPersonelPo.poId, poId),
+        lte(pemetaanPersonelPo.berlakuDari, akhir),
+        or(isNull(pemetaanPersonelPo.berlakuSampai), gte(pemetaanPersonelPo.berlakuSampai, awal))
+      )
+    );
+  const hasil: BarisTahap[] = [];
+  for (const p of pemetaan) {
+    const rate = await db
+      .select()
+      .from(rateCard)
+      .where(
+        and(
+          eq(rateCard.personelId, p.personelId),
+          lte(rateCard.berlakuDari, akhir),
+          or(isNull(rateCard.berlakuSampai), gte(rateCard.berlakuSampai, awal))
+        )
+      )
+      .orderBy(rateCard.berlakuDari);
+    hasil.push({ ...p, nilaiRateAcuan: rate.length ? rate[rate.length - 1].nilaiRate : null });
+  }
+  return hasil;
+}
+
+// Validasi + normalisasi input manual tagihan tahap. Mengembalikan baris
+// siap-insert atau pesan error. Dipakai POST (buat) dan PATCH (revisi).
+export async function siapkanTagihanTahap(
+  poId: number, periode: string, nilaiManual: unknown, saldoPo: string
+): Promise<{ error: string } | { baris: { personelId: number; poLineItemId: number | null; nilaiRateAcuan: string; nilai: string }[]; total: Decimal }> {
+  if (!nilaiManual || typeof nilaiManual !== "object") return { error: "Isi nilai tagihan minimal untuk 1 personel." };
+  const tersedia = await daftarPersonelTahap(poId, periode);
+  const peta = new Map(tersedia.map((t) => [t.personelId, t]));
+  const baris: { personelId: number; poLineItemId: number | null; nilaiRateAcuan: string; nilai: string }[] = [];
+  let total = new Decimal(0);
+  for (const [k, v] of Object.entries(nilaiManual as Record<string, unknown>)) {
+    const t = peta.get(Number(k));
+    if (!t) return { error: "Ada personel yang tidak terpetakan ke PO ini pada periode tersebut." };
+    if (!angkaDesimalValid(v)) return { error: `Nilai tagihan ${t.namaPersonel} harus angka valid (maks 2 desimal).` };
+    const nilai = new Decimal(v.trim());
+    if (nilai.lessThanOrEqualTo(0)) return { error: `Nilai tagihan ${t.namaPersonel} harus lebih dari 0.` };
+    total = total.plus(nilai);
+    baris.push({ personelId: t.personelId, poLineItemId: t.poLineItemId, nilaiRateAcuan: t.nilaiRateAcuan ?? "0.00", nilai: nilai.toFixed(2) });
+  }
+  if (baris.length === 0) return { error: "Isi nilai tagihan minimal untuk 1 personel." };
+  if (total.greaterThan(new Decimal(saldoPo))) {
+    return { error: `Total pengajuan (${total.toFixed(2)}) melebihi saldo PO sebelum PPN yang tersisa (${new Decimal(saldoPo).toFixed(2)}).` };
+  }
+  return { baris, total };
 }

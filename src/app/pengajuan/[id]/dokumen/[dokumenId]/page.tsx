@@ -132,7 +132,7 @@ export default async function HalamanDokumen({ params }: { params: Promise<{ id:
               <tr key={i}>
                 <td>{r.namaPersonel}</td>
                 <td>{formatRupiah(r.nilaiRateDipakai)}</td>
-                <td>{r.hariKerjaDapatDitagihkan} / {r.hariKerjaAcuanBulan}</td>
+                <td>{r.hariKerjaAcuanBulan === 0 ? "-" : `${r.hariKerjaDapatDitagihkan} / ${r.hariKerjaAcuanBulan}`}</td>
                 <td>{formatRupiah(r.hasilHitung)}</td>
               </tr>
             ))}

@@ -167,7 +167,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   for (const r of rincian) {
     teks(r.namaPersonel, { x: kolom[0], size: 9 });
     teks(formatRupiah(r.nilaiRateDipakai), { x: kolom[1], size: 9 });
-    teks(`${r.hariKerjaDapatDitagihkan} / ${r.hariKerjaAcuanBulan}`, { x: kolom[2], size: 9 });
+    teks(r.hariKerjaAcuanBulan === 0 ? "-" : `${r.hariKerjaDapatDitagihkan} / ${r.hariKerjaAcuanBulan}`, { x: kolom[2], size: 9 });
     teks(formatRupiah(r.hasilHitung), { x: kolom[3], size: 9 });
     baris(14);
   }

@@ -6,7 +6,7 @@ import Decimal from "decimal.js";
 import { wajibRoleApi } from "@/lib/require-role-api";
 import { userSaatIni } from "@/lib/session-server";
 import { catatAudit } from "@/lib/audit";
-import { hitungSemuaPersonelUntukPo, terapkanAlokasiLintasPo } from "@/lib/hitung-pengajuan";
+import { hitungSemuaPersonelUntukPo, terapkanAlokasiLintasPo, siapkanTagihanTahap } from "@/lib/hitung-pengajuan";
 
 // Edit rincian pengajuan (pilihan personel) — HANYA boleh saat status "perlu_revisi".
 // Periode, PO, dan User XL tidak bisa diubah di sini (sesuai lingkup MVP 1: satu
@@ -40,6 +40,39 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   const body = await request.json().catch(() => null);
   const personelIds: number[] = Array.isArray(body?.personelIds) ? body.personelIds : [];
+
+  // PO "tahap" (bagian 53) — revisi nilai manual + keterangan tahap.
+  if (poRow.jenisTagihan === "tahap") {
+    const keteranganTahap = typeof body?.keteranganTahap === "string" ? body.keteranganTahap.trim() : "";
+    if (!keteranganTahap) {
+      return NextResponse.json({ error: "Keterangan tahap wajib diisi." }, { status: 400 });
+    }
+    const siap = await siapkanTagihanTahap(ajuan.poId, ajuan.periode, body?.nilaiManual, poRow.saldoSebelumPpn);
+    if ("error" in siap) return NextResponse.json({ error: siap.error }, { status: 400 });
+
+    await db.delete(pengajuanDetail).where(eq(pengajuanDetail.pengajuanId, pengajuanId));
+    for (const b of siap.baris) {
+      await db.insert(pengajuanDetail).values({
+        pengajuanId,
+        personelId: b.personelId,
+        hariKerjaDapatDitagihkan: 0,
+        hariKerjaAcuanBulan: 0,
+        nilaiRateDipakai: b.nilaiRateAcuan,
+        hasilHitung: b.nilai,
+        nilaiPenuh: b.nilai,
+        poLineItemId: b.poLineItemId,
+        sumberHitung: "manual",
+      });
+    }
+    const versiTahap = ajuan.versi + 1;
+    await db.update(pengajuan).set({ versi: versiTahap, keteranganTahap }).where(eq(pengajuan.id, pengajuanId));
+    await catatAudit({
+      entitas: "pengajuan", entitasId: pengajuanId,
+      perubahan: `Revisi rincian TAHAP "${keteranganTahap}" (versi ${versiTahap}) total=${siap.total.toFixed(2)} (${siap.baris.length} personel, nilai manual) — status tetap perlu_revisi`,
+      userId: user!.id,
+    });
+    return NextResponse.json({ ok: true, versi: versiTahap });
+  }
 
   const semuaBaris = await hitungSemuaPersonelUntukPo(ajuan.poId, ajuan.periode);
   // Alokasi lintas-PO (bagian 35) — pengajuan_detail milik pengajuan ini sendiri

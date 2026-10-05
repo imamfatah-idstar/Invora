@@ -6,7 +6,7 @@ import Decimal from "decimal.js";
 import { wajibRoleApi } from "@/lib/require-role-api";
 import { userSaatIni } from "@/lib/session-server";
 import { catatAudit } from "@/lib/audit";
-import { hitungSemuaPersonelUntukPo, terapkanAlokasiLintasPo } from "@/lib/hitung-pengajuan";
+import { hitungSemuaPersonelUntukPo, terapkanAlokasiLintasPo, siapkanTagihanTahap } from "@/lib/hitung-pengajuan";
 
 export async function POST(request: NextRequest) {
   const gagal = await wajibRoleApi(["petugas"]);
@@ -21,6 +21,44 @@ export async function POST(request: NextRequest) {
   const [poRow] = await db.select().from(po).where(eq(po.id, Number(body.poId)));
   if (!poRow) {
     return NextResponse.json({ error: "PO tidak ditemukan." }, { status: 404 });
+  }
+
+  // PO "tahap" (bagian 53): nilai tagihan diisi MANUAL per personel + keterangan
+  // tahap (keputusan bagian 41). Tidak ada hitung prorata / alokasi lintas-PO.
+  if (poRow.jenisTagihan === "tahap") {
+    const keteranganTahap = typeof body.keteranganTahap === "string" ? body.keteranganTahap.trim() : "";
+    if (!keteranganTahap) {
+      return NextResponse.json({ error: "Keterangan tahap wajib diisi (mis. \"Tahap I (50%)\")." }, { status: 400 });
+    }
+    const siap = await siapkanTagihanTahap(Number(body.poId), body.periode, body.nilaiManual, poRow.saldoSebelumPpn);
+    if ("error" in siap) return NextResponse.json({ error: siap.error }, { status: 400 });
+
+    const [ajuanTahap] = await db.insert(pengajuan).values({
+      periode: body.periode,
+      poId: Number(body.poId),
+      userXlId: Number(body.userXlId),
+      status: "draft",
+      keteranganTahap,
+    }).returning();
+    for (const b of siap.baris) {
+      await db.insert(pengajuanDetail).values({
+        pengajuanId: ajuanTahap.id,
+        personelId: b.personelId,
+        hariKerjaDapatDitagihkan: 0,
+        hariKerjaAcuanBulan: 0,
+        nilaiRateDipakai: b.nilaiRateAcuan,
+        hasilHitung: b.nilai,
+        nilaiPenuh: b.nilai,
+        poLineItemId: b.poLineItemId,
+        sumberHitung: "manual",
+      });
+    }
+    await catatAudit({
+      entitas: "pengajuan", entitasId: ajuanTahap.id,
+      perubahan: `Buat pengajuan draft TAHAP "${keteranganTahap}" periode=${ajuanTahap.periode} po=${poRow.nomorPo} total=${siap.total.toFixed(2)} (${siap.baris.length} personel, nilai manual)`,
+      userId: user!.id,
+    });
+    return NextResponse.json({ id: ajuanTahap.id }, { status: 201 });
   }
 
   const semuaBaris = await hitungSemuaPersonelUntukPo(Number(body.poId), body.periode);

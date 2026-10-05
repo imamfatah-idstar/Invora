@@ -3,9 +3,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function FormEditPo({
-  id, nomorPo, namaProyekAwal, saldoAwal, tahunAwal, nilaiGrAwal, tanggalPoAwal,
+  id, nomorPo, namaProyekAwal, saldoAwal, tahunAwal, nilaiGrAwal, tanggalPoAwal, klienAwal, jenisTagihanAwal,
 }: {
-  id: number; nomorPo: string; namaProyekAwal: string; saldoAwal: string; tahunAwal: number; nilaiGrAwal: string; tanggalPoAwal: string | null;
+  id: number; nomorPo: string; namaProyekAwal: string; saldoAwal: string; tahunAwal: number; nilaiGrAwal: string; tanggalPoAwal: string | null; klienAwal: string | null; jenisTagihanAwal: string;
 }) {
   const router = useRouter();
   const [namaProyek, setNamaProyek] = useState(namaProyekAwal);
@@ -13,6 +13,8 @@ export default function FormEditPo({
   const [tahun, setTahun] = useState(String(tahunAwal));
   const [nilaiGr, setNilaiGr] = useState(nilaiGrAwal);
   const [tanggalPo, setTanggalPo] = useState(tanggalPoAwal ?? "");
+  const [klien, setKlien] = useState(klienAwal ?? "");
+  const [jenisTagihan, setJenisTagihan] = useState(jenisTagihanAwal);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -22,7 +24,7 @@ export default function FormEditPo({
     const res = await fetch(`/api/po/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ namaProyek, saldoSebelumPpn: saldo, tahun: Number(tahun), nilaiGr, tanggalPo: tanggalPo || null }),
+      body: JSON.stringify({ namaProyek, saldoSebelumPpn: saldo, tahun: Number(tahun), nilaiGr, tanggalPo: tanggalPo || null, klien, jenisTagihan }),
     });
     setLoading(false);
     if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Gagal menyimpan."); return; }
@@ -41,6 +43,18 @@ export default function FormEditPo({
         <label>Nilai sudah di-GR (kumulatif)</label>
         <input value={nilaiGr} onChange={(e) => setNilaiGr(e.target.value)} required />
         <p className="subtitle" style={{ margin: "4px 0 0", fontSize: 12 }}>Diisi manual setelah GR disetujui di Get Approve CAC/COUPA. Dipakai di halaman Summary PO (saldo = nilai item − nilai GR).</p>
+      </div>
+      <div className="field">
+        <label>Klien (nama resmi)</label>
+        <input value={klien} onChange={(e) => setKlien(e.target.value)} placeholder="cth. PT Bank CIMB Niaga Tbk" />
+        <p className="subtitle" style={{ margin: "4px 0 0", fontSize: 12 }}>Dipakai menentukan klien XL vs Non-XL (alur CAC) dan nama resmi di BAST. Biasanya terisi otomatis dari impor Integral.</p>
+      </div>
+      <div className="field">
+        <label>Jenis tagihan</label>
+        <select value={jenisTagihan} onChange={(e) => setJenisTagihan(e.target.value)}>
+          <option value="bulanan">Bulanan (prorata hari kerja)</option>
+          <option value="tahap">Tahap / milestone (nilai diisi manual)</option>
+        </select>
       </div>
       {error && <div className="alert alert-danger">{error}</div>}
       <button type="submit" disabled={loading} className="btn btn-primary">{loading ? "Menyimpan..." : "Simpan"}</button>

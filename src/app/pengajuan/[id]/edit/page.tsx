@@ -14,7 +14,7 @@ export default async function HalamanEditPengajuan({ params }: { params: Promise
   const [header] = await db
     .select({
       id: pengajuan.id, periode: pengajuan.periode, status: pengajuan.status,
-      poId: pengajuan.poId, nomorPo: po.nomorPo, namaProyek: po.namaProyek, namaUserXl: userXl.nama,
+      poId: pengajuan.poId, keteranganTahap: pengajuan.keteranganTahap, jenisTagihan: po.jenisTagihan, nomorPo: po.nomorPo, namaProyek: po.namaProyek, namaUserXl: userXl.nama,
     })
     .from(pengajuan)
     .innerJoin(po, eq(pengajuan.poId, po.id))
@@ -28,7 +28,7 @@ export default async function HalamanEditPengajuan({ params }: { params: Promise
   }
 
   const rincianSaatIni = await db
-    .select({ personelId: pengajuanDetail.personelId })
+    .select({ personelId: pengajuanDetail.personelId, hasilHitung: pengajuanDetail.hasilHitung })
     .from(pengajuanDetail)
     .where(eq(pengajuanDetail.pengajuanId, pengajuanId));
 
@@ -61,6 +61,9 @@ export default async function HalamanEditPengajuan({ params }: { params: Promise
           poId={header.poId}
           periode={header.periode}
           personelIdsAwal={rincianSaatIni.map((r) => r.personelId)}
+          jenisTagihan={header.jenisTagihan}
+          keteranganTahapAwal={header.keteranganTahap ?? ""}
+          nilaiTahapAwal={Object.fromEntries(rincianSaatIni.map((r) => [r.personelId, r.hasilHitung]))}
         />
       </main>
     </>

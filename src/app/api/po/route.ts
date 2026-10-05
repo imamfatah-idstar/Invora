@@ -30,6 +30,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Nilai GR harus berupa angka valid (maks 2 desimal)." }, { status: 400 });
   }
 
+  const jenisTagihan = body.jenisTagihan === "tahap" ? "tahap" : "bulanan";
+  const klien = typeof body.klien === "string" && body.klien.trim() ? body.klien.trim() : null;
+
   try {
     const [row] = await db.insert(po).values({
       nomorPo: String(body.nomorPo).trim(),
@@ -38,6 +41,8 @@ export async function POST(request: NextRequest) {
       nilaiItem: body.nilaiItem,
       saldoSebelumPpn: body.nilaiItem,
       nilaiGr,
+      klien,
+      jenisTagihan,
     }).returning();
 
     await catatAudit({ entitas: "po", entitasId: row.id, perubahan: `Tambah PO "${row.nomorPo}" tahun=${tahun} nilai=${row.nilaiItem} nilaiGr=${nilaiGr}`, userId: user!.id });
