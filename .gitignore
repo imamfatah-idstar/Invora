@@ -47,6 +47,13 @@ credentials*.json
 service-account*.json
 
 # =========================================================================
+# DOKUMEN INTERNAL / PROPRIETARY (JANGAN DI-UPLOAD KE GITHUB)
+# =========================================================================
+PROJECT_INSTRUCTIONS.md
+project-plan.md
+summary-mvp-1-3.md
+
+# =========================================================================
 # DATABASE & DATA DUMPS
 # =========================================================================
 dev.db
