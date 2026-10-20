@@ -1,6 +1,8 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# =========================================================================
+# INVORA — GITIGNORE RULES (Keamanan & Proteksi File Sensitif)
+# =========================================================================
 
-# dependencies
+# Dependencies
 /node_modules
 /.pnp
 .pnp.*
@@ -10,39 +12,78 @@
 !.yarn/releases
 !.yarn/versions
 
-# testing
+# Testing & Coverage
 /coverage
 
-# next.js
+# Next.js & Build outputs
 /.next/
 /out/
+/build/
+.vercel
 
-# production
-/build
+# TypeScript build info
+*.tsbuildinfo
+next-env.d.ts
 
-# misc
-.DS_Store
+# =========================================================================
+# FILE SENSITIF, ENVIRONMENT VARIABLES & CREDENTIALS (JANGAN DI-PUSH)
+# =========================================================================
+.env
+.env*
+*.env
+*.env.*
+!.env.example
+*.secret
+*.token
+*.key
 *.pem
+*.crt
+*.pfx
+*.p12
+password*.txt
+*password*.txt
+kredensial*.json
+credentials*.json
+service-account*.json
 
-# debug
+# =========================================================================
+# DATABASE & DATA DUMPS
+# =========================================================================
+dev.db
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+*.dump
+/*.sql
+!drizzle/*.sql
+
+# =========================================================================
+# FILE UNGGAHAN USER / OPERASIONAL (Timesheet, scan PO asli, dokumen CAC/BAST)
+# =========================================================================
+/uploads/*
+!/uploads/.gitkeep
+
+# =========================================================================
+# OS & IDE ARTIFACTS
+# =========================================================================
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =========================================================================
+# DEBUG LOGS
+# =========================================================================
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
-
-# env files (can opt-in for committing if needed)
-.env*
-
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-
-# database lokal
-*.db
-*.db-journal
-
-# file timesheet yang diunggah (dokumen asli, bukan kode)
-/uploads/
