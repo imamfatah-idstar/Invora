@@ -39,7 +39,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const workbook = new ExcelJS.Workbook();
   try {
-    await workbook.xlsx.readFile(path.join(process.cwd(), row.pathFileBalikanXl));
+    const subPath = row.pathFileBalikanXl.replace(/^[/\\]*uploads[/\\]*/, "");
+    await workbook.xlsx.readFile(path.join(/*turbopackIgnore: true*/ process.cwd(), "uploads", subPath));
   } catch {
     return NextResponse.json({ error: "File balikan XL tidak bisa dibaca — pastikan format .xlsx valid." }, { status: 400 });
   }

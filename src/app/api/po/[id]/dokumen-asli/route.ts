@@ -44,7 +44,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   await writeFile(pathDisimpan, buffer);
 
   if (row.pathFilePoAsli) {
-    await unlink(path.join(process.cwd(), row.pathFilePoAsli)).catch(() => {});
+    const subPath = row.pathFilePoAsli.replace(/^[/\\]*uploads[/\\]*/, "");
+    await unlink(path.join(/*turbopackIgnore: true*/ process.cwd(), "uploads", subPath)).catch(() => {});
   }
 
   await db.update(po).set({
@@ -71,7 +72,8 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   if (!row) return NextResponse.json({ error: "PO tidak ditemukan." }, { status: 404 });
 
   if (row.pathFilePoAsli) {
-    await unlink(path.join(process.cwd(), row.pathFilePoAsli)).catch(() => {});
+    const subPath = row.pathFilePoAsli.replace(/^[/\\]*uploads[/\\]*/, "");
+    await unlink(path.join(/*turbopackIgnore: true*/ process.cwd(), "uploads", subPath)).catch(() => {});
   }
 
   await db.update(po).set({ namaFilePoAsli: null, pathFilePoAsli: null }).where(eq(po.id, poId));

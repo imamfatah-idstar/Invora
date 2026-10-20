@@ -25,7 +25,8 @@ function formatRupiah(nilai: string) {
 // halaman tambahan ke dokumen PDF gabungan. File PDF: semua halamannya
 // disalin apa adanya. File gambar: ditempatkan di tengah halaman A4.
 async function tempelFile(gabungan: PDFDocument, pathRelatif: string) {
-  const bytes = await readFile(path.join(process.cwd(), pathRelatif));
+  const subPath = pathRelatif.replace(/^[/\\]*uploads[/\\]*/, "");
+  const bytes = await readFile(path.join(/*turbopackIgnore: true*/ process.cwd(), "uploads", subPath));
   const ekstensi = path.extname(pathRelatif).toLowerCase();
 
   if (ekstensi === ".pdf") {

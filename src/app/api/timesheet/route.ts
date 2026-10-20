@@ -108,7 +108,8 @@ export async function POST(request: NextRequest) {
       .where(eq(timesheet.id, existing[0].id));
     id = existing[0].id;
     // Hapus file lama supaya tidak menumpuk file yatim di uploads/timesheet/.
-    const pathFileLama = path.join(process.cwd(), existing[0].pathFile);
+    const subPath = existing[0].pathFile.replace(/^[/\\]*uploads[/\\]*/, "");
+    const pathFileLama = path.join(/*turbopackIgnore: true*/ process.cwd(), "uploads", subPath);
     await unlink(pathFileLama).catch(() => {});
     await catatAudit({
       entitas: "timesheet", entitasId: id, userId: user.id,

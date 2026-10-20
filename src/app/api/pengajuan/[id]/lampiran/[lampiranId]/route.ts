@@ -20,7 +20,8 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   }
 
   await db.delete(lampiranPengajuan).where(eq(lampiranPengajuan.id, row.id));
-  await unlink(path.join(process.cwd(), row.pathFile)).catch(() => {});
+  const subPath = row.pathFile.replace(/^[/\\]*uploads[/\\]*/, "");
+  await unlink(path.join(/*turbopackIgnore: true*/ process.cwd(), "uploads", subPath)).catch(() => {});
 
   await catatAudit({
     entitas: "lampiran_pengajuan", entitasId: row.id, userId: user!.id,

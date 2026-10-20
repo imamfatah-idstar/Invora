@@ -27,7 +27,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: "File belum tersedia." }, { status: 404 });
   }
 
-  const buffer = await readFile(path.join(process.cwd(), pathFile)).catch(() => null);
+  const subPath = pathFile.replace(/^[/\\]*uploads[/\\]*/, "");
+  const buffer = await readFile(path.join(/*turbopackIgnore: true*/ process.cwd(), "uploads", subPath)).catch(() => null);
   if (!buffer) return NextResponse.json({ error: "File tidak ditemukan di server." }, { status: 404 });
 
   return new NextResponse(buffer as unknown as BodyInit, {
