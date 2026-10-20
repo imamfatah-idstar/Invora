@@ -9,6 +9,7 @@ import Link from "next/link";
 import TombolCetak from "./tombol-cetak";
 import Logo from "@/components/logo";
 import { LABEL_LAMPIRAN_BALANCE } from "@/lib/lampiran-label";
+import { apakahKlienXl } from "@/lib/klien";
 
 function formatRupiah(nilai: string) {
   return "Rp" + Number(nilai).toLocaleString("id-ID", { minimumFractionDigits: 2 });
@@ -29,13 +30,17 @@ export default async function HalamanDokumen({ params }: { params: Promise<{ id:
   const [header] = await db
     .select({
       periode: pengajuan.periode, versi: pengajuan.versi,
+      keteranganTahap: pengajuan.keteranganTahap,
       nomorPo: po.nomorPo, namaProyek: po.namaProyek, namaUserXl: userXl.nama,
+      klien: po.klien,
     })
     .from(pengajuan)
     .innerJoin(po, eq(pengajuan.poId, po.id))
     .innerJoin(userXl, eq(pengajuan.userXlId, userXl.id))
     .where(eq(pengajuan.id, pengajuanId));
   if (!header) notFound();
+
+  const isKlienXl = apakahKlienXl(header.klien);
 
   const [poRow] = await db.select({ pathFilePoAsli: po.pathFilePoAsli }).from(po).where(eq(po.nomorPo, header.nomorPo));
   const [lampiranBalance] = await db
@@ -109,8 +114,10 @@ export default async function HalamanDokumen({ params }: { params: Promise<{ id:
           <tbody>
             <tr><td>Nomor PO</td><td>{header.nomorPo}</td></tr>
             <tr><td>Nama Proyek</td><td>{header.namaProyek}</td></tr>
-            <tr><td>User XL</td><td>{header.namaUserXl}</td></tr>
+            {header.klien && <tr><td>Klien</td><td>{header.klien}</td></tr>}
+            <tr><td>{isKlienXl ? "User XL" : "User Klien / PIC"}</td><td>{header.namaUserXl}</td></tr>
             <tr><td>Periode</td><td>{header.periode}</td></tr>
+            {header.keteranganTahap && <tr><td>Tagihan Tahap</td><td>{header.keteranganTahap}</td></tr>}
             <tr><td>Dikonfirmasi Petugas</td><td>{konfirmasiTerakhir ? `${konfirmasiTerakhir.nama} — ${konfirmasiTerakhir.waktu}` : "-"}</td></tr>
             <tr><td>Diperiksa Checker</td><td>{checkerTerakhir ? `${checkerTerakhir.nama} — ${checkerTerakhir.waktu}` : "-"}</td></tr>
           </tbody>
@@ -119,7 +126,7 @@ export default async function HalamanDokumen({ params }: { params: Promise<{ id:
         {dok.jenis === "BAST" && (
           <p className="doc-narasi">
             Dengan ini menyatakan bahwa jasa personel berikut telah dilaksanakan sesuai PO <b>{header.nomorPo}</b> untuk
-            proyek <b>{header.namaProyek}</b> pada periode <b>{header.periode}</b>, dan diserahterimakan sesuai rincian di bawah ini.
+            proyek <b>{header.namaProyek}</b> {header.keteranganTahap ? <>pada <b>{header.keteranganTahap}</b> (periode {header.periode})</> : <>pada periode <b>{header.periode}</b></>}, dan diserahterimakan sesuai rincian di bawah ini.
           </p>
         )}
 
@@ -154,7 +161,7 @@ export default async function HalamanDokumen({ params }: { params: Promise<{ id:
             <p>{checkerTerakhir?.nama ?? "________________"}</p>
           </div>
           <div>
-            <p>Disetujui oleh (User XL),</p>
+            <p>Disetujui oleh ({isKlienXl ? "User XL" : (header.klien || "Pihak Pertama / Klien")}),</p>
             <div className="doc-ttd-box"></div>
             <p>{header.namaUserXl}</p>
           </div>

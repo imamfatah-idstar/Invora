@@ -13,12 +13,14 @@ const LABEL: Record<string, string> = {
 const URUTAN = ["tanggalCacApproved", "tanggalRequestGr", "tanggalGrDisetujui", "tanggalSubmitInvoice", "tanggalApproveInvoice"] as const;
 
 export default function FormStatusProses({
-  pengajuanId, nilaiAwal, nomorInvoiceAwal, grRequestSudahDicek,
+  pengajuanId, nilaiAwal, nomorInvoiceAwal, grRequestSudahDicek, isKlienXl = true, bastAda = true,
 }: {
   pengajuanId: number;
   nilaiAwal: Record<(typeof URUTAN)[number], string | null>;
   nomorInvoiceAwal: string | null;
   grRequestSudahDicek: boolean;
+  isKlienXl?: boolean;
+  bastAda?: boolean;
 }) {
   const router = useRouter();
   const [nilai, setNilai] = useState(nilaiAwal);
@@ -26,6 +28,8 @@ export default function FormStatusProses({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [sukses, setSukses] = useState(false);
+
+  const terkunciNomorInvoice = isKlienXl && !grRequestSudahDicek && !nomorInvoiceAwal;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -43,6 +47,11 @@ export default function FormStatusProses({
 
   return (
     <form onSubmit={handleSubmit} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginTop: 12 }}>
+      {!bastAda && (
+        <div className="alert alert-warning" style={{ gridColumn: "1 / -1", margin: 0, padding: "8px 12px", fontSize: 13 }}>
+          ⚠️ <b>Peringatan BAST:</b> Dokumen BAST belum dibuat untuk pengajuan ini. Pastikan BAST sudah disiapkan sebelum submit invoice ke klien.
+        </div>
+      )}
       <div className="field">
         <label>Nomor Invoice</label>
         <input
@@ -50,12 +59,14 @@ export default function FormStatusProses({
           placeholder="cth 798/INV-IDS/IX/2026"
           value={nomorInvoice}
           onChange={(e) => setNomorInvoice(e.target.value)}
-          disabled={!grRequestSudahDicek && !nomorInvoiceAwal}
+          disabled={terkunciNomorInvoice}
         />
         <p className="subtitle" style={{ margin: "4px 0 0", fontSize: 11.5 }}>
-          {grRequestSudahDicek || nomorInvoiceAwal
+          {!isKlienXl
             ? "Input manual — nomor invoice satu urutan bersama semua customer, bukan digenerate aplikasi ini."
-            : "Terkunci — GR Request pengajuan ini belum dikonfirmasi 'sudah dicek' oleh Checker (lihat kartu GR Request di bawah)."}
+            : (grRequestSudahDicek || nomorInvoiceAwal
+              ? "Input manual — nomor invoice satu urutan bersama semua customer, bukan digenerate aplikasi ini."
+              : "Terkunci — GR Request pengajuan ini belum dikonfirmasi 'sudah dicek' oleh Checker (lihat kartu GR Request di bawah).")}
         </p>
       </div>
       {URUTAN.map((field) => (

@@ -125,6 +125,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       nilaiRateDipakai: b.nilaiRateDipakai!,
       hasilHitung: b.akanDitagihkan!,
       nilaiPenuh: b.nilaiPenuh,
+      poLineItemId: b.poLineItemId,
       sumberHitung: b.sumberHitung,
     });
   }

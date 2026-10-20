@@ -35,7 +35,7 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
       id: pengajuan.id, periode: pengajuan.periode, status: pengajuan.status, versi: pengajuan.versi,
       nomorPo: po.nomorPo, namaProyek: po.namaProyek, namaUserXl: userXl.nama,
       namaFilePoAsli: po.namaFilePoAsli,
-      klien: po.klien, keteranganTahap: pengajuan.keteranganTahap,
+      klien: po.klien, jenisTagihan: po.jenisTagihan, keteranganTahap: pengajuan.keteranganTahap,
       tanggalSubmitCac: pengajuan.tanggalSubmitCac,
       tanggalCacApproved: pengajuan.tanggalCacApproved,
       tanggalRequestGr: pengajuan.tanggalRequestGr,
@@ -139,6 +139,7 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
   // Non-XL TIDAK lewat CAC, tapi tetap wajib timesheet + BAST sebelum invoice
   // bisa diajukan. Deteksi HANYA dari po.klien (client_name), lihat src/lib/klien.ts.
   const isKlienXl = apakahKlienXl(header.klien);
+  const isTagihanTahap = !!header.keteranganTahap || header.jenisTagihan === "tahap";
   const semuaPakaiTimesheet = rincian.length > 0 && rincian.every((r) => r.sumberHitung === "timesheet");
 
   return (
@@ -159,6 +160,11 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
           )}
           {header.keteranganTahap && (
             <> &middot; Tagihan tahap: <b>{header.keteranganTahap}</b></>
+          )}
+          {!bastAda && (header.status === "siap_diajukan" || header.status === "diajukan") && (
+            <span className="badge badge-danger" style={{ marginLeft: 8 }} title="Dokumen BAST belum dibuat">
+              ⚠️ BAST Belum Dibuat
+            </span>
           )}
         </p>
         {(header.approvalAlokasiUserXlPemberi || header.approvalAlokasiTanggal || header.approvalAlokasiReferensi) && (
@@ -289,7 +295,9 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
             <FormStatusProses
               pengajuanId={header.id}
               nomorInvoiceAwal={header.nomorInvoice}
-              grRequestSudahDicek={!!dataGrRequest?.dicekPada}
+              grRequestSudahDicek={!isKlienXl || !!dataGrRequest?.dicekPada}
+              isKlienXl={isKlienXl}
+              bastAda={bastAda}
               nilaiAwal={{
                 tanggalCacApproved: header.tanggalCacApproved,
                 tanggalRequestGr: header.tanggalRequestGr,
@@ -318,10 +326,15 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
             <ul style={{ margin: "0 0 16px 0", paddingLeft: 18, fontSize: 14 }}>
               {isKlienXl ? (
                 <li>{cacAda ? "✓" : "○"} Dokumen CAC {cacAda ? "sudah dibuat" : "belum dibuat"}</li>
+              ) : isTagihanTahap ? (
+                <li>✓ Tagihan tahap (manual) — timesheet tidak disyaratkan {header.keteranganTahap ? `(${header.keteranganTahap})` : ""}</li>
               ) : (
                 <li>{semuaPakaiTimesheet ? "✓" : "○"} Timesheet {semuaPakaiTimesheet ? "sudah jadi dasar hitung semua personel" : "belum lengkap untuk semua personel (klien Non-XL wajib timesheet)"}</li>
               )}
-              <li>{bastAda ? "✓" : "○"} Dokumen BAST {bastAda ? "sudah dibuat" : "belum dibuat"}</li>
+              <li>
+                {bastAda ? "✓" : "○"} Dokumen BAST {bastAda ? "sudah dibuat" : "belum dibuat"}
+                {!bastAda && <span className="badge badge-danger" style={{ marginLeft: 6, fontSize: 11 }}>Wajib</span>}
+              </li>
               <li>{poAsliAda ? "✓" : "○"} Dokumen PO Asli — {poAsliAda ? header.namaFilePoAsli : <>belum diunggah, <a href="/data-referensi/po">unggah di Data Referensi · PO/Item</a></>}</li>
               <li>{lampiranBalanceAda ? "✓" : "○"} Lampiran Balance PO (potongan tabel dari spreadsheet tracking) {lampiranBalanceAda ? "sudah diunggah" : "belum diunggah"}</li>
               <li>{lampiranLain.length > 0 ? "✓" : "○"} Lampiran tambahan lain (spreadsheet, dokumen pendukung lain) — {lampiranLain.length} file diunggah</li>

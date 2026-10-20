@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { pengajuan, grRequest } from "@/db/schema";
+import { pengajuan, grRequest, po } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { wajibRoleApi } from "@/lib/require-role-api";
 import { userSaatIni } from "@/lib/session-server";
 import { catatAudit } from "@/lib/audit";
 import { tanggalValidAtauKosong } from "@/lib/validasi";
+import { apakahKlienXl } from "@/lib/klien";
 
 // Field manual di kartu "Status Proses CAC -> Invoice". tanggalSubmitCac SENGAJA
 // tidak ada di sini — itu diisi otomatis oleh sistem saat Checker meloloskan
@@ -26,7 +27,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const { id } = await params;
   const pengajuanId = Number(id);
 
-  const [ajuan] = await db.select({ id: pengajuan.id }).from(pengajuan).where(eq(pengajuan.id, pengajuanId));
+  const [ajuan] = await db
+    .select({ id: pengajuan.id, klien: po.klien })
+    .from(pengajuan)
+    .innerJoin(po, eq(pengajuan.poId, po.id))
+    .where(eq(pengajuan.id, pengajuanId));
   if (!ajuan) return NextResponse.json({ error: "Pengajuan tidak ditemukan." }, { status: 404 });
 
   const body = await request.json().catch(() => null);
@@ -47,16 +52,18 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   // aplikasi ini (satu urutan bersama semua customer). Lihat bagian 30.
   if ("nomorInvoice" in body) {
     const nilai = typeof body.nomorInvoice === "string" ? body.nomorInvoice.trim() : "";
-    // Validasi bagian 34: nomor invoice tidak boleh diisi sebelum GR Request
-    // dikonfirmasi "sudah dicek" oleh Checker — supaya tidak ada yang lewat
-    // langkah cek manual (SOW/COVER isian XL) sebelum lanjut ke tahap invoice.
+    // Validasi bagian 34 & bagian 45: untuk klien XL, nomor invoice tidak boleh diisi sebelum GR Request
+    // dikonfirmasi "sudah dicek" oleh Checker. Untuk klien Non-XL, GR Request di-skip total.
     if (nilai !== "") {
-      const [grRow] = await db.select({ dicekPada: grRequest.dicekPada }).from(grRequest).where(eq(grRequest.pengajuanId, pengajuanId));
-      if (!grRow || !grRow.dicekPada) {
-        return NextResponse.json(
-          { error: "Nomor invoice belum bisa diisi — GR Request untuk pengajuan ini belum dikonfirmasi 'sudah dicek' oleh Checker." },
-          { status: 409 }
-        );
+      const isKlienXl = apakahKlienXl(ajuan.klien);
+      if (isKlienXl) {
+        const [grRow] = await db.select({ dicekPada: grRequest.dicekPada }).from(grRequest).where(eq(grRequest.pengajuanId, pengajuanId));
+        if (!grRow || !grRow.dicekPada) {
+          return NextResponse.json(
+            { error: "Nomor invoice belum bisa diisi — GR Request untuk pengajuan ini belum dikonfirmasi 'sudah dicek' oleh Checker." },
+            { status: 409 }
+          );
+        }
       }
     }
     patch.nomorInvoice = nilai === "" ? null : nilai;

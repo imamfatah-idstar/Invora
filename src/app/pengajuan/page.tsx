@@ -1,6 +1,6 @@
 import { wajibRole } from "@/lib/require-role";
 import { db } from "@/db";
-import { pengajuan, po, userXl } from "@/db/schema";
+import { pengajuan, po, userXl, dokumen } from "@/db/schema";
 import { desc, eq } from "drizzle-orm";
 import Topbar from "@/components/topbar";
 
@@ -25,7 +25,16 @@ export default async function DaftarPengajuan() {
     .innerJoin(userXl, eq(pengajuan.userXlId, userXl.id))
     .orderBy(desc(pengajuan.id));
 
+  const daftarBast = await db
+    .select({ pengajuanId: dokumen.pengajuanId })
+    .from(dokumen)
+    .where(eq(dokumen.jenis, "BAST"));
+  const bastPengajuanSet = new Set(daftarBast.map((d) => d.pengajuanId));
+
   const jumlahMenungguChecker = daftar.filter((a) => a.status === "menunggu_checker").length;
+  const pengajuanTanpaBast = daftar.filter(
+    (a) => (a.status === "siap_diajukan" || a.status === "diajukan") && !bastPengajuanSet.has(a.id)
+  ).length;
 
   return (
     <>
@@ -48,6 +57,12 @@ export default async function DaftarPengajuan() {
           </div>
         )}
 
+        {pengajuanTanpaBast > 0 && (
+          <div className="alert alert-warning">
+            ⚠️ Ada <b>{pengajuanTanpaBast}</b> pengajuan siap/sedang diajukan yang <b>dokumen BAST-nya belum dibuat</b> (lihat penanda BAST di bawah).
+          </div>
+        )}
+
         <div className="table-wrap">
           <table>
             <thead><tr>
@@ -57,12 +72,21 @@ export default async function DaftarPengajuan() {
             <tbody>
               {daftar.map((a) => {
                 const perluPerhatianChecker = userLogin.role === "checker" && a.status === "menunggu_checker";
+                const bastKurang = (a.status === "siap_diajukan" || a.status === "diajukan") && !bastPengajuanSet.has(a.id);
                 return (
                   <tr key={a.id} style={perluPerhatianChecker ? { background: "var(--color-warning-bg)" } : undefined}>
                     <td>{a.periode}</td>
                     <td>{a.nomorPo}</td>
                     <td>{a.namaUserXl}</td>
-                    <td><span className={`badge badge-${a.status}`}>{LABEL_STATUS[a.status] ?? a.status}</span>{perluPerhatianChecker ? " ⏳" : ""}</td>
+                    <td>
+                      <span className={`badge badge-${a.status}`}>{LABEL_STATUS[a.status] ?? a.status}</span>
+                      {perluPerhatianChecker ? " ⏳" : ""}
+                      {bastKurang && (
+                        <span className="badge badge-danger" style={{ marginLeft: 6, fontSize: 11 }} title="Dokumen BAST belum dibuat">
+                          ⚠️ BAST
+                        </span>
+                      )}
+                    </td>
                     <td><a href={`/pengajuan/${a.id}`} className="btn-text">Lihat</a></td>
                   </tr>
                 );

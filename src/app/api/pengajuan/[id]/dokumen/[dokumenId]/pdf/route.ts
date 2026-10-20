@@ -10,6 +10,7 @@ import {
 import { eq, desc, and } from "drizzle-orm";
 import { wajibRoleApi } from "@/lib/require-role-api";
 import { LABEL_LAMPIRAN_BALANCE } from "@/lib/lampiran-label";
+import { apakahKlienXl } from "@/lib/klien";
 
 const LABEL_JENIS: Record<string, string> = {
   CAC: "Dokumen CAC (Konfirmasi Pengajuan Invoicing)",
@@ -60,7 +61,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const [header] = await db
     .select({
       periode: pengajuan.periode, versi: pengajuan.versi,
+      keteranganTahap: pengajuan.keteranganTahap,
       nomorPo: po.nomorPo, namaProyek: po.namaProyek, namaUserXl: userXl.nama,
+      klien: po.klien,
       pathFilePoAsli: po.pathFilePoAsli,
     })
     .from(pengajuan)
@@ -68,6 +71,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     .innerJoin(userXl, eq(pengajuan.userXlId, userXl.id))
     .where(eq(pengajuan.id, pengajuanId));
   if (!header) return NextResponse.json({ error: "Pengajuan tidak ditemukan." }, { status: 404 });
+
+  const isKlienXl = apakahKlienXl(header.klien);
 
   const rincian = await db
     .select({
@@ -128,8 +133,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const infoBaris: [string, string][] = [
     ["Nomor PO", header.nomorPo],
     ["Nama Proyek", header.namaProyek],
-    ["User XL", header.namaUserXl],
+    ...(header.klien ? [["Klien", header.klien] as [string, string]] : []),
+    [isKlienXl ? "User XL" : "User Klien / PIC", header.namaUserXl],
     ["Periode", header.periode],
+    ...(header.keteranganTahap ? [["Tagihan Tahap", header.keteranganTahap] as [string, string]] : []),
     ["Dikonfirmasi Petugas", konfirmasiTerakhir ? `${konfirmasiTerakhir.nama} — ${konfirmasiTerakhir.waktu}` : "-"],
     ["Diperiksa Checker", checkerTerakhir ? `${checkerTerakhir.nama} — ${checkerTerakhir.waktu}` : "-"],
   ];
@@ -141,7 +148,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   baris(6);
 
   if (dok.jenis === "BAST") {
-    const narasi = `Dengan ini menyatakan bahwa jasa personel berikut telah dilaksanakan sesuai PO ${header.nomorPo} untuk proyek ${header.namaProyek} pada periode ${header.periode}, dan diserahterimakan sesuai rincian di bawah ini.`;
+    const narasi = `Dengan ini menyatakan bahwa jasa personel berikut telah dilaksanakan sesuai PO ${header.nomorPo} untuk proyek ${header.namaProyek} ${header.keteranganTahap ? `pada ${header.keteranganTahap} (periode ${header.periode})` : `pada periode ${header.periode}`}, dan diserahterimakan sesuai rincian di bawah ini.`;
     const maxLebar = pw - margin * 2;
     const kata = narasi.split(" ");
     let baru = "";
@@ -179,7 +186,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   baris(50);
 
   const ttdKolom = [margin, margin + 180, margin + 360];
-  const ttdLabel = ["Dibuat oleh (Petugas),", "Diperiksa oleh (Checker),", "Disetujui oleh (User XL),"];
+  const ttdLabel = ["Dibuat oleh (Petugas),", "Diperiksa oleh (Checker),", `Disetujui oleh (${isKlienXl ? "User XL" : (header.klien || "Pihak Pertama")}),`];
   const ttdNama = [konfirmasiTerakhir?.nama ?? "________________", checkerTerakhir?.nama ?? "________________", header.namaUserXl];
   ttdLabel.forEach((l, i) => teks(l, { x: ttdKolom[i], size: 9 }));
   baris(45);
