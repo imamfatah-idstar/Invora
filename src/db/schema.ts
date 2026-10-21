@@ -212,6 +212,8 @@ export const pengajuan = pgTable("pengajuan", {
   approvalAlokasiReferensi: text("approval_alokasi_referensi"), // cth link/nomor chat WA atau subjek email
 
   // ====== MVP 4: GR Aktual, Deficiency GR, Invoice & Faktur Pajak ======
+  // Nomor dokumen GR Slip resmi
+  nomorGrSlip: text("nomor_gr_slip"),
   // Nilai nominal GR aktual yang resmi disetujui klien (sebelum PPN)
   nilaiGrDisetujui: text("nilai_gr_disetujui"),
   // Selisih GR (Deficiency GR) = total tagihan pengajuan - nilaiGrDisetujui.
