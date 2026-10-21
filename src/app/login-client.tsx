@@ -94,7 +94,7 @@ export default function LoginClient() {
         <div className="login-aside-brand">
           <Logo height={28} variant="white" />
           <div className="login-aside-title">
-            Sistem Otomasi Invoicing &amp; Request GR Customer XL Smart
+            <b>INVORA</b> &middot; Invoice Operations &amp; Revenue Assurance
           </div>
         </div>
         <div className="login-aside-address">
@@ -114,8 +114,10 @@ export default function LoginClient() {
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginBottom: 20 }}>
             <Logo height={44} variant="color" />
             <div style={{ textAlign: "center" }}>
-              <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0, color: "#111827" }}>🧾 Masuk ke Invora</h1>
-              <p className="subtitle" style={{ marginBottom: 0, fontSize: 13 }}>IDStar Financial &amp; Invoicing Platform</p>
+              <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0, color: "#111827" }}>🧾 Masuk ke INVORA</h1>
+              <p className="subtitle" style={{ marginBottom: 0, fontSize: 13, fontWeight: 500 }}>
+                Invoice Operations &amp; Revenue Assurance &middot; IDStar
+              </p>
             </div>
           </div>
 

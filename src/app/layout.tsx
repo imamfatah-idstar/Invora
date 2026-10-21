@@ -9,8 +9,8 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "🧾 Invora — IDStar Group",
-  description: "Invora — aplikasi internal IDStar untuk proses invoicing ke Customer XL, dari manual jadi otomatis (tahap pengembangan)",
+  title: "INVORA — Invoice Operations & Revenue Assurance (IDStar)",
+  description: "INVORA (Invoice Operations & Revenue Assurance) — Platform sistem operasional invoicing & revenue assurance IDStar Group",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

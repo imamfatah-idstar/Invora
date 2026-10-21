@@ -117,7 +117,7 @@ export default function DashboardView({ user, menu }: Props) {
             Halo, {user.nama}
           </h1>
           <p className="subtitle" style={{ margin: 0 }}>
-            Selamat datang di Dashboard Invora IDStar &middot; Sistem Otomasi Invoicing &amp; Request GR XL Smart.
+            Selamat datang di <b>INVORA</b> (Invoice Operations &amp; Revenue Assurance) &middot; IDStar Group.
           </p>
         </div>
 

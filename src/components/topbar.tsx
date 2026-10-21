@@ -5,9 +5,9 @@ import { labelRole } from "@/lib/role-label";
 export default function Topbar({ nama, role }: { nama: string; role: string }) {
   return (
     <div className="topbar">
-      <a href="/dashboard" className="topbar-brand">
+      <a href="/dashboard" className="topbar-brand" title="INVORA — Invoice Operations & Revenue Assurance">
         <Logo />
-        <span>🧾 Invora</span>
+        <span>🧾 INVORA</span>
       </a>
       <div className="topbar-user">
         <span className="topbar-user-name">{nama}</span>
