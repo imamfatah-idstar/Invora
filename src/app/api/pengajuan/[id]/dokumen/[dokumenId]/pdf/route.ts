@@ -89,7 +89,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       hariKerjaAcuanBulan: pengajuanDetail.hariKerjaAcuanBulan,
       nilaiRateDipakai: pengajuanDetail.nilaiRateDipakai, hasilHitung: pengajuanDetail.hasilHitung,
       nomorLine: poLineItem.nomorLine,
-      deskripsiLine: poLineItem.deskripsi,
+      deskripsiLine: poLineItem.shortText,
     })
     .from(pengajuanDetail)
     .innerJoin(personel, eq(pengajuanDetail.personelId, personel.id))

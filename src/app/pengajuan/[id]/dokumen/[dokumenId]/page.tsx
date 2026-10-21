@@ -58,7 +58,7 @@ export default async function HalamanDokumen({ params }: { params: Promise<{ id:
       hariKerjaAcuanBulan: pengajuanDetail.hariKerjaAcuanBulan,
       nilaiRateDipakai: pengajuanDetail.nilaiRateDipakai, hasilHitung: pengajuanDetail.hasilHitung,
       nomorLine: poLineItem.nomorLine,
-      deskripsiLine: poLineItem.deskripsi,
+      deskripsiLine: poLineItem.shortText,
     })
     .from(pengajuanDetail)
     .innerJoin(personel, eq(pengajuanDetail.personelId, personel.id))

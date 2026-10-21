@@ -98,7 +98,7 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
       sumberHitung: pengajuanDetail.sumberHitung,
       poLineItemId: pengajuanDetail.poLineItemId,
       nomorLine: poLineItem.nomorLine,
-      deskripsiLine: poLineItem.deskripsi,
+      deskripsiLine: poLineItem.shortText,
     })
     .from(pengajuanDetail)
     .innerJoin(personel, eq(pengajuanDetail.personelId, personel.id))
