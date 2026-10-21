@@ -6,9 +6,11 @@ import * as schema from "./schema";
 // Database Supabase (PostgreSQL). DATABASE_URL diisi di .env (tidak ikut git).
 // prepare:false dipakai supaya tetap kompatibel baik lewat Session Pooler
 // maupun Transaction Pooler Supabase (yang tidak mendukung prepared statement).
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL belum diisi di .env — lihat README/PROJECT_INSTRUCTIONS untuk cara mengambilnya dari Supabase.");
+const databaseUrl = process.env.DATABASE_URL || "postgresql://postgres:placeholder@127.0.0.1:5432/postgres";
+
+if (!process.env.DATABASE_URL && process.env.NODE_ENV === "production" && typeof window === "undefined") {
+  console.warn("PERINGATAN: DATABASE_URL belum diatur di Environment Variables Vercel.");
 }
 
-const client = postgres(process.env.DATABASE_URL, { prepare: false });
+const client = postgres(databaseUrl, { prepare: false });
 export const db = drizzle(client, { schema });
