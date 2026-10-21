@@ -1,6 +1,6 @@
 import { wajibRole } from "@/lib/require-role";
 import { db } from "@/db";
-import { pengajuan, pengajuanDetail, personel, po, userXl, konfirmasi, checkerReview, users, dokumen, lampiranPengajuan, grRequest, grRequestRiwayat } from "@/db/schema";
+import { pengajuan, pengajuanDetail, personel, po, poLineItem, userXl, konfirmasi, checkerReview, users, dokumen, lampiranPengajuan, grRequest, grRequestRiwayat } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import TombolKonfirmasi from "./konfirmasi-button";
@@ -89,9 +89,13 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
       nilaiRateDipakai: pengajuanDetail.nilaiRateDipakai, hasilHitung: pengajuanDetail.hasilHitung,
       nilaiPenuh: pengajuanDetail.nilaiPenuh,
       sumberHitung: pengajuanDetail.sumberHitung,
+      poLineItemId: pengajuanDetail.poLineItemId,
+      nomorLine: poLineItem.nomorLine,
+      deskripsiLine: poLineItem.deskripsi,
     })
     .from(pengajuanDetail)
     .innerJoin(personel, eq(pengajuanDetail.personelId, personel.id))
+    .leftJoin(poLineItem, eq(pengajuanDetail.poLineItemId, poLineItem.id))
     .where(eq(pengajuanDetail.pengajuanId, header.id));
 
   const riwayatKonfirmasi = await db
@@ -178,7 +182,7 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
         <div className="table-wrap">
           <table>
             <thead><tr>
-              <th>Personel</th><th>Rate</th>
+              <th>Personel</th><th>PO Line</th><th>Rate</th>
               <th>Hari Ditagihkan / Acuan</th><th>Sumber</th><th>Hasil Hitung</th>
             </tr></thead>
             <tbody>
@@ -187,6 +191,15 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
                 return (
                 <tr key={r.id}>
                   <td>{r.namaPersonel}</td>
+                  <td>
+                    {r.nomorLine ? (
+                      <span className="badge badge-draft" title={r.deskripsiLine ?? ""}>
+                        Line {r.nomorLine}
+                      </span>
+                    ) : (
+                      <span style={{ color: "var(--color-text-muted)", fontSize: 12 }}>-</span>
+                    )}
+                  </td>
                   <td>{formatRupiah(r.nilaiRateDipakai)}</td>
                   <td>{r.sumberHitung === "manual" ? "-" : `${r.hariKerjaDapatDitagihkan} / ${r.hariKerjaAcuanBulan}`}</td>
                   <td>

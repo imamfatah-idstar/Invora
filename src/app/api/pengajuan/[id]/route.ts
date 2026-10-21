@@ -50,8 +50,16 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const siap = await siapkanTagihanTahap(ajuan.poId, ajuan.periode, body?.nilaiManual, poRow.saldoSebelumPpn);
     if ("error" in siap) return NextResponse.json({ error: siap.error }, { status: 400 });
 
+    // Ambil rincian lama untuk cadangan poLineItemId jika di pemetaan terkini tidak ada / null
+    const rincianLama = await db
+      .select({ personelId: pengajuanDetail.personelId, poLineItemId: pengajuanDetail.poLineItemId })
+      .from(pengajuanDetail)
+      .where(eq(pengajuanDetail.pengajuanId, pengajuanId));
+    const mapLineItemLama = new Map(rincianLama.map((r) => [r.personelId, r.poLineItemId]));
+
     await db.delete(pengajuanDetail).where(eq(pengajuanDetail.pengajuanId, pengajuanId));
     for (const b of siap.baris) {
+      const finalPoLineItemId = b.poLineItemId ?? mapLineItemLama.get(b.personelId) ?? null;
       await db.insert(pengajuanDetail).values({
         pengajuanId,
         personelId: b.personelId,
@@ -60,7 +68,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         nilaiRateDipakai: b.nilaiRateAcuan,
         hasilHitung: b.nilai,
         nilaiPenuh: b.nilai,
-        poLineItemId: b.poLineItemId,
+        poLineItemId: finalPoLineItemId,
         sumberHitung: "manual",
       });
     }
@@ -115,8 +123,16 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     );
   }
 
+  // Simpan map poLineItemId dari rincian lama agar tidak hilang jika di pemetaan terkini null
+  const rincianLama = await db
+    .select({ personelId: pengajuanDetail.personelId, poLineItemId: pengajuanDetail.poLineItemId })
+    .from(pengajuanDetail)
+    .where(eq(pengajuanDetail.pengajuanId, pengajuanId));
+  const mapLineItemLama = new Map(rincianLama.map((r) => [r.personelId, r.poLineItemId]));
+
   await db.delete(pengajuanDetail).where(eq(pengajuanDetail.pengajuanId, pengajuanId));
   for (const b of dipilih) {
+    const finalPoLineItemId = b.poLineItemId ?? mapLineItemLama.get(b.personelId) ?? null;
     await db.insert(pengajuanDetail).values({
       pengajuanId,
       personelId: b.personelId,
@@ -125,7 +141,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       nilaiRateDipakai: b.nilaiRateDipakai!,
       hasilHitung: b.akanDitagihkan!,
       nilaiPenuh: b.nilaiPenuh,
-      poLineItemId: b.poLineItemId,
+      poLineItemId: finalPoLineItemId,
       sumberHitung: b.sumberHitung,
     });
   }
