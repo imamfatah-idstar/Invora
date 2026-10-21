@@ -1,9 +1,18 @@
+"use client";
+
+import { usePathname } from "next/navigation";
 import Logo from "./logo";
 
-// Alamat resmi IDStar — tampil di semua halaman (lihat globals.css .app-footer,
-// disembunyikan otomatis saat cetak dokumen CAC/BAST via @media print). Dibuat
-// 2 baris sesuai permintaan pengguna.
+// Alamat resmi IDStar — tampil di semua halaman aplikasi kecuali halaman login
+// dan disembunyikan otomatis saat cetak dokumen via @media print.
 export default function Footer() {
+  const pathname = usePathname();
+
+  // Sembunyikan footer khusus di halaman login
+  if (pathname === "/" || pathname === "/login") {
+    return null;
+  }
+
   return (
     <footer className="app-footer">
       <Logo height={22} variant="color" />
@@ -14,3 +23,4 @@ export default function Footer() {
     </footer>
   );
 }
+

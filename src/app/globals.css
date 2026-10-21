@@ -269,6 +269,12 @@ tfoot td { background: #fafbfc; border-top: 2px solid var(--color-border); }
 .app-footer .app-footer-text { line-height: 1.5; }
 .app-footer .app-footer-text b { color: var(--color-text); }
 
+/* Khusus halaman login: sembunyikan footer aplikasi */
+.login-shell ~ .app-footer,
+body:has(.login-shell) .app-footer {
+  display: none !important;
+}
+
 /* ============================================================
    Dokumen cetak (CAC / BAST) — draf internal, template resmi
    sudah dikonfirmasi (bagian 25); tetap draf karena pengajuan
