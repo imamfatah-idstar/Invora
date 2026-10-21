@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import {
-  dokumen, pengajuan, pengajuanDetail, personel, po, userXl,
+  dokumen, pengajuan, pengajuanDetail, personel, po, poLineItem, userXl,
   konfirmasi, checkerReview, users, lampiranPengajuan,
 } from "@/db/schema";
 import { eq, desc, and } from "drizzle-orm";
@@ -10,6 +10,7 @@ import TombolCetak from "./tombol-cetak";
 import Logo from "@/components/logo";
 import { LABEL_LAMPIRAN_BALANCE } from "@/lib/lampiran-label";
 import { apakahKlienXl } from "@/lib/klien";
+import BastNonXlView from "./bast-non-xl-view";
 
 function formatRupiah(nilai: string) {
   return "Rp" + Number(nilai).toLocaleString("id-ID", { minimumFractionDigits: 2 });
@@ -56,9 +57,12 @@ export default async function HalamanDokumen({ params }: { params: Promise<{ id:
       hariKerjaDapatDitagihkan: pengajuanDetail.hariKerjaDapatDitagihkan,
       hariKerjaAcuanBulan: pengajuanDetail.hariKerjaAcuanBulan,
       nilaiRateDipakai: pengajuanDetail.nilaiRateDipakai, hasilHitung: pengajuanDetail.hasilHitung,
+      nomorLine: poLineItem.nomorLine,
+      deskripsiLine: poLineItem.deskripsi,
     })
     .from(pengajuanDetail)
     .innerJoin(personel, eq(pengajuanDetail.personelId, personel.id))
+    .leftJoin(poLineItem, eq(pengajuanDetail.poLineItemId, poLineItem.id))
     .where(eq(pengajuanDetail.pengajuanId, pengajuanId));
 
   const [konfirmasiTerakhir] = await db
@@ -74,6 +78,27 @@ export default async function HalamanDokumen({ params }: { params: Promise<{ id:
     .orderBy(desc(checkerReview.waktu)).limit(1);
 
   const total = rincian.reduce((acc, r) => acc + Number(r.hasilHitung), 0);
+
+  // Jika klien Non-XL dan dokumen adalah BAST, gunakan format BAST Non-XL khusus (1 halaman, klausul resmi 2 pihak)
+  if (!isKlienXl && dok.jenis === "BAST") {
+    return (
+      <BastNonXlView
+        pengajuanId={pengajuanId}
+        dokumenId={dok.id}
+        dokumenVersi={dok.versi}
+        nomorPo={header.nomorPo}
+        namaProyek={header.namaProyek}
+        klien={header.klien}
+        periode={header.periode}
+        keteranganTahap={header.keteranganTahap}
+        defaultPihakPertama={header.namaUserXl}
+        defaultPihakKedua={konfirmasiTerakhir?.nama ?? "Aris Munandar"}
+        rincian={rincian}
+        total={total}
+        dibuatPada={dok.dibuatPada}
+      />
+    );
+  }
 
   return (
     <div className="doc-page">

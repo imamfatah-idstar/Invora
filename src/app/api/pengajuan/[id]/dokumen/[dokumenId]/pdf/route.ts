@@ -4,7 +4,7 @@ import path from "path";
 import { PDFDocument, StandardFonts, rgb, PageSizes } from "pdf-lib";
 import { db } from "@/db";
 import {
-  dokumen, pengajuan, pengajuanDetail, personel, po, userXl,
+  dokumen, pengajuan, pengajuanDetail, personel, po, poLineItem, userXl,
   konfirmasi, checkerReview, users, lampiranPengajuan,
 } from "@/db/schema";
 import { eq, desc, and } from "drizzle-orm";
@@ -75,15 +75,25 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   const isKlienXl = apakahKlienXl(header.klien);
 
+  const { searchParams } = new URL(request.url);
+  const pihak1Nama = searchParams.get("pihak1Nama") || header.namaUserXl || "Bpk/Ibu PIC Klien";
+  const pihak1Jabatan = searchParams.get("pihak1Jabatan") || "Project Manager / PIC";
+  const pihak2Nama = searchParams.get("pihak2Nama") || "Aris Munandar";
+  const pihak2Jabatan = searchParams.get("pihak2Jabatan") || "Account Director";
+  const tglDokumen = searchParams.get("tgl") || "21 Oktober 2026";
+
   const rincian = await db
     .select({
       namaPersonel: personel.nama,
       hariKerjaDapatDitagihkan: pengajuanDetail.hariKerjaDapatDitagihkan,
       hariKerjaAcuanBulan: pengajuanDetail.hariKerjaAcuanBulan,
       nilaiRateDipakai: pengajuanDetail.nilaiRateDipakai, hasilHitung: pengajuanDetail.hasilHitung,
+      nomorLine: poLineItem.nomorLine,
+      deskripsiLine: poLineItem.deskripsi,
     })
     .from(pengajuanDetail)
     .innerJoin(personel, eq(pengajuanDetail.personelId, personel.id))
+    .leftJoin(poLineItem, eq(pengajuanDetail.poLineItemId, poLineItem.id))
     .where(eq(pengajuanDetail.pengajuanId, pengajuanId));
 
   const [konfirmasiTerakhir] = await db
@@ -106,7 +116,164 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   const total = rincian.reduce((acc, r) => acc + Number(r.hasilHitung), 0);
 
-  // ---- Halaman 1: sertifikat, digambar langsung dengan pdf-lib ----
+  // ---- BAST Khusus Non-XL (Format resmi 1 halaman, 2 pihak) ----
+  if (!isKlienXl && dok.jenis === "BAST") {
+    const bastPdf = await PDFDocument.create();
+    const font = await bastPdf.embedFont(StandardFonts.Helvetica);
+    const fontBold = await bastPdf.embedFont(StandardFonts.HelveticaBold);
+    const halaman = bastPdf.addPage(PageSizes.A4);
+    const { width: pw, height: ph } = halaman.getSize();
+    const margin = 42;
+    let y = ph - margin;
+
+    function teksNonXl(isi: string, opsi: { x?: number; size?: number; bold?: boolean; warna?: [number, number, number] } = {}) {
+      halaman.drawText(isi, {
+        x: opsi.x ?? margin, y, size: opsi.size ?? 9.5,
+        font: opsi.bold ? fontBold : font,
+        color: opsi.warna ? rgb(...opsi.warna) : rgb(0.1, 0.1, 0.1),
+      });
+    }
+    function barisNonXl(tinggi = 14) { y -= tinggi; }
+
+    const namaKlienResmi = header.klien || "KLIEN MITRA";
+
+    // Header Klien & IDStar
+    teksNonXl(namaKlienResmi.toUpperCase(), { size: 12, bold: true });
+    const idstarW = fontBold.widthOfTextAtSize("PT IDSTAR CIPTA TEKNOLOGI", 11);
+    teksNonXl("PT IDSTAR CIPTA TEKNOLOGI", { x: pw - margin - idstarW, size: 11, bold: true, warna: [0.8, 0.1, 0.1] });
+    barisNonXl(16);
+    halaman.drawLine({ start: { x: margin, y }, end: { x: pw - margin, y }, thickness: 1.5, color: rgb(0.15, 0.15, 0.15) });
+    barisNonXl(18);
+
+    // Judul Dokumen
+    const judul = "BERITA ACARA SERAH TERIMA PEKERJAAN";
+    const judulW = fontBold.widthOfTextAtSize(judul, 13);
+    teksNonXl(judul, { x: (pw - judulW) / 2, size: 13, bold: true });
+    barisNonXl(14);
+    const noBast = `Nomor: BAST/${header.nomorPo}/${header.periode}/${dok.id}`;
+    const noBastW = font.widthOfTextAtSize(noBast, 9.5);
+    teksNonXl(noBast, { x: (pw - noBastW) / 2, size: 9.5, bold: true, warna: [0.3, 0.3, 0.3] });
+    barisNonXl(13);
+    const poSub = `Purchase Order (PO): ${header.nomorPo} · Proyek: ${header.namaProyek}`;
+    const poSubW = font.widthOfTextAtSize(poSub, 9);
+    teksNonXl(poSub, { x: (pw - poSubW) / 2, size: 9, warna: [0.4, 0.4, 0.4] });
+    barisNonXl(18);
+
+    // Paragraf Pembuka
+    teksNonXl(`Pada hari ini, tanggal ${tglDokumen}, yang bertanda tangan di bawah ini:`, { size: 9.5 });
+    barisNonXl(14);
+
+    // Identitas 2 Pihak
+    const identitas: [string, string, string][] = [
+      ["1.", "Nama", pihak1Nama],
+      ["", "Jabatan", pihak1Jabatan],
+      ["", "Perusahaan", `${namaKlienResmi} (selanjutnya disebut sebagai "PIHAK PERTAMA")`],
+      ["", "", ""],
+      ["2.", "Nama", pihak2Nama],
+      ["", "Jabatan", pihak2Jabatan],
+      ["", "Perusahaan", `PT IDstar Cipta Teknologi (selanjutnya disebut sebagai "PIHAK KEDUA")`],
+    ];
+
+    for (const [no, label, val] of identitas) {
+      if (!label) { barisNonXl(6); continue; }
+      if (no) teksNonXl(no, { x: margin, size: 9, bold: true });
+      teksNonXl(label, { x: margin + 18, size: 9, warna: [0.4, 0.4, 0.4] });
+      teksNonXl(":", { x: margin + 95, size: 9 });
+      teksNonXl(val, { x: margin + 105, size: 9, bold: label === "Perusahaan" });
+      barisNonXl(13);
+    }
+    barisNonXl(8);
+
+    // Klausul Penyerahan
+    const teksPekerjaan = header.keteranganTahap
+      ? `tahap ${header.keteranganTahap}`
+      : `periode layanan ${header.periode}`;
+    const narasi = `PIHAK PERTAMA dan PIHAK KEDUA secara bersama-sama menerangkan bahwa PIHAK KEDUA telah menyelesaikan pekerjaan penyediaan jasa keahlian / konsultan untuk proyek ${header.namaProyek} pada ${teksPekerjaan} berdasarkan Purchase Order No. ${header.nomorPo}, dengan rincian serah terima sebagai berikut:`;
+
+    const maxLebar = pw - margin * 2;
+    const kata = narasi.split(" ");
+    let baru = "";
+    const lines: string[] = [];
+    for (const k of kata) {
+      const coba = baru ? `${baru} ${k}` : k;
+      if (font.widthOfTextAtSize(coba, 9) > maxLebar) { lines.push(baru); baru = k; } else { baru = coba; }
+    }
+    if (baru) lines.push(baru);
+    for (const l of lines) { teksNonXl(l, { size: 9 }); barisNonXl(12); }
+    barisNonXl(8);
+
+    // Tabel Penugasan
+    const colX = [margin, margin + 22, margin + 180, margin + 340, pw - margin - 95];
+    teksNonXl("No", { x: colX[0], size: 8.5, bold: true });
+    teksNonXl("Nama Personel", { x: colX[1], size: 8.5, bold: true });
+    teksNonXl("Posisi / PO Line", { x: colX[2], size: 8.5, bold: true });
+    teksNonXl("Hari/Acuan", { x: colX[3], size: 8.5, bold: true });
+    teksNonXl("Nilai Serah Terima", { x: colX[4], size: 8.5, bold: true });
+    barisNonXl(4);
+    halaman.drawLine({ start: { x: margin, y }, end: { x: pw - margin, y }, thickness: 1, color: rgb(0.2, 0.2, 0.2) });
+    barisNonXl(12);
+
+    rincian.forEach((r, idx) => {
+      teksNonXl(String(idx + 1), { x: colX[0], size: 8.5 });
+      teksNonXl(r.namaPersonel, { x: colX[1], size: 8.5, bold: true });
+      const pos = r.nomorLine ? `Line ${r.nomorLine} ${r.deskripsiLine ? `(${r.deskripsiLine})` : ""}` : (header.namaProyek || "-");
+      teksNonXl(pos.slice(0, 32), { x: colX[2], size: 8.5 });
+      teksNonXl(r.hariKerjaAcuanBulan === 0 ? "-" : `${r.hariKerjaDapatDitagihkan}/${r.hariKerjaAcuanBulan}`, { x: colX[3], size: 8.5 });
+      const valStr = formatRupiah(r.hasilHitung);
+      const valW = fontBold.widthOfTextAtSize(valStr, 8.5);
+      teksNonXl(valStr, { x: pw - margin - valW, size: 8.5, bold: true });
+      barisNonXl(12);
+    });
+    barisNonXl(4);
+    halaman.drawLine({ start: { x: margin, y }, end: { x: pw - margin, y }, thickness: 0.75, color: rgb(0.6, 0.6, 0.6) });
+    barisNonXl(12);
+    teksNonXl("Total Nilai Pekerjaan (Sebelum PPN):", { x: colX[1], size: 9, bold: true });
+    const totStr = formatRupiah(String(total));
+    const totW = fontBold.widthOfTextAtSize(totStr, 9.5);
+    teksNonXl(totStr, { x: pw - margin - totW, size: 9.5, bold: true, warna: [0.8, 0.1, 0.1] });
+    barisNonXl(16);
+
+    // Klausul Penutup
+    const penutup = `Pekerjaan tersebut telah diserahterimakan oleh PIHAK KEDUA dan diterima dengan baik serta lengkap oleh PIHAK PERTAMA. Berita Acara Serah Terima ini dibuat dalam rangkap yang cukup dan memiliki kekuatan hukum yang sah sebagai kelengkapan dokumen penagihan dan dasar pembayaran bagi PIHAK KEDUA.`;
+    const kPenutup = penutup.split(" ");
+    let bPenutup = "";
+    const lPenutup: string[] = [];
+    for (const kp of kPenutup) {
+      const coba = bPenutup ? `${bPenutup} ${kp}` : kp;
+      if (font.widthOfTextAtSize(coba, 9) > maxLebar) { lPenutup.push(bPenutup); bPenutup = kp; } else { bPenutup = coba; }
+    }
+    if (bPenutup) lPenutup.push(bPenutup);
+    for (const lp of lPenutup) { teksNonXl(lp, { size: 9 }); barisNonXl(12); }
+    barisNonXl(18);
+
+    // Tanda Tangan 2 Pihak
+    const ttdCol1 = margin + 30;
+    const ttdCol2 = margin + 300;
+    teksNonXl("PIHAK PERTAMA,", { x: ttdCol1, size: 9, warna: [0.4, 0.4, 0.4] });
+    teksNonXl("PIHAK KEDUA,", { x: ttdCol2, size: 9, warna: [0.4, 0.4, 0.4] });
+    barisNonXl(14);
+    teksNonXl(namaKlienResmi, { x: ttdCol1, size: 9.5, bold: true });
+    teksNonXl("PT IDstar Cipta Teknologi", { x: ttdCol2, size: 9.5, bold: true });
+    barisNonXl(48);
+    teksNonXl(pihak1Nama, { x: ttdCol1, size: 9.5, bold: true });
+    teksNonXl(pihak2Nama, { x: ttdCol2, size: 9.5, bold: true });
+    barisNonXl(12);
+    teksNonXl(pihak1Jabatan, { x: ttdCol1, size: 8.5, warna: [0.4, 0.4, 0.4] });
+    teksNonXl(pihak2Jabatan, { x: ttdCol2, size: 8.5, warna: [0.4, 0.4, 0.4] });
+    barisNonXl(18);
+
+    teksNonXl(`Dokumen resmi INVORA · IDStar Group — ${dok.dibuatPada} · dokumen #${dok.id}`, { size: 7.5, warna: [0.6, 0.6, 0.6] });
+
+    const pdfBytes = await bastPdf.save();
+    return new NextResponse(Buffer.from(pdfBytes), {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `inline; filename="BAST-NonXL-${header.nomorPo}-${header.periode}.pdf"`,
+      },
+    });
+  }
+
+  // ---- Halaman 1: sertifikat CAC/BAST XL, digambar langsung dengan pdf-lib ----
   const gabungan = await PDFDocument.create();
   const font = await gabungan.embedFont(StandardFonts.Helvetica);
   const fontBold = await gabungan.embedFont(StandardFonts.HelveticaBold);

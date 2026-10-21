@@ -260,9 +260,7 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
                 <>Draf internal berdasarkan data pengajuan ini, mengikuti template resmi CAC/BAST yang sudah
                 dikonfirmasi — tetap gunakan Get Approve CAC / COUPA untuk pengajuan resmi ke XL.</>
               ) : (
-                <>Klien Non-XL — tidak lewat proses CAC. Cukup BAST + timesheet sebagai dasar invoice
-                (bagian 40-43). Format BAST khusus Non-XL menyusul di bagian terpisah; dokumen di bawah
-                masih memakai format sementara.</>
+                <>Klien Non-XL — proses resmi tanpa CAC. BAST 1 halaman formal (klausul Pihak Pertama &amp; Kedua) + timesheet sebagai kelengkapan dokumen dan dasar penagihan invoice.</>
               )}
             </p>
             <div style={{ display: "flex", gap: 10 }}>
