@@ -7,7 +7,7 @@ export default async function HalamanAdmin() {
   const user = await userSaatIni();
 
   if (!user) {
-    redirect("/login");
+    redirect("/");
   }
   if (user.role !== "admin") {
     redirect("/dashboard"); // login sah, tapi role tidak berhak -> ditolak

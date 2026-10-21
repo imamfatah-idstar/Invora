@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { userSaatIni } from "@/lib/session-server";
-import HalamanLogin from "./login/page";
+import LoginClient from "./login-client";
 
 export const metadata = {
   title: "Masuk — Invora",
@@ -25,5 +25,5 @@ export default async function HomePage() {
     }
   }
 
-  return <HalamanLogin />;
+  return <LoginClient />;
 }

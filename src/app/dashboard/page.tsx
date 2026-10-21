@@ -6,7 +6,7 @@ type MenuItem = { href: string; label: string; deskripsi: string };
 
 export default async function Dashboard() {
   const user = await userSaatIni();
-  if (!user) redirect("/login");
+  if (!user) redirect("/");
 
   // Daftar isi (bagian 48, dipindah dari grid kartu ke sidebar kiri —
   // mengikuti pola yang sama seperti sidebar Data Referensi & Admin) —

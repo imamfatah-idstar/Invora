@@ -5,7 +5,7 @@ export default function TombolKeluarTopbar() {
   const router = useRouter();
   async function keluar() {
     await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/login");
+    router.push("/");
     router.refresh();
   }
   return (

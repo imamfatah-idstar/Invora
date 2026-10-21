@@ -141,7 +141,7 @@ export default function MvpPortalClient({ user, dbStatus = "connected", dbErrorM
                   {quickLoginLoading === "checker@contoh.local" ? "Masuk..." : "Checker"}
                 </button>
                 <a
-                  href="/login"
+                  href="/"
                   className="btn"
                   style={{
                     background: "#ffffff",
@@ -760,7 +760,7 @@ export default function MvpPortalClient({ user, dbStatus = "connected", dbErrorM
               </p>
             </div>
             <a
-              href="/login"
+              href="/"
               style={{
                 color: "#f2a30f",
                 fontSize: 13,

@@ -7,7 +7,7 @@ import type { Role } from "@/lib/auth";
 export async function wajibRole(rolesDiizinkan: Role[]) {
   const user = await userSaatIni();
   if (!user) {
-    redirect("/login");
+    redirect("/");
   }
   if (!rolesDiizinkan.includes(user.role as Role)) {
     redirect("/dashboard");
