@@ -88,20 +88,16 @@ export default function LoginClient() {
   }
 
   return (
-    <main style={{ minHeight: "100vh", display: "flex" }}>
-      {/* Panel kiri ~20% lebar layar, warna merah brand */}
-      <aside style={{
-        width: "22%", minWidth: 180, background: "var(--color-primary)",
-        display: "flex", flexDirection: "column", justifyContent: "space-between",
-        alignItems: "flex-start", padding: 28, flexShrink: 0,
-      }}>
-        <div>
+    <main className="login-shell">
+      {/* Panel kiri / atas brand IDStar */}
+      <aside className="login-aside">
+        <div className="login-aside-brand">
           <Logo height={28} variant="white" />
-          <div style={{ color: "rgba(255,255,255,0.9)", fontSize: 13, marginTop: 16, lineHeight: 1.5, fontWeight: 500 }}>
+          <div className="login-aside-title">
             Sistem Otomasi Invoicing &amp; Request GR Customer XL Smart
           </div>
         </div>
-        <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 11, lineHeight: 1.5 }}>
+        <div className="login-aside-address">
           <div style={{ fontWeight: 600, color: "#ffffff", marginBottom: 4 }}>IDStar Head Office:</div>
           <div>The Bellagio Mansion, Ground floor</div>
           <div>Mega Kuningan Timur II, Setiabudi</div>
@@ -110,10 +106,10 @@ export default function LoginClient() {
       </aside>
 
       {/* Area Form & Demo Login */}
-      <div style={{ position: "relative", flex: 1, display: "flex", alignItems: "center", justifyContent: "center", overflowY: "auto", padding: "40px 20px" }}>
+      <div className="login-main">
         <LoginBackground />
         
-        <div className="card" style={{ width: 440, maxWidth: "100%", position: "relative", zIndex: 1, boxShadow: "0 10px 30px rgba(0,0,0,0.08)", borderRadius: 14 }}>
+        <div className="card login-card">
           {/* Header */}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginBottom: 20 }}>
             <Logo height={44} variant="color" />
@@ -177,6 +173,7 @@ export default function LoginClient() {
                   type="button"
                   disabled={loading || Boolean(demoLoading)}
                   onClick={() => handleDemoLogin(item.email)}
+                  className="login-demo-btn"
                   style={{
                     display: "flex",
                     alignItems: "center",

@@ -10,7 +10,7 @@ export default function Topbar({ nama, role }: { nama: string; role: string }) {
         <span>🧾 Invora</span>
       </a>
       <div className="topbar-user">
-        <span>{nama}</span>
+        <span className="topbar-user-name">{nama}</span>
         <span className="topbar-role-badge">{labelRole(role)}</span>
         <TombolKeluarTopbar />
       </div>

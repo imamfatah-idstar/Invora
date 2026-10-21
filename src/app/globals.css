@@ -196,7 +196,16 @@ input:focus, select:focus, textarea:focus {
 .toolbar { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 20px; }
 
 table { border-collapse: collapse; width: 100%; background: var(--color-surface); }
-.table-wrap { border: 1px solid var(--color-border); border-radius: var(--radius); overflow: hidden; }
+.table-wrap {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--color-surface);
+}
+.table-wrap table {
+  min-width: 600px;
+}
 thead tr { background: #fafbfc; }
 th {
   text-align: left;
@@ -466,3 +475,230 @@ tfoot td { background: #fafbfc; border-top: 2px solid var(--color-border); }
 .th-sortable:hover { color: var(--color-text); }
 .th-sort-caret { display: inline-block; margin-left: 4px; font-size: 10px; color: var(--color-text-muted); }
 .th-sort-caret.aktif { color: var(--color-primary); }
+
+/* ============================================================
+   Login Page — Responsif & Adaptive Layout
+   ============================================================ */
+.login-shell {
+  min-height: 100vh;
+  display: flex;
+  position: relative;
+  background: var(--color-bg);
+}
+.login-aside {
+  width: 24%;
+  min-width: 220px;
+  max-width: 320px;
+  background: var(--color-primary);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 32px 24px;
+  flex-shrink: 0;
+  z-index: 2;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+}
+.login-aside-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.login-aside-title {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 13.5px;
+  margin-top: 16px;
+  line-height: 1.5;
+  font-weight: 500;
+}
+.login-aside-address {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+.login-main {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 40px 20px;
+}
+.login-card {
+  width: 440px;
+  max-width: 100%;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08);
+  border-radius: 14px;
+}
+
+/* ============================================================
+   Media Queries — Tablet (<= 840px)
+   ============================================================ */
+@media (max-width: 840px) {
+  .login-shell {
+    flex-direction: column;
+  }
+  .login-aside {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    padding: 16px 20px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+  .login-aside-brand {
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+  }
+  .login-aside-title {
+    margin-top: 0;
+    font-size: 12.5px;
+  }
+  .login-aside-address {
+    display: none;
+  }
+  .login-main {
+    padding: 32px 16px 48px;
+    min-height: calc(100vh - 68px);
+  }
+  .admin-content {
+    padding: 22px 18px;
+  }
+}
+
+/* ============================================================
+   Media Queries — Mobile / Smartphone (<= 640px)
+   ============================================================ */
+@media (max-width: 640px) {
+  /* Topbar responsif */
+  .topbar {
+    padding: 0 12px;
+    height: 52px;
+  }
+  .topbar-brand {
+    font-size: 14px;
+    gap: 6px;
+  }
+  .topbar-user {
+    gap: 8px;
+    font-size: 12px;
+  }
+  .topbar-user-name {
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+  }
+  .topbar-role-badge {
+    padding: 2px 7px;
+    font-size: 11px;
+  }
+
+  /* Admin Shell & Sidebar responsif */
+  .admin-shell {
+    flex-direction: column;
+  }
+  .admin-sidebar {
+    width: 100% !important;
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+    padding: 12px 14px;
+  }
+  .admin-sidebar.collapsed {
+    display: none !important;
+  }
+  .admin-sidebar .admin-nav {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+    gap: 6px;
+  }
+  .admin-sidebar .admin-nav a {
+    font-size: 13px;
+    padding: 8px 10px;
+    background: #f8fafc;
+    border: 1px solid var(--color-border);
+  }
+  .admin-content {
+    padding: 16px 12px 36px;
+  }
+
+  /* Kartu & Halaman */
+  .page {
+    padding: 16px 12px 40px;
+  }
+  .card {
+    padding: 16px 14px;
+    border-radius: 10px;
+  }
+  .login-card {
+    padding: 18px 14px;
+    border-radius: 12px;
+  }
+  .login-aside-title {
+    display: none;
+  }
+
+  .login-demo-btn {
+    padding: 9px 10px !important;
+  }
+
+  /* Toolbar Filter & Tombol Aksi */
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .toolbar > * {
+    width: 100%;
+  }
+
+  /* Form inputs & touch target minimum 40px */
+  input, select, textarea {
+    font-size: 16px; /* Cegah auto-zoom bawaan browser di smartphone */
+  }
+  .btn {
+    min-height: 40px;
+    padding: 9px 14px;
+  }
+
+  /* Dokumen Cetak */
+  .doc-sheet {
+    padding: 18px 14px;
+  }
+  .doc-watermark {
+    font-size: 48px;
+  }
+  .doc-ttd {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    margin-top: 24px;
+  }
+
+  /* Footer */
+  .app-footer {
+    padding: 16px 14px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+
+/* ============================================================
+   Media Queries — Extra Small Mobile (<= 420px)
+   ============================================================ */
+@media (max-width: 420px) {
+  .topbar-user-name {
+    display: none;
+  }
+  .admin-sidebar .admin-nav {
+    grid-template-columns: 1fr;
+  }
+}
+
