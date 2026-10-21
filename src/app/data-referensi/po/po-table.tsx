@@ -14,9 +14,10 @@ type BarisPo = {
   nilaiGr: string;
   klien: string | null;
   jenisTagihan: string;
+  statusPo?: string | null;
 };
 
-type KolomSort = "nomorPo" | "namaProyek" | "tahun" | "nilaiItem" | "saldoSebelumPpn" | "nilaiGr" | "klien";
+type KolomSort = "nomorPo" | "namaProyek" | "tahun" | "nilaiItem" | "saldoSebelumPpn" | "nilaiGr" | "klien" | "statusPo";
 type ArahSort = "asc" | "desc";
 
 const KOLOM_ANGKA: KolomSort[] = ["tahun", "nilaiItem", "saldoSebelumPpn", "nilaiGr"];
@@ -86,39 +87,50 @@ export default function TabelPo({ daftar }: { daftar: BarisPo[] }) {
             <Th label="Nomor PO" k="nomorPo" />
             <Th label="Proyek" k="namaProyek" />
             <Th label="Klien" k="klien" />
+            <Th label="Status" k="statusPo" />
             <Th label="Tahun" k="tahun" />
             <Th label="Nilai Item" k="nilaiItem" />
             <Th label="Saldo Sebelum PPN" k="saldoSebelumPpn" />
-            <Th label="Nilai GR" k="nilaiGr" />
+            <Th label="Realisasi GR" k="nilaiGr" />
             <th></th>
           </tr>
         </thead>
         <tbody>
-          {daftarUrut.map((p) => (
-            <tr key={p.id}>
-              <td><input type="checkbox" checked={terpilih.has(p.id)} onChange={() => toggle(p.id)} /></td>
-              <td>{p.nomorPo}</td>
-              <td>{p.namaProyek}</td>
-              <td>
-                {p.klien ?? <span style={{ color: "var(--color-muted, #999)" }}>-</span>}
-                {p.klien && (
-                  <span className={`badge ${apakahKlienXl(p.klien) ? "badge-siap_diajukan" : "badge-draft"}`} style={{ marginLeft: 6 }}>
-                    {apakahKlienXl(p.klien) ? "XL" : "Non-XL"}
+          {daftarUrut.map((p) => {
+            const isSelesai = p.statusPo === "selesai";
+            return (
+              <tr key={p.id} style={{ opacity: isSelesai ? 0.75 : 1 }}>
+                <td><input type="checkbox" checked={terpilih.has(p.id)} onChange={() => toggle(p.id)} /></td>
+                <td>
+                  <b>{p.nomorPo}</b>
+                </td>
+                <td>{p.namaProyek}</td>
+                <td>
+                  {p.klien ?? <span style={{ color: "var(--color-muted, #999)" }}>-</span>}
+                  {p.klien && (
+                    <span className={`badge ${apakahKlienXl(p.klien) ? "badge-siap_diajukan" : "badge-draft"}`} style={{ marginLeft: 6 }}>
+                      {apakahKlienXl(p.klien) ? "XL" : "Non-XL"}
+                    </span>
+                  )}
+                </td>
+                <td>
+                  <span className={`badge ${isSelesai ? "badge-success" : "badge-siap_diajukan"}`}>
+                    {isSelesai ? "Selesai (Closed)" : "Aktif"}
                   </span>
-                )}
-              </td>
-              <td>{p.tahun}</td>
-              <td>{formatRupiah(p.nilaiItem)}</td>
-              <td>{formatRupiah(p.saldoSebelumPpn)}</td>
-              <td>{formatRupiah(p.nilaiGr)}</td>
-              <td style={{ display: "flex", gap: 8 }}>
-                <a href={`/data-referensi/po/${p.id}/edit`} className="btn-text">Edit</a>
-                <TombolHapus url={`/api/po/${p.id}`} konfirmasi={`Hapus PO "${p.nomorPo}"?`} />
-              </td>
-            </tr>
-          ))}
+                </td>
+                <td>{p.tahun}</td>
+                <td>{formatRupiah(p.nilaiItem)}</td>
+                <td>{formatRupiah(p.saldoSebelumPpn)}</td>
+                <td>{formatRupiah(p.nilaiGr)}</td>
+                <td style={{ display: "flex", gap: 8 }}>
+                  <a href={`/data-referensi/po/${p.id}/edit`} className="btn-text">Edit</a>
+                  <TombolHapus url={`/api/po/${p.id}`} konfirmasi={`Hapus PO "${p.nomorPo}"?`} />
+                </td>
+              </tr>
+            );
+          })}
           {daftarUrut.length === 0 && (
-            <tr><td colSpan={9} className="table-empty">Belum ada data.</td></tr>
+            <tr><td colSpan={10} className="table-empty">Belum ada data.</td></tr>
           )}
         </tbody>
       </table>

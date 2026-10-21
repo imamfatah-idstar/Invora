@@ -43,6 +43,14 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
   const [barisTahap, setBarisTahap] = useState<BarisTahapUi[] | null>(null);
   const [nilaiTahap, setNilaiTahap] = useState<Record<number, string>>({});
   const [keteranganTahap, setKeteranganTahap] = useState("");
+  // MVP 4: Deficiency GR (selisih) dari pengajuan sebelumnya pada PO yang sama
+  const [selisihMenggantung, setSelisihMenggantung] = useState<{
+    sumberPengajuanId: number;
+    periode: string;
+    nomorInvoice: string | null;
+    nominal: string;
+    isKekurangan: boolean;
+  } | null>(null);
 
   async function hitungPratinjau() {
     setError(null);
@@ -56,6 +64,7 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
     setLoadingHitung(false);
     if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Gagal menghitung."); return; }
     const data = await res.json();
+    setSelisihMenggantung(data.selisihMenggantung ?? null);
     if (data.jenis === "tahap") {
       setJenis("tahap");
       setBarisTahap(data.baris);
@@ -225,8 +234,45 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
               </tbody>
             </table>
           </div>
-          <p className="card" style={{ display: "inline-block", padding: "10px 16px", fontSize: 15 }}>
+          {selisihMenggantung && (
+            <div
+              className="card"
+              style={{
+                marginTop: 12,
+                padding: "12px 16px",
+                borderLeft: selisihMenggantung.isKekurangan ? "4px solid #f59e0b" : "4px solid #3b82f6",
+                background: "var(--color-bg-alt, #f8fafc)",
+              }}
+            >
+              <h4 style={{ margin: "0 0 4px 0", fontSize: 14 }}>
+                ⚠️ Deficiency GR Carry-Over Terdeteksi (One-Time Carry-Over)
+              </h4>
+              <p style={{ margin: "0 0 8px 0", fontSize: 13, color: "var(--color-text-muted)" }}>
+                Ditemukan selisih GR dari pengajuan sebelumnya (Periode: <b>{selisihMenggantung.periode}</b>, {selisihMenggantung.nomorInvoice ? `No. Invoice: ${selisihMenggantung.nomorInvoice}` : `Ref: Pengajuan #${selisihMenggantung.sumberPengajuanId}`}).
+                Nilai ini akan otomatis diserap ke pengajuan ini sebagai penyesuaian tagihan.
+              </p>
+              <div style={{ display: "flex", gap: 16, fontSize: 13, flexWrap: "wrap" }}>
+                <span>Subtotal Personel: <b>{formatRupiah(String(total))}</b></span>
+                <span>
+                  Penyesuaian Selisih GR:{" "}
+                  <b style={{ color: selisihMenggantung.isKekurangan ? "#b45309" : "#1d4ed8" }}>
+                    {selisihMenggantung.isKekurangan ? "+" : ""}{formatRupiah(selisihMenggantung.nominal)} ({selisihMenggantung.isKekurangan ? "Menambah Tagihan" : "Memotong Tagihan"})
+                  </b>
+                </span>
+                <span style={{ fontSize: 14, fontWeight: "bold" }}>
+                  Estimasi Tagihan Akhir: {formatRupiah(String(total + Number(selisihMenggantung.nominal)))}
+                </span>
+              </div>
+            </div>
+          )}
+
+          <p className="card" style={{ display: "inline-block", padding: "10px 16px", fontSize: 15, marginTop: 12 }}>
             Total dipilih: <b>{formatRupiah(String(total))}</b>
+            {selisihMenggantung && (
+              <span style={{ fontSize: 13, color: "var(--color-text-muted)", marginLeft: 8 }}>
+                (sebelum penyesuaian selisih GR {selisihMenggantung.isKekurangan ? "+" : ""}{formatRupiah(selisihMenggantung.nominal)})
+              </span>
+            )}
           </p>
           {baris.some((b) => Number(b.sudahDialokasikanDiPoLain) > 0) && (
             <div className="card" style={{ padding: "12px 16px", marginTop: 8 }}>

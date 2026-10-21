@@ -100,6 +100,8 @@ export const po = pgTable("po", {
   // tidak ada formula otomatis). Default "bulanan" supaya PO lama/XL yang
   // sudah ada tidak perlu diisi ulang.
   jenisTagihan: text("jenis_tagihan").notNull().default("bulanan"),
+  // Status siklus hidup PO: "aktif" atau "selesai" (closing PO)
+  statusPo: text("status_po").notNull().default("aktif"),
 });
 
 // Baris/line item PO — PO bersifat bundling banyak baris (per role/jenis
@@ -208,6 +210,22 @@ export const pengajuan = pgTable("pengajuan", {
   approvalAlokasiUserXlPemberi: text("approval_alokasi_user_xl_pemberi"),
   approvalAlokasiTanggal: text("approval_alokasi_tanggal"), // "YYYY-MM-DD"
   approvalAlokasiReferensi: text("approval_alokasi_referensi"), // cth link/nomor chat WA atau subjek email
+
+  // ====== MVP 4: GR Aktual, Deficiency GR, Invoice & Faktur Pajak ======
+  // Nilai nominal GR aktual yang resmi disetujui klien (sebelum PPN)
+  nilaiGrDisetujui: text("nilai_gr_disetujui"),
+  // Selisih GR (Deficiency GR) = total tagihan pengajuan - nilaiGrDisetujui.
+  // Positif = kekurangan GR (akan menambah pengajuan berikutnya)
+  // Negatif = kelebihan GR (akan mengurangi pengajuan berikutnya)
+  selisihGr: text("selisih_gr"),
+  // ID pengajuan berikutnya yang menyerap selisih ini (menjamin one-time carry-over)
+  selisihGrDipakaiPadaPengajuanId: integer("selisih_gr_dipakai_pada_pengajuan_id"),
+  // Penyesuaian selisih GR dari pengajuan sebelumnya yang dibawa masuk ke pengajuan ini
+  penyesuaianSelisihGrMasuk: text("penyesuaian_selisih_gr_masuk").notNull().default("0.00"),
+  // Data Faktur Pajak Resmi
+  nomorFakturPajak: text("nomor_faktur_pajak"),
+  tanggalFakturPajak: text("tanggal_faktur_pajak"), // "YYYY-MM-DD"
+  tarifPpn: text("tarif_ppn").notNull().default("11.00"), // persentase PPN (default 11, bisa 12)
 });
 
 // Rincian pengajuan per personel — hasil hitung prorata/rate penuh.

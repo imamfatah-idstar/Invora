@@ -107,17 +107,31 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // MVP 4: Cek apakah ada Deficiency GR (selisih GR) dari pengajuan sebelumnya
+  // yang belum pernah diserap (one-time carry-over).
+  const { cariSelisihGrMenggantung } = await import("@/lib/deficiency-gr-server");
+  const selisihMenggantung = await cariSelisihGrMenggantung(Number(body.poId));
+
   const [ajuan] = await db.insert(pengajuan).values({
     periode: body.periode,
     poId: Number(body.poId),
     userXlId: Number(body.userXlId),
     status: "draft",
+    penyesuaianSelisihGrMasuk: selisihMenggantung ? selisihMenggantung.nominal : null,
     // Alokasi lintas-PO (bagian 35) — pencatatan internal opsional dari
     // approval User XL yang terjadi di luar aplikasi (email/WhatsApp).
     approvalAlokasiUserXlPemberi: body.approvalAlokasiUserXlPemberi || null,
     approvalAlokasiTanggal: body.approvalAlokasiTanggal || null,
     approvalAlokasiReferensi: body.approvalAlokasiReferensi || null,
   }).returning();
+
+  // Kunci pengajuan sumber selisih agar tidak terbawa dua kali (one-time carry over)
+  if (selisihMenggantung) {
+    await db
+      .update(pengajuan)
+      .set({ selisihGrDipakaiPadaPengajuanId: ajuan.id })
+      .where(eq(pengajuan.id, selisihMenggantung.sumberPengajuanId));
+  }
 
   for (const b of dipilih) {
     await db.insert(pengajuanDetail).values({
@@ -133,9 +147,13 @@ export async function POST(request: NextRequest) {
     });
   }
 
+  const ketCarryOver = selisihMenggantung
+    ? ` + penyesuaian selisih GR dari pengajuan #${selisihMenggantung.sumberPengajuanId} sebesar Rp${selisihMenggantung.nominal}`
+    : "";
+
   await catatAudit({
     entitas: "pengajuan", entitasId: ajuan.id,
-    perubahan: `Buat pengajuan draft periode=${ajuan.periode} po=${poRow.nomorPo} total=${totalPengajuan.toFixed(2)} (${dipilih.length} personel)`,
+    perubahan: `Buat pengajuan draft periode=${ajuan.periode} po=${poRow.nomorPo} total=${totalPengajuan.toFixed(2)} (${dipilih.length} personel)${ketCarryOver}`,
     userId: user!.id,
   });
 

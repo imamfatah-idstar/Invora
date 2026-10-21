@@ -46,6 +46,13 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
       approvalAlokasiUserXlPemberi: pengajuan.approvalAlokasiUserXlPemberi,
       approvalAlokasiTanggal: pengajuan.approvalAlokasiTanggal,
       approvalAlokasiReferensi: pengajuan.approvalAlokasiReferensi,
+      nomorGrSlip: pengajuan.nomorGrSlip,
+      nilaiGrDisetujui: pengajuan.nilaiGrDisetujui,
+      selisihGr: pengajuan.selisihGr,
+      penyesuaianSelisihGrMasuk: pengajuan.penyesuaianSelisihGrMasuk,
+      nomorFakturPajak: pengajuan.nomorFakturPajak,
+      tanggalFakturPajak: pengajuan.tanggalFakturPajak,
+      tarifPpn: pengajuan.tarifPpn,
     })
     .from(pengajuan)
     .innerJoin(po, eq(pengajuan.poId, po.id))
@@ -291,21 +298,34 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
 
         {bisaKelengkapan && (
           <div className="card" style={{ marginTop: 20 }}>
-            <h3 style={{ marginTop: 0 }}>Status Proses CAC &rarr; Invoice</h3>
+            <h3 style={{ marginTop: 0 }}>Status Proses CAC &rarr; Realisasi GR &rarr; Invoice Resmi</h3>
             <p className="subtitle">
-              Tanggal submit CAC otomatis (dari tanggal Checker meloloskan pengajuan). Tanggal lainnya
-              dicatat manual mengikuti proses di Get Approve/COUPA (otomasinya belum dibangun).
+              Siklus lengkap MVP 4: Pelacakan tanggal proses, pencatatan nomor GR Slip resmi &amp; nominal realisasi GR disetujui, kalkulasi otomatis Deficiency GR (selisih), serta penerbitan Faktur Pajak &amp; Invoice Resmi.
             </p>
+            {header.penyesuaianSelisihGrMasuk && Number(header.penyesuaianSelisihGrMasuk) !== 0 && (
+              <div className="alert alert-info" style={{ marginTop: 8, marginBottom: 12 }}>
+                ℹ️ <b>Penyesuaian Selisih GR dari Periode Sebelumnya:</b> Pengajuan ini memuat carry-over selisih GR sebesar{" "}
+                <b>{Number(header.penyesuaianSelisihGrMasuk) > 0 ? "+" : ""}{formatRupiah(header.penyesuaianSelisihGrMasuk)}</b> yang telah diperhitungkan ke dalam total tagihan.
+              </div>
+            )}
             <p style={{ margin: "0 0 4px", fontSize: 14 }}>
               Tanggal Submit CAC (otomatis): <b>{header.tanggalSubmitCac ?? "belum diloloskan Checker"}</b>
               {header.tanggalSubmitCac && header.tanggalApproveInvoice && (
                 <> &middot; total proses sampai invoice disetujui: <b>{Math.round((new Date(header.tanggalApproveInvoice + "T00:00:00Z").getTime() - new Date(header.tanggalSubmitCac + "T00:00:00Z").getTime()) / 86400000)} hari</b></>
               )}
               {header.nomorInvoice && <> &middot; Nomor Invoice: <b>{header.nomorInvoice}</b></>}
+              {header.nomorGrSlip && <> &middot; GR Slip: <b>{header.nomorGrSlip}</b></>}
+              {header.nilaiGrDisetujui && <> &middot; GR Disetujui: <b>{formatRupiah(header.nilaiGrDisetujui)}</b></>}
             </p>
             <FormStatusProses
               pengajuanId={header.id}
+              totalPengajuan={total}
               nomorInvoiceAwal={header.nomorInvoice}
+              nomorGrSlipAwal={header.nomorGrSlip}
+              nilaiGrDisetujuiAwal={header.nilaiGrDisetujui}
+              nomorFakturPajakAwal={header.nomorFakturPajak}
+              tanggalFakturPajakAwal={header.tanggalFakturPajak}
+              tarifPpnAwal={header.tarifPpn}
               grRequestSudahDicek={!isKlienXl || !!dataGrRequest?.dicekPada}
               isKlienXl={isKlienXl}
               bastAda={bastAda}

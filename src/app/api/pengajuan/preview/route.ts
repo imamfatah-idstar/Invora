@@ -33,5 +33,11 @@ export async function POST(request: NextRequest) {
   // ke saldo PO ini yang tersisa (saldoSebelumPpn), sisanya lagi jadi
   // "belum tertagih di sini" untuk pengajuan berikutnya di PO lain.
   const baris = await terapkanAlokasiLintasPo(barisMentah, poId, body.periode, poRow.saldoSebelumPpn);
-  return NextResponse.json({ jenis: "bulanan", baris });
+
+  // MVP 4: Cek apakah ada Deficiency GR (selisih GR) dari pengajuan sebelumnya
+  // yang belum pernah diserap (one-time carry-over).
+  const { cariSelisihGrMenggantung } = await import("@/lib/deficiency-gr-server");
+  const selisihMenggantung = await cariSelisihGrMenggantung(poId);
+
+  return NextResponse.json({ jenis: "bulanan", baris, selisihMenggantung });
 }
