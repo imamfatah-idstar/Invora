@@ -26,6 +26,7 @@ Sistem enterprise internal **PT IDStar Cipta Teknologi** yang dirancang khusus u
    - [Tahap 7: Kontrol Penyelesaian PO (Closing PO) & Rekonsiliasi](#tahap-7-kontrol-penyelesaian-po-closing-po--rekonsiliasi)
    - [Tahap 8: Dashboard Monitoring Outstanding Invoice & Aging Schedule](#tahap-8-dashboard-monitoring-outstanding-invoice--aging-schedule)
    - [Tahap 9: Modul Pencatatan Pelunasan (Payment Settlement)](#tahap-9-modul-pencatatan-pelunasan-payment-settlement)
+   - [Tahap 10: Estimasi Jadwal Cair Otomatis (Cash-in Forecasting)](#tahap-10-estimasi-jadwal-cair-otomatis-cash-in-forecasting)
 6. [Teknologi & Arsitektur Sistem](#6-teknologi--arsitektur-sistem)
 7. [Struktur Direktori Proyek](#7-struktur-direktori-proyek)
 8. [Panduan Instalasi & Menjalankan Aplikasi](#8-panduan-instalasi--menjalankan-aplikasi)
@@ -301,6 +302,25 @@ Pencatatan pembayaran riil dari rekening koran bank klien diintegrasikan langsun
    - **Checker (Reviewer):** Melakukan audit kecocokan bukti bayar dengan rekening koran. **Sistem secara ketat melarang Petugas memverifikasi pelunasan yang dicatatnya sendiri.**
    - **Status Pelunasan Otomatis:** Setelah diverifikasi Checker, status pengajuan otomatis beralih menjadi **LUNAS (PAID)** atau **TERBAYAR SEBAGIAN (PARTIALLY PAID)**, dan meng-update metrik pada Dashboard Outstanding secara real-time.
 
+### Tahap 10: Estimasi Jadwal Cair Otomatis (Cash-in Forecasting)
+Untuk mendukung visibilitas likuiditas dan perencanaan kas perusahaan (*treasury management*), modul `/dashboard/forecast` memproyeksikan arus kas masuk secara cerdas:
+1. **Perhitungan Net Kas Masuk Realistis:**
+   Menghitung estimasi dana riil yang masuk rekening bank dengan memperhitungkan potongan wajib PPh 23 (2%) dari DPP:
+   $$\text{Net Kas Masuk} = (\text{DPP} + \text{PPN}) - (\text{DPP} \times 2\%)$$
+2. **Kalkulasi Estimasi Tanggal Cair Berbasis Kalender Kerja Bank:**
+   $$\text{Tanggal Estimasi Cair} = \text{SesuaikanHariKerja}(\text{Tanggal Acuan} + \text{TOP} + \text{Buffer Keterlambatan})$$
+   *Bila tanggal jatuh tempo bertepatan dengan akhir pekan (Sabtu/Minggu) atau hari libur nasional, sistem secara otomatis menggeser jadwal pencairan ke hari kerja perbankan terdekat (Senin).*
+3. **Klasifikasi Tingkat Kepastian Pembayaran (Confidence Level):**
+   - **🟢 Tinggi (>90%):** Invoice dan Faktur Pajak resmi sudah terbit dari DJP.
+   - **🟡 Sedang (~75%):** Goods Receipt (GR) telah disetujui klien; invoice dalam proses administrasi akhir.
+   - **⚪ Proyeksi (~50%):** Pengajuan masih berstatus draf atau dalam review berkas CAC/BAST.
+4. **Simulasi Skenario Likuiditas (What-If Analysis):**
+   - Pengaturan dinamis Term of Payment (TOP 30 hari standar, 45 hari, 60 hari).
+   - Pengujian stres arus kas (*Cash-flow Stress Test*) dengan buffer keterlambatan bayar (+0 hari Tepat Waktu, +7 hari Ringan, +14 hari Moderat, +30 hari Berat).
+5. **Agregasi Periode Waktu & Ekspor:**
+   - Rekapitulasi: *Immediate Inflow* (7 hari ke depan), Minggu Depan (8–14 hari), Bulan Berjalan, dan Bulan Depan.
+   - Fitur **Ekspor CSV Proyeksi Cash-in** untuk kebutuhan rapat rutin manajemen dan direksi.
+
 ---
 
 ## 6. Teknologi & Arsitektur Sistem
@@ -361,6 +381,7 @@ proses-invoicing-app/
 │   │   │   └── summary-po/       # Endpoint data summary pagu PO
 │   │   ├── akun/                 # Halaman manajemen akun & hak akses
 │   │   ├── dashboard/            # Analisa durasi & metrik invoicing
+│   │   │   ├── forecast/         # Estimasi Jadwal Cair Otomatis & Cash-in Forecasting
 │   │   │   └── outstanding/      # Dashboard Monitoring Outstanding Invoice & Aging Schedule
 │   │   ├── data-referensi/       # Kelola Master PO, Personel, Rate Card, Kalender, Klien
 │   │   ├── kelola-data/          # Impor massal data master & tracker
@@ -373,6 +394,7 @@ proses-invoicing-app/
 │   │   └── schema.ts             # Definisi skema tabel & relasi PostgreSQL (termasuk pembayaran)
 │   └── lib/                      # Core business logic
 │       ├── aging.ts              # Engine Aging Buckets, TOP 30/45/60/90, Overdue, & DSO
+│       ├── cash-in-forecast.ts   # Engine Cash-in Forecasting, penyesuaian hari kerja bank, & simulasi TOP
 │       ├── deficiency-gr.ts      # Engine kalkulasi selisih GR & carry-over
 │       ├── deficiency-gr-server.ts # Server logic deficiency GR
 │       ├── google-auth.ts        # Validasi Google Workspace OAuth SSO (@idstar.group)

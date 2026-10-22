@@ -26,6 +26,12 @@ export default async function Dashboard() {
       deskripsi: "Monitoring piutang belum lunas, jadwal jatuh tempo, dan aging schedule.",
       icon: "💰"
     }] : []),
+    ...(user.role !== "admin" ? [{
+      href: "/dashboard/forecast",
+      label: "Cash-in Forecasting",
+      deskripsi: "Estimasi jadwal cair otomatis, simulasi arus kas masuk, dan skenario TOP.",
+      icon: "📈"
+    }] : []),
     ...(user.role === "petugas" ? [{
       href: "/data-referensi/personel",
       label: "Data Referensi",

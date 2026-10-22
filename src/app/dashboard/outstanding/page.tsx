@@ -143,8 +143,12 @@ export default async function HalamanOutstanding() {
             </p>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
+            <a href="/dashboard/forecast" className="btn btn-primary" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span>📈</span>
+              <span>Cash-in Forecasting</span>
+            </a>
             <a href="/pengajuan" className="btn">
-              📋 Daftar Pengajuan
+              📋 Pengajuan
             </a>
             <a href="/summary-po" className="btn">
               📊 Summary PO
