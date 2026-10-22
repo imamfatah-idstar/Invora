@@ -47,11 +47,13 @@ credentials*.json
 service-account*.json
 
 # =========================================================================
-# DOKUMEN INTERNAL / PROPRIETARY (JANGAN DI-UPLOAD KE GITHUB)
+# DOKUMEN INTERNAL / PROPRIETARY & MARKDOWN (JANGAN DI-UPLOAD KE GITHUB)
+# Abaikan semua file markdown (.md) kecuali README.md
 # =========================================================================
-PROJECT_INSTRUCTIONS.md
-project-plan.md
-summary-mvp-1-3.md
+*.md
+**/*.md
+!README.md
+!**/README.md
 
 # =========================================================================
 # DATABASE & DATA DUMPS
