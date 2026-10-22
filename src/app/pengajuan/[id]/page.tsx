@@ -15,6 +15,8 @@ import GrRequestPanel from "./gr-request-panel";
 import { alias } from "drizzle-orm/pg-core";
 import { apakahKlienXl } from "@/lib/klien";
 import PembayaranPanel from "./pembayaran-panel";
+import ReminderModal from "./reminder-modal";
+import { tambahHari, selisihHari } from "@/lib/aging";
 
 const LABEL_STATUS: Record<string, string> = {
   draft: "Draft", menunggu_checker: "Menunggu Checker", perlu_revisi: "Perlu Revisi",
@@ -35,6 +37,7 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
     .select({
       id: pengajuan.id, periode: pengajuan.periode, status: pengajuan.status, versi: pengajuan.versi,
       nomorPo: po.nomorPo, namaProyek: po.namaProyek, namaUserXl: userXl.nama,
+      kontakUserXl: userXl.kontak,
       namaFilePoAsli: po.namaFilePoAsli,
       klien: po.klien, jenisTagihan: po.jenisTagihan, keteranganTahap: pengajuan.keteranganTahap,
       tanggalSubmitCac: pengajuan.tanggalSubmitCac,
@@ -180,11 +183,44 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
   const isTagihanTahap = !!header.keteranganTahap || header.jenisTagihan === "tahap";
   const semuaPakaiTimesheet = rincian.length > 0 && rincian.every((r) => r.sumberHitung === "timesheet");
 
+  const dppTagihan = header.nilaiGrDisetujui ? Number(header.nilaiGrDisetujui) : total;
+  const tarifPpnTagihan = header.tarifPpn ? Number(header.tarifPpn) : 11;
+  const totalTagihanFinal = dppTagihan + (dppTagihan * tarifPpnTagihan) / 100;
+  const totalTerbayarVerifikasi = daftarPembayaran
+    .filter((p) => p.status === "diverifikasi")
+    .reduce((acc, p) => acc + (Number(p.nominalDiterima) || 0) + (Number(p.potonganPph23) || 0) + (Number(p.biayaAdminBank) || 0), 0);
+  const sisaPiutangTagihan = Math.max(0, totalTagihanFinal - totalTerbayarVerifikasi);
+
+  const tanggalAcuanTagihan = header.tanggalSubmitInvoice || header.tanggalApproveInvoice || header.tanggalFakturPajak || `${header.periode}-28`;
+  const tanggalJatuhTempoTagihan = tambahHari(tanggalAcuanTagihan, 30);
+  const hariTerlambatTagihan = selisihHari(tanggalJatuhTempoTagihan, new Date().toISOString().split("T")[0]);
+
   return (
     <>
       <Topbar nama={userLogin.nama} role={userLogin.role} />
       <main className="page">
-        <a href="/pengajuan" className="back-link">&larr; Daftar Pengajuan</a>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: 12 }}>
+          <a href="/pengajuan" className="back-link" style={{ margin: 0 }}>&larr; Daftar Pengajuan</a>
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <ReminderModal
+              pengajuanId={header.id}
+              nomorInvoice={header.nomorInvoice || `DRAF-INV-${header.id}`}
+              nomorFakturPajak={header.nomorFakturPajak}
+              nomorPo={header.nomorPo}
+              namaProyek={header.namaProyek}
+              klien={header.klien || "XL Axiata"}
+              namaPic={header.namaUserXl}
+              kontakPic={header.kontakUserXl}
+              periode={header.periode}
+              tanggalInvoice={tanggalAcuanTagihan}
+              tanggalJatuhTempo={tanggalJatuhTempoTagihan}
+              hariTerlambat={hariTerlambatTagihan}
+              totalTagihan={totalTagihanFinal}
+              terbayar={totalTerbayarVerifikasi}
+              sisaPiutang={sisaPiutangTagihan}
+            />
+          </div>
+        </div>
         <h1>Pengajuan {header.periode} — {header.nomorPo}</h1>
         <p className="subtitle">
           Proyek: <b>{header.namaProyek}</b> &middot; User XL: <b>{header.namaUserXl}</b> &middot;

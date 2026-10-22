@@ -27,6 +27,7 @@ Sistem enterprise internal **PT IDStar Cipta Teknologi** yang dirancang khusus u
    - [Tahap 8: Dashboard Monitoring Outstanding Invoice & Aging Schedule](#tahap-8-dashboard-monitoring-outstanding-invoice--aging-schedule)
    - [Tahap 9: Modul Pencatatan Pelunasan (Payment Settlement)](#tahap-9-modul-pencatatan-pelunasan-payment-settlement)
    - [Tahap 10: Estimasi Jadwal Cair Otomatis (Cash-in Forecasting)](#tahap-10-estimasi-jadwal-cair-otomatis-cash-in-forecasting)
+   - [Tahap 11: Sistem Pengingat Jatuh Tempo (Automated Email Reminder)](#tahap-11-sistem-pengingat-jatuh-tempo-automated-email-reminder)
 6. [Teknologi & Arsitektur Sistem](#6-teknologi--arsitektur-sistem)
 7. [Struktur Direktori Proyek](#7-struktur-direktori-proyek)
 8. [Panduan Instalasi & Menjalankan Aplikasi](#8-panduan-instalasi--menjalankan-aplikasi)
@@ -321,6 +322,23 @@ Untuk mendukung visibilitas likuiditas dan perencanaan kas perusahaan (*treasury
    - Rekapitulasi: *Immediate Inflow* (7 hari ke depan), Minggu Depan (8–14 hari), Bulan Berjalan, dan Bulan Depan.
    - Fitur **Ekspor CSV Proyeksi Cash-in** untuk kebutuhan rapat rutin manajemen dan direksi.
 
+### Tahap 11: Sistem Pengingat Jatuh Tempo (Automated Email Reminder)
+Untuk mempercepat proses penagihan (*collection*) dan mencegah terjadinya piutang tak tertagih, sistem menyediakan modul generator surat dan pengingat pembayaran otomatis:
+1. **5 Tingkat Urgensi Template Email:**
+   - **H-7 (Peringatan Dini):** Nada ramah dan santun, mengingatkan bahwa invoice akan jatuh tempo dalam 7 hari ke depan serta mengonfirmasi jadwal proses pembayaran.
+   - **Hari H / H-0 (Jatuh Tempo Hari Ini):** Nada profesional, mengonfirmasi apakah instruksi transfer bank telah diproses pada hari ini.
+   - **H+7 (Follow-Up Keterlambatan I):** Menanyakan jadwal realisasi atau adanya kendala administratif jika pembayaran belum diterima.
+   - **H+14 (Peringatan Pembayaran Tahap II):** Permohonan prioritas penyelesaian pembayaran invoice secara formal.
+   - **H+30 (Surat Pemberitahuan Tunggakan Kritis):** Surat tagihan resmi (*Demand Notice*) untuk mitigasi risiko penalti atau penghentian SLA layanan.
+2. **Kelengkapan Dokumen & Data Rekening Otomatis:**
+   - Setiap draf surat secara otomatis menyertakan nomor invoice, nomor faktur pajak resmi, nomor PO, nama proyek, periode penagihan, rincian sisa piutang, dan rekening koran penerimaan resmi PT IDStar Cipta Teknologi (BCA & Mandiri).
+3. **Eksekusi Pengiriman & Audit Trail:**
+   - **Buka di Email Client (`mailto:`):** Membuka aplikasi email lokal pengguna (Outlook, Thunderbird, Apple Mail, Gmail) dengan subjek dan isi surat yang sudah terisi otomatis.
+   - **Salin Teks Cepat:** Memungkinkan pengguna menyalin seluruh teks draf untuk dikirimkan melalui aplikasi pesan bisnis (WhatsApp/Teams/Slack).
+   - **Pencatatan Log Audit:** Setiap reminder yang digenerate dicatat ke tabel `reminder_log` beserta waktu kirim, jenis reminder, dan user ID pengirim untuk kebutuhan audit penagihan internal.
+4. **Aksi Cepat dari Tabel Outstanding:**
+   - Tombol **"✉️ Ingatkan"** disematkan langsung pada setiap baris invoice yang berstatus belum lunas di Dashboard Outstanding & Aging Schedule.
+
 ---
 
 ## 6. Teknologi & Arsitektur Sistem
@@ -391,7 +409,7 @@ proses-invoicing-app/
 │   ├── components/               # Komponen UI bersama (Topbar, Footer, Select, Modals)
 │   ├── db/                       # Konfigurasi Drizzle ORM & skema database
 │   │   ├── index.ts              # Koneksi client database postgres (pooler-optimized)
-│   │   └── schema.ts             # Definisi skema tabel & relasi PostgreSQL (termasuk pembayaran)
+│   │   └── schema.ts             # Definisi skema tabel & relasi PostgreSQL (termasuk pembayaran & reminder_log)
 │   └── lib/                      # Core business logic
 │       ├── aging.ts              # Engine Aging Buckets, TOP 30/45/60/90, Overdue, & DSO
 │       ├── cash-in-forecast.ts   # Engine Cash-in Forecasting, penyesuaian hari kerja bank, & simulasi TOP
@@ -403,6 +421,7 @@ proses-invoicing-app/
 │       ├── kalender.ts           # Logika hari kerja & kalender libur nasional
 │       ├── klien.ts              # Deteksi routing klien XL vs Non-XL
 │       ├── perhitungan.ts        # Utilitas kalkulasi moneter dengan Decimal.js
+│       ├── reminder.ts           # Generator template email pengingat jatuh tempo & rekening IDStar
 │       └── require-role.ts       # Middleware proteksi peran (RBAC)
 ├── .gitignore                    # Aturan proteksi file rahasia & filter dokumen
 ├── drizzle.config.ts             # Konfigurasi Drizzle Kit

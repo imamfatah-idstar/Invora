@@ -875,18 +875,38 @@ export default function OutstandingView({
                       </span>
                     </td>
                     <td>
-                      <a
-                        href={`/pengajuan/${item.id}`}
-                        className="btn"
-                        style={{
-                          fontSize: 12,
-                          padding: "4px 10px",
-                          fontWeight: 600,
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        Detail &rarr;
-                      </a>
+                      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                        <a
+                          href={`/pengajuan/${item.id}`}
+                          className="btn"
+                          style={{
+                            fontSize: 12,
+                            padding: "4px 8px",
+                            fontWeight: 600,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          Detail &rarr;
+                        </a>
+                        {item.statusBayar !== "paid" && (
+                          <a
+                            href={`/pengajuan/${item.id}`}
+                            className="btn"
+                            title="Buka form & buat pengingat jatuh tempo ke klien"
+                            style={{
+                              fontSize: 11.5,
+                              padding: "4px 8px",
+                              fontWeight: 600,
+                              whiteSpace: "nowrap",
+                              background: isOverdue ? "#fee2e2" : isDueSoon ? "#fef3c7" : "#f1f5f9",
+                              color: isOverdue ? "#991b1b" : isDueSoon ? "#92400e" : "#334155",
+                              border: `1px solid ${isOverdue ? "#fca5a5" : isDueSoon ? "#fde68a" : "#cbd5e1"}`,
+                            }}
+                          >
+                            ✉️ Ingatkan
+                          </a>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );

@@ -462,3 +462,27 @@ export const pembayaran = pgTable("pembayaran", {
   catatanChecker: text("catatan_checker"),
 });
 
+// =========================================================================
+// LOG PENGINGAT JATUH TEMPO / EMAIL REMINDER (MVP 5 - Poin 4)
+// =========================================================================
+
+export const reminderLog = pgTable("reminder_log", {
+  id: serial("id").primaryKey(),
+  pengajuanId: integer("pengajuan_id")
+    .notNull()
+    .references(() => pengajuan.id),
+  // tipe: "h-7" | "h-0" | "h+7" | "h+14" | "h+30" | "custom"
+  tipeReminder: text("tipe_reminder").notNull(),
+  emailPenerima: text("email_penerima").notNull(),
+  namaPicPenerima: text("nama_pic_penerima"),
+  subjek: text("subjek").notNull(),
+  pesanTeks: text("pesan_teks").notNull(),
+  // metode: "mailto" | "smtp" | "manual"
+  metode: text("metode").notNull().default("mailto"),
+  statusKirim: text("status_kirim").notNull().default("berhasil"),
+  dikirimOlehUserId: integer("dikirim_oleh_user_id")
+    .notNull()
+    .references(() => users.id),
+  dikirimPada: text("dikirim_pada").notNull().default(sql`now()::text`),
+});
+
