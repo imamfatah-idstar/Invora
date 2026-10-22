@@ -20,6 +20,12 @@ export default async function Dashboard() {
       deskripsi: "Ringkasan nilai PO, nilai GR, dan saldo per tahun.",
       icon: "📊"
     }] : []),
+    ...(user.role !== "admin" ? [{
+      href: "/dashboard/outstanding",
+      label: "Outstanding & Aging",
+      deskripsi: "Monitoring piutang belum lunas, jadwal jatuh tempo, dan aging schedule.",
+      icon: "💰"
+    }] : []),
     ...(user.role === "petugas" ? [{
       href: "/data-referensi/personel",
       label: "Data Referensi",

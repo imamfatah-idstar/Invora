@@ -43,7 +43,8 @@ export default async function DaftarPengajuan() {
         <a href="/dashboard" className="back-link">&larr; Dashboard</a>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
           <h1>Daftar Pengajuan</h1>
-          <div style={{ display: "flex", gap: 10 }}>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <a href="/dashboard/outstanding" className="btn">💰 Outstanding &amp; Aging</a>
             <a href="/api/rekon-invoice" className="btn">⬇ Download Rekon Invoice (.xlsx)</a>
             {userLogin.role === "petugas" && (
               <a href="/pengajuan/baru" className="btn btn-primary">+ Buat Pengajuan</a>

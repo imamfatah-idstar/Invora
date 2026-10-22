@@ -12,5 +12,5 @@ if (!process.env.DATABASE_URL && process.env.NODE_ENV === "production" && typeof
   console.warn("PERINGATAN: DATABASE_URL belum diatur di Environment Variables Vercel.");
 }
 
-const client = postgres(databaseUrl, { prepare: false });
+const client = postgres(databaseUrl, { prepare: false, max: 2, idle_timeout: 5 });
 export const db = drizzle(client, { schema });

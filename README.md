@@ -24,6 +24,8 @@ Sistem enterprise internal **PT IDStar Cipta Teknologi** yang dirancang khusus u
    - [Tahap 5: Pencatatan GR Aktual & Mesin Deficiency GR](#tahap-5-pencatatan-gr-aktual--mesin-deficiency-gr)
    - [Tahap 6: Penerbitan Invoice Resmi & Faktur Pajak](#tahap-6-penerbitan-invoice-resmi--faktur-pajak)
    - [Tahap 7: Kontrol Penyelesaian PO (Closing PO) & Rekonsiliasi](#tahap-7-kontrol-penyelesaian-po-closing-po--rekonsiliasi)
+   - [Tahap 8: Dashboard Monitoring Outstanding Invoice & Aging Schedule](#tahap-8-dashboard-monitoring-outstanding-invoice--aging-schedule)
+   - [Tahap 9: Modul Pencatatan Pelunasan (Payment Settlement)](#tahap-9-modul-pencatatan-pelunasan-payment-settlement)
 6. [Teknologi & Arsitektur Sistem](#6-teknologi--arsitektur-sistem)
 7. [Struktur Direktori Proyek](#7-struktur-direktori-proyek)
 8. [Panduan Instalasi & Menjalankan Aplikasi](#8-panduan-instalasi--menjalankan-aplikasi)
@@ -265,6 +267,40 @@ Setelah berkas diajukan, klien memproses persetujuan Goods Receipt (GR) resmi:
    - **Analisa Durasi Invoicing (`/dashboard/analisa-durasi`):** Melacak rata-rata durasi siklus penagihan (CAC disetujui $\rightarrow$ GR disetujui $\rightarrow$ Invoice lunas).
    - **Rekon Invoice (`/api/rekon-invoice`):** Rekapitulasi status penagihan internal untuk rekonsiliasi akuntansi bulanan.
 
+### Tahap 8: Dashboard Monitoring Outstanding Invoice & Aging Schedule
+Untuk menjaga likuiditas dan mitigasi risiko piutang macet (*bad debt*), sistem dilengkapi modul *Aging Schedule* interaktif di `/dashboard/outstanding`:
+1. **Term of Payment (TOP) Dinamis:** Mendukung simulasi syarat pembayaran fleksibel (30 hari standar, 45 hari, 60 hari, hingga 90 hari enterprise).
+2. **Kalkulasi Hari Jatuh Tempo & Overdue:**
+   $$\text{Tanggal Jatuh Tempo} = \text{Tanggal Invoice} + \text{TOP (hari)}$$
+   $$\text{Hari Lewat Jatuh Tempo (Overdue)} = \max(0, \text{Hari Ini} - \text{Tanggal Jatuh Tempo})$$
+3. **Pengelompokan Umur Piutang (*Aging Buckets*):**
+   - **Current:** Invoice belum jatuh tempo ($\le 0$ hari)
+   - **1–30 Hari:** Menunggak ringan
+   - **31–60 Hari:** Menunggak sedang
+   - **61–90 Hari:** Perhatian khusus (*Warning*)
+   - **> 90 Hari:** Risiko tinggi (*Critical Risk*)
+4. **Metrik Finansial Utama (KPI Cards):**
+   - Total Piutang Belum Lunas (*Outstanding AR*)
+   - Total Piutang Telah Jatuh Tempo (*Overdue AR*)
+   - Rasio Penagihan Berhasil (*Collection Rate %*)
+   - *Days Sales Outstanding* (DSO) rata-rata hari penagihan
+5. **Fitur Filter & Ekspor:** Pencarian real-time berdasarkan Klien, status penagihan, kategori bucket aging, serta tombol **Ekspor CSV Aging Schedule** langsung untuk kebutuhan rapat divisi Finance & Direksi.
+
+### Tahap 9: Modul Pencatatan Pelunasan (Payment Settlement)
+Pencatatan pembayaran riil dari rekening koran bank klien diintegrasikan langsung pada halaman detail pengajuan `/pengajuan/[id]`:
+1. **Komponen Pengurang Tagihan (Pajak & Potongan):**
+   - **Nominal Diterima Bersih (*Net Received*):** Nilai dana riil yang masuk ke rekening bank perusahaan.
+   - **PPh 23 Dipotong Klien (2%):** Otomatis dihitung dari DPP ($\text{DPP} \times 2\%$) atau diinput sesuai bukti potong pajak resmi.
+   - **Potongan/Biaya Lain:** Biaya administrasi transfer antar-bank atau penyesuaian penalti.
+   - **Bukti Potong PPh 23 (Bupot):** Input nomor bupot dan tanggal penerbitan bupot dari klien.
+2. **Formula Rekonsiliasi Pelunasan:**
+   $$\text{Total Terbayar Efektif} = \text{Nominal Diterima} + \text{PPh 23} + \text{Potongan Lain}$$
+   $$\text{Sisa Piutang} = \max(0, \text{Total Tagihan Final} - \text{Total Terbayar Efektif})$$
+3. **Penegakan Maker-Checker pada Pelunasan:**
+   - **Petugas (Maker):** Menginput rincian transfer, bank tujuan, nominal bersih, PPh 23, nomor bupot, dan mengunggah berkas bukti transfer.
+   - **Checker (Reviewer):** Melakukan audit kecocokan bukti bayar dengan rekening koran. **Sistem secara ketat melarang Petugas memverifikasi pelunasan yang dicatatnya sendiri.**
+   - **Status Pelunasan Otomatis:** Setelah diverifikasi Checker, status pengajuan otomatis beralih menjadi **LUNAS (PAID)** atau **TERBAYAR SEBAGIAN (PARTIALLY PAID)**, dan meng-update metrik pada Dashboard Outstanding secara real-time.
+
 ---
 
 ## 6. Teknologi & Arsitektur Sistem
@@ -320,21 +356,23 @@ proses-invoicing-app/
 │   ├── app/                      # Next.js App Router
 │   │   ├── api/                  # REST API Route Handlers
 │   │   │   ├── auth/             # Otentikasi (login, logout, session, google-callback)
-│   │   │   ├── pengajuan/        # API workflow pengajuan, CAC, GR Request, lampiran
+│   │   │   ├── pengajuan/        # Workflow pengajuan, CAC, GR Request, & pembayaran (pelunasan)
 │   │   │   ├── rekon-invoice/    # Ekspor laporan rekon invoice
 │   │   │   └── summary-po/       # Endpoint data summary pagu PO
 │   │   ├── akun/                 # Halaman manajemen akun & hak akses
 │   │   ├── dashboard/            # Analisa durasi & metrik invoicing
+│   │   │   └── outstanding/      # Dashboard Monitoring Outstanding Invoice & Aging Schedule
 │   │   ├── data-referensi/       # Kelola Master PO, Personel, Rate Card, Kalender, Klien
 │   │   ├── kelola-data/          # Impor massal data master & tracker
 │   │   ├── login/                # Halaman login modern dengan Google SSO
-│   │   ├── pengajuan/            # Modul utama draf, review Checker, BAST, dan GR Request
+│   │   ├── pengajuan/            # Modul utama draf, review Checker, BAST, GR, & panel pelunasan
 │   │   └── summary-po/           # Dashboard visual pagu dan sisa saldo PO
 │   ├── components/               # Komponen UI bersama (Topbar, Footer, Select, Modals)
 │   ├── db/                       # Konfigurasi Drizzle ORM & skema database
-│   │   ├── index.ts              # Koneksi client database postgres
-│   │   └── schema.ts             # Definisi skema tabel & relasi PostgreSQL
+│   │   ├── index.ts              # Koneksi client database postgres (pooler-optimized)
+│   │   └── schema.ts             # Definisi skema tabel & relasi PostgreSQL (termasuk pembayaran)
 │   └── lib/                      # Core business logic
+│       ├── aging.ts              # Engine Aging Buckets, TOP 30/45/60/90, Overdue, & DSO
 │       ├── deficiency-gr.ts      # Engine kalkulasi selisih GR & carry-over
 │       ├── deficiency-gr-server.ts # Server logic deficiency GR
 │       ├── google-auth.ts        # Validasi Google Workspace OAuth SSO (@idstar.group)

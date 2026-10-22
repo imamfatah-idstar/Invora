@@ -1,6 +1,6 @@
 import { wajibRole } from "@/lib/require-role";
 import { db } from "@/db";
-import { pengajuan, pengajuanDetail, personel, po, poLineItem, userXl, konfirmasi, checkerReview, users, dokumen, lampiranPengajuan, grRequest, grRequestRiwayat } from "@/db/schema";
+import { pengajuan, pengajuanDetail, personel, po, poLineItem, userXl, konfirmasi, checkerReview, users, dokumen, lampiranPengajuan, grRequest, grRequestRiwayat, pembayaran } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import TombolKonfirmasi from "./konfirmasi-button";
@@ -14,6 +14,7 @@ import FormStatusProses from "./status-proses-form";
 import GrRequestPanel from "./gr-request-panel";
 import { alias } from "drizzle-orm/pg-core";
 import { apakahKlienXl } from "@/lib/klien";
+import PembayaranPanel from "./pembayaran-panel";
 
 const LABEL_STATUS: Record<string, string> = {
   draft: "Draft", menunggu_checker: "Menunggu Checker", perlu_revisi: "Perlu Revisi",
@@ -118,8 +119,34 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
   const daftarDokumen = await db
     .select({ id: dokumen.id, jenis: dokumen.jenis, versi: dokumen.versi, dibuatPada: dokumen.dibuatPada, status: dokumen.status })
     .from(dokumen)
-    .where(eq(dokumen.pengajuanId, header.id))
-    .orderBy(desc(dokumen.id));
+    .where(eq(dokumen.pengajuanId, header.id));
+
+  // Ambil daftar pembayaran pelunasan (MVP 5)
+  const userBayar = alias(users, "user_bayar");
+  const daftarPembayaran = await db
+    .select({
+      id: pembayaran.id,
+      tanggalBayar: pembayaran.tanggalBayar,
+      nominalDiterima: pembayaran.nominalDiterima,
+      potonganPph23: pembayaran.potonganPph23,
+      nomorBupotPph23: pembayaran.nomorBupotPph23,
+      biayaAdminBank: pembayaran.biayaAdminBank,
+      bankTujuan: pembayaran.bankTujuan,
+      nomorReferensiBank: pembayaran.nomorReferensiBank,
+      namaFileBukti: pembayaran.namaFileBukti,
+      pathFileBukti: pembayaran.pathFileBukti,
+      status: pembayaran.status,
+      catatan: pembayaran.catatan,
+      diinputPada: pembayaran.diinputPada,
+      diinputOlehUserId: pembayaran.diinputOlehUserId,
+      namaPenginput: userBayar.nama,
+      diverifikasiPada: pembayaran.diverifikasiPada,
+      catatanChecker: pembayaran.catatanChecker,
+    })
+    .from(pembayaran)
+    .innerJoin(userBayar, eq(pembayaran.diinputOlehUserId, userBayar.id))
+    .where(eq(pembayaran.pengajuanId, header.id))
+    .orderBy(desc(pembayaran.id));
 
   const daftarLampiran = await db
     .select({ id: lampiranPengajuan.id, label: lampiranPengajuan.label, namaFile: lampiranPengajuan.namaFile, diunggahPada: lampiranPengajuan.diunggahPada })
@@ -344,6 +371,22 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
             klien Non-XL skip total, tidak ditampilkan sama sekali. */}
         {bisaKelengkapan && isKlienXl && (
           <GrRequestPanel pengajuanId={header.id} data={dataGrRequest} role={userLogin.role} riwayat={riwayatGrRequest} />
+        )}
+
+        {/* MVP 5: Modul Pencatatan Pelunasan Pembayaran (Payment Settlement) */}
+        {bisaKelengkapan && (
+          <PembayaranPanel
+            pengajuanId={header.id}
+            nomorInvoice={header.nomorInvoice}
+            totalInvoice={(() => {
+              const dpp = header.nilaiGrDisetujui ? Number(header.nilaiGrDisetujui) : total;
+              const tarif = header.tarifPpn ? Number(header.tarifPpn) : 11;
+              return dpp + (dpp * tarif) / 100;
+            })()}
+            dpp={header.nilaiGrDisetujui ? Number(header.nilaiGrDisetujui) : total}
+            daftarPembayaranAwal={daftarPembayaran}
+            userLogin={{ id: userLogin.id, nama: userLogin.nama, role: userLogin.role }}
+          />
         )}
 
         {bisaKelengkapan && (

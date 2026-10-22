@@ -212,8 +212,6 @@ export const pengajuan = pgTable("pengajuan", {
   approvalAlokasiReferensi: text("approval_alokasi_referensi"), // cth link/nomor chat WA atau subjek email
 
   // ====== MVP 4: GR Aktual, Deficiency GR, Invoice & Faktur Pajak ======
-  // Nomor dokumen GR Slip resmi
-  nomorGrSlip: text("nomor_gr_slip"),
   // Nilai nominal GR aktual yang resmi disetujui klien (sebelum PPN)
   nilaiGrDisetujui: text("nilai_gr_disetujui"),
   // Selisih GR (Deficiency GR) = total tagihan pengajuan - nilaiGrDisetujui.
@@ -433,3 +431,34 @@ export const auditLog = pgTable("audit_log", {
     .references(() => users.id),
   waktu: text("waktu").notNull().default(sql`now()::text`),
 });
+
+// =========================================================================
+// PEMBAYARAN & SETTLEMENT (MVP 5)
+// =========================================================================
+
+export const pembayaran = pgTable("pembayaran", {
+  id: serial("id").primaryKey(),
+  pengajuanId: integer("pengajuan_id")
+    .notNull()
+    .references(() => pengajuan.id),
+  tanggalBayar: text("tanggal_bayar").notNull(), // "YYYY-MM-DD"
+  nominalDiterima: text("nominal_diterima").notNull(), // nilai bersih masuk bank
+  potonganPph23: text("potongan_pph23").notNull().default("0.00"), // potongan PPh 23 (2% dari DPP)
+  nomorBupotPph23: text("nomor_bupot_pph23"), // nomor bukti potong PPh 23
+  biayaAdminBank: text("biaya_admin_bank").notNull().default("0.00"), // biaya kliring/admin
+  bankTujuan: text("bank_tujuan").notNull(), // cth "BCA PT IDStar Cipta Teknologi"
+  nomorReferensiBank: text("nomor_referensi_bank"), // no slip/transaksi transfer
+  namaFileBukti: text("nama_file_bukti"), // nama file bukti transfer
+  pathFileBukti: text("path_file_bukti"), // path file di uploads/pembayaran/
+  // status: "menunggu_verifikasi" | "diverifikasi" | "ditolak"
+  status: text("status").notNull().default("menunggu_verifikasi"),
+  catatan: text("catatan"),
+  diinputOlehUserId: integer("diinput_oleh_user_id")
+    .notNull()
+    .references(() => users.id),
+  diinputPada: text("diinput_pada").notNull().default(sql`now()::text`),
+  diverifikasiOlehUserId: integer("diverifikasi_oleh_user_id").references(() => users.id),
+  diverifikasiPada: text("diverifikasi_pada"),
+  catatanChecker: text("catatan_checker"),
+});
+

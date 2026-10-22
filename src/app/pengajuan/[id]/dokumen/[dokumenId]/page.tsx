@@ -88,7 +88,7 @@ export default async function HalamanDokumen({ params }: { params: Promise<{ id:
         dokumenVersi={dok.versi}
         nomorPo={header.nomorPo}
         namaProyek={header.namaProyek}
-        klien={header.klien}
+        klien={header.klien ?? "Klien"}
         periode={header.periode}
         keteranganTahap={header.keteranganTahap}
         defaultPihakPertama={header.namaUserXl}

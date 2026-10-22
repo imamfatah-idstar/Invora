@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
     poId: Number(body.poId),
     userXlId: Number(body.userXlId),
     status: "draft",
-    penyesuaianSelisihGrMasuk: selisihMenggantung ? selisihMenggantung.nominal : null,
+    penyesuaianSelisihGrMasuk: selisihMenggantung ? selisihMenggantung.nominal : "0.00",
     // Alokasi lintas-PO (bagian 35) — pencatatan internal opsional dari
     // approval User XL yang terjadi di luar aplikasi (email/WhatsApp).
     approvalAlokasiUserXlPemberi: body.approvalAlokasiUserXlPemberi || null,
