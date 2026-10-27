@@ -135,6 +135,22 @@ export default function LoginClient() {
             <b>INVORA</b> &middot; Invoice Operations &amp; Revenue Assurance
           </div>
         </div>
+
+        <div className="login-aside-values">
+          <div className="login-aside-value-item">
+            <div className="login-aside-value-label">Vision</div>
+            <div className="login-aside-value-desc">
+              We aspire to see a digital-ready generation that innovates and leads smart businesses across asia.
+            </div>
+          </div>
+          <div className="login-aside-value-item">
+            <div className="login-aside-value-label">Mission</div>
+            <div className="login-aside-value-desc">
+              To Build, Accelerate, Support, and Empower every organization business transformation.
+            </div>
+          </div>
+        </div>
+
         <div className="login-aside-address">
           <div style={{ fontWeight: 600, color: "#ffffff", marginBottom: 4 }}>IDStar Head Office:</div>
           <div>The Bellagio Mansion, Ground floor</div>

@@ -522,6 +522,32 @@ body:has(.login-shell) .app-footer {
   font-size: 11.5px;
   line-height: 1.5;
 }
+.login-aside-values {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  margin: auto 0;
+}
+.login-aside-value-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.login-aside-value-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #93c5fd;
+}
+.login-aside-value-desc {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.88);
+  line-height: 1.5;
+}
 .login-main {
   position: relative;
   flex: 1;
@@ -566,7 +592,8 @@ body:has(.login-shell) .app-footer {
     margin-top: 0;
     font-size: 12.5px;
   }
-  .login-aside-address {
+  .login-aside-address,
+  .login-aside-values {
     display: none;
   }
   .login-main {
