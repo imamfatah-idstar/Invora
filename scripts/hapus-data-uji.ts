@@ -16,13 +16,13 @@
 import "dotenv/config";
 import { db } from "../src/db";
 import {
-  grRequestRiwayat, grRequest, lampiranPengajuan, dokumen, checkerReview,
+  reminderLog, pembayaran, grRequestRiwayat, grRequest, lampiranPengajuan, dokumen, checkerReview,
   konfirmasi, timesheet, pengajuanDetail, pengajuan, pemetaanPersonelPo,
   poLineItem, rateCard, po, personel,
 } from "../src/db/schema";
 
 async function hitungSemua() {
-  const tabel = { grRequestRiwayat, grRequest, lampiranPengajuan, dokumen, checkerReview, konfirmasi, timesheet, pengajuanDetail, pengajuan, pemetaanPersonelPo, poLineItem, rateCard, po, personel };
+  const tabel = { reminderLog, pembayaran, grRequestRiwayat, grRequest, lampiranPengajuan, dokumen, checkerReview, konfirmasi, timesheet, pengajuanDetail, pengajuan, pemetaanPersonelPo, poLineItem, rateCard, po, personel };
   const hasil: Record<string, number> = {};
   for (const [nama, t] of Object.entries(tabel)) {
     hasil[nama] = (await db.select().from(t as never)).length;
@@ -43,6 +43,8 @@ async function main() {
   }
 
   console.log("\nMenghapus (child -> parent)...");
+  await db.delete(reminderLog);
+  await db.delete(pembayaran);
   await db.delete(grRequestRiwayat);
   await db.delete(grRequest);
   await db.delete(lampiranPengajuan);
