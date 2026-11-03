@@ -88,7 +88,22 @@ export default async function DaftarPengajuan() {
                         </span>
                       )}
                     </td>
-                    <td><a href={`/pengajuan/${a.id}`} className="btn-text">Lihat</a></td>
+                    <td>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        <a href={`/pengajuan/${a.id}`} className="btn-text">Lihat</a>
+                        <span style={{ color: "var(--color-border)" }}>&middot;</span>
+                        <a
+                          href={`/api/pengajuan/${a.id}/invoice/pdf`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn-text"
+                          title="Cetak Invoice Resmi PDF"
+                          style={{ color: "#ea242a", fontWeight: 600 }}
+                        >
+                          📄 PDF
+                        </a>
+                      </div>
+                    </td>
                   </tr>
                 );
               })}

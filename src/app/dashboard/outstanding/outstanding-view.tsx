@@ -877,6 +877,24 @@ export default function OutstandingView({
                     <td>
                       <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                         <a
+                          href={`/api/pengajuan/${item.id}/invoice/pdf`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn"
+                          title="Cetak / Unduh Invoice Resmi PDF"
+                          style={{
+                            fontSize: 11.5,
+                            padding: "4px 8px",
+                            fontWeight: 600,
+                            whiteSpace: "nowrap",
+                            background: "#f8fafc",
+                            color: "#334155",
+                            border: "1px solid #cbd5e1",
+                          }}
+                        >
+                          📄 PDF
+                        </a>
+                        <a
                           href={`/pengajuan/${item.id}`}
                           className="btn"
                           style={{
