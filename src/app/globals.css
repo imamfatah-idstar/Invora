@@ -541,7 +541,7 @@ body:has(.login-shell) .app-footer {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #93c5fd;
+  color: rgba(255, 255, 255, 0.88);
 }
 .login-aside-value-desc {
   font-size: 12px;

@@ -8,6 +8,7 @@ async function main() {
   const kataSandiHash = await hashKataSandi("contoh123");
 
   const daftarAkunContoh = [
+    { nama: "Imam Fatah", email: "imam.fatah2@idstar.group", role: "admin" as const },
     { nama: "Admin Contoh", email: "admin@contoh.local", role: "admin" as const },
     { nama: "Petugas Contoh", email: "petugas@contoh.local", role: "petugas" as const },
     { nama: "Checker Contoh", email: "checker@contoh.local", role: "checker" as const },

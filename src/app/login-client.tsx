@@ -54,7 +54,7 @@ export default function LoginClient() {
   const [demoLoading, setDemoLoading] = useState<string | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleDemoModal, setGoogleDemoModal] = useState(false);
-  const [customGoogleEmail, setCustomGoogleEmail] = useState("ahmad.fauzi@idstar.group");
+  const [customGoogleEmail, setCustomGoogleEmail] = useState("imam.fatah2@idstar.group");
 
   // Tangkap pesan error dari URL callback (misal penolakan domain bukan @idstar.group)
   useEffect(() => {
@@ -409,10 +409,10 @@ export default function LoginClient() {
                 <span style={{ color: "var(--color-text-muted)" }}>Pintasan Uji:</span>
                 <button
                   type="button"
-                  onClick={() => setCustomGoogleEmail("ahmad.fauzi@idstar.group")}
+                  onClick={() => setCustomGoogleEmail("imam.fatah2@idstar.group")}
                   style={{ background: "#ecfdf5", border: "1px solid #a7f3d0", color: "#065f46", padding: "2px 8px", borderRadius: 4, cursor: "pointer", fontSize: 11 }}
                 >
-                  ✓ ahmad.fauzi@idstar.group (Lolos)
+                  ✓ imam.fatah2@idstar.group (Lolos)
                 </button>
                 <button
                   type="button"

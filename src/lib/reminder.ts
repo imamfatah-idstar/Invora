@@ -164,7 +164,7 @@ Finance & Invoicing Department
 PT IDStar Cipta Teknologi
 The Bellagio Mansion, Ground Floor, Mega Kuningan
 Jakarta Selatan, DKI Jakarta 12950
-Email : finance@idstar.group | invoicing@idstar.group
+Email : imam.fatah2@idstar.group | finance@idstar.group | invoicing@idstar.group
 Telepon: +62 21 576-0888
 Website: https://idstar.co.id`;
 
