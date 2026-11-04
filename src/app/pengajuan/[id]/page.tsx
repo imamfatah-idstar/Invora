@@ -206,10 +206,16 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
             <InvoiceModal
               pengajuanId={header.id}
               nomorInvoice={header.nomorInvoice || `DRAF-INV-${header.id}`}
+              nomorFakturPajak={header.nomorFakturPajak}
               nomorPo={header.nomorPo}
               klien={header.klien || "XL Axiata"}
               namaProyek={header.namaProyek}
+              namaPic={header.namaUserXl}
+              kontakPic={header.kontakUserXl}
+              userEmail={userLogin.email}
               periode={header.periode}
+              tanggalInvoice={tanggalAcuanTagihan}
+              tanggalJatuhTempo={tanggalJatuhTempoTagihan}
               totalTagihan={totalTagihanFinal}
               dpp={header.nilaiGrDisetujui ? Number(header.nilaiGrDisetujui) : total}
               tarifPpn={header.tarifPpn ? Number(header.tarifPpn) : 11}
