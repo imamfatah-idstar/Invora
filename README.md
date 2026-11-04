@@ -479,11 +479,6 @@ npm run dev
 ```
 Buka browser di [http://localhost:3000](http://localhost:3000).
 
-### Akun Uji Coba Default (Setelah Seeding):
-- **Super Admin:** `admin@idstar.group` (Password: `Admin123!`)
-- **Petugas (Maker):** `petugas@idstar.group` (Password: `Petugas123!`)
-- **Checker (Reviewer):** `checker@idstar.group` (Password: `Checker123!`)
-
 ---
 
 ## 9. Dataset Pengujian & Hasil Validasi UAT

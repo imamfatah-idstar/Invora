@@ -57,6 +57,11 @@ export async function GET(
     return NextResponse.json({ error: "ID pengajuan tidak valid." }, { status: 400 });
   }
 
+  const { searchParams } = new URL(request.url);
+  const format = searchParams.get("format") || "detail"; // "detail" | "ringkas" | "bilingual"
+  const isDownload = searchParams.get("download") === "true";
+  const bankOption = searchParams.get("bank") || "all"; // "all" | "bca" | "mandiri"
+
   // 1. Ambil data pengajuan, PO, dan klien
   const [header] = await db
     .select({
@@ -156,7 +161,7 @@ export async function GET(
 
   let curY = ph - 38;
 
-  // --- Header Kiri: Nama & Info Perusahaan ---
+  // --- Header Kiri: Identitas Perusahaan ---
   page.drawText("PT IDSTAR CIPTA TEKNOLOGI", {
     x: margin,
     y: curY,
@@ -166,7 +171,10 @@ export async function GET(
   });
 
   curY -= 13;
-  page.drawText("IT Professional Services & Managed Solutions", {
+  const companyTagline = format === "bilingual"
+    ? "IT Professional Services & Managed Talent Solutions"
+    : "Layanan Penempatan Tenaga Ahli IT & Solusi Teknologi";
+  page.drawText(companyTagline, {
     x: margin,
     y: curY,
     size: 8,
@@ -192,7 +200,7 @@ export async function GET(
     color: cDark,
   });
 
-  // --- Header Kanan: Judul Invoice ---
+  // --- Header Kanan: Judul Dokumen ---
   const invoiceJudul = "INVOICE";
   const wInvJudul = fontBold.widthOfTextAtSize(invoiceJudul, 24);
   page.drawText(invoiceJudul, {
@@ -203,7 +211,11 @@ export async function GET(
     color: cDark,
   });
 
-  const subJudul = "FAKTUR PENAGIHAN RESMI";
+  const subJudul = format === "bilingual"
+    ? "COMMERCIAL INVOICE & TAX BILL"
+    : format === "ringkas"
+    ? "FAKTUR KONSOLIDASI PROYEK"
+    : "FAKTUR PENAGIHAN RESMI";
   const wSubJudul = fontBold.widthOfTextAtSize(subJudul, 8);
   page.drawText(subJudul, {
     x: pw - margin - wSubJudul,
@@ -241,7 +253,8 @@ export async function GET(
     borderWidth: 0.8,
   });
 
-  page.drawText("DITUJUKAN KEPADA (BILL TO):", {
+  const billToTitle = format === "bilingual" ? "BILL TO / DITUJUKAN KEPADA:" : "DITUJUKAN KEPADA (BILL TO):";
+  page.drawText(billToTitle, {
     x: colLeftX + 10,
     y: boxTopY - 14,
     size: 7.5,
@@ -257,7 +270,8 @@ export async function GET(
     color: cDark,
   });
 
-  page.drawText(`Attn / PIC : ${header.namaUserXl || "-"}${header.kontakUserXl ? ` (${header.kontakUserXl})` : ""}`, {
+  const attnLabel = "Attn / PIC   :";
+  page.drawText(`${attnLabel} ${header.namaUserXl || "-"}${header.kontakUserXl ? ` (${header.kontakUserXl})` : ""}`, {
     x: colLeftX + 10,
     y: boxTopY - 42,
     size: 8,
@@ -265,7 +279,8 @@ export async function GET(
     color: cDark,
   });
 
-  page.drawText(`Proyek      : ${header.namaProyek}`, {
+  const projLabel = format === "bilingual" ? "Project      :" : "Proyek        :";
+  page.drawText(`${projLabel} ${header.namaProyek}`, {
     x: colLeftX + 10,
     y: boxTopY - 55,
     size: 8,
@@ -273,7 +288,8 @@ export async function GET(
     color: cDark,
   });
 
-  page.drawText(`Periode    : ${header.periode}${header.keteranganTahap ? ` (${header.keteranganTahap})` : ""}`, {
+  const periodLabel = format === "bilingual" ? "Period       :" : "Periode      :";
+  page.drawText(`${periodLabel} ${header.periode}${header.keteranganTahap ? ` (${header.keteranganTahap})` : ""}`, {
     x: colLeftX + 10,
     y: boxTopY - 68,
     size: 8,
@@ -292,7 +308,8 @@ export async function GET(
     borderWidth: 0.8,
   });
 
-  page.drawText("INFORMASI PENAGIHAN:", {
+  const infoTitle = format === "bilingual" ? "INVOICE DETAILS / INFORMASI PENAGIHAN:" : "INFORMASI PENAGIHAN:";
+  page.drawText(infoTitle, {
     x: colRightX + 10,
     y: boxTopY - 14,
     size: 7.5,
@@ -301,205 +318,360 @@ export async function GET(
   });
 
   const renderInfoRow = (label: string, val: string, yPos: number, isBoldVal = false) => {
-    page.drawText(label, { x: colRightX + 10, y: yPos, size: 8, font: fontRegular, color: cMuted });
+    page.drawText(label, { x: colRightX + 10, y: yPos, size: 7.8, font: fontRegular, color: cMuted });
     page.drawText(`: ${val}`, {
-      x: colRightX + 75,
+      x: colRightX + 80,
       y: yPos,
-      size: 8,
+      size: 7.8,
       font: isBoldVal ? fontBold : fontRegular,
       color: isBoldVal ? cDark : cDark,
     });
   };
 
-  renderInfoRow("No. Invoice", nomorInv, boxTopY - 28, true);
-  renderInfoRow("Tgl Invoice", tanggalInvoiceFormatted, boxTopY - 40);
-  renderInfoRow("Jatuh Tempo", tanggalJatuhTempoFormatted, boxTopY - 52, true);
-  renderInfoRow("No. PO", header.nomorPo, boxTopY - 64, true);
+  const lblInv = format === "bilingual" ? "Invoice No." : "No. Invoice";
+  const lblTgl = format === "bilingual" ? "Invoice Date" : "Tgl Invoice";
+  const lblDue = format === "bilingual" ? "Due Date" : "Jatuh Tempo";
+  const lblPo = format === "bilingual" ? "PO Number" : "No. PO";
+
+  renderInfoRow(lblInv, nomorInv, boxTopY - 28, true);
+  renderInfoRow(lblTgl, tanggalInvoiceFormatted, boxTopY - 40);
+  renderInfoRow(lblDue, tanggalJatuhTempoFormatted, boxTopY - 52, true);
+  renderInfoRow(lblPo, header.nomorPo, boxTopY - 64, true);
 
   if (header.nomorFakturPajak) {
-    renderInfoRow("Faktur Pajak", header.nomorFakturPajak, boxTopY - 74);
+    const lblFp = format === "bilingual" ? "Tax Invoice" : "Faktur Pajak";
+    renderInfoRow(lblFp, header.nomorFakturPajak, boxTopY - 74);
   } else if (header.nomorGrSlip) {
-    renderInfoRow("No. GR Slip", header.nomorGrSlip, boxTopY - 74);
+    renderInfoRow("GR Slip", header.nomorGrSlip, boxTopY - 74);
   }
 
   curY = boxTopY - boxHeight - 16;
 
-  // --- TABEL RINCIAN TAGIHAN (ITEMIZED BILLING) ---
+  // --- TABEL RINCIAN TAGIHAN (ITEMIZED VS RINGKAS) ---
   const thHeight = 18;
-  const colDef = [
-    { label: "NO", w: 24, align: "center" as const },
-    { label: "DESKRIPSI PEKERJAAN / TALENTA", w: 195, align: "left" as const },
-    { label: "LINE PO", w: 55, align: "center" as const },
-    { label: "HARI KERJA", w: 65, align: "center" as const },
-    { label: "RATE BULANAN", w: 85, align: "right" as const },
-    { label: "JUMLAH (RP)", w: 99, align: "right" as const },
-  ];
 
-  // Header Background
-  page.drawRectangle({
-    x: margin,
-    y: curY - thHeight,
-    width: contentWidth,
-    height: thHeight,
-    color: cHeaderBg,
-  });
+  if (format === "ringkas") {
+    // --- FORMAT RINGKAS (LUMP SUM PROYEK) ---
+    const colDefRingkas = [
+      { label: "NO", w: 28, align: "center" as const },
+      { label: "DESKRIPSI PEKERJAAN / JASA", w: 260, align: "left" as const },
+      { label: "NO. PO / REKAP", w: 75, align: "center" as const },
+      { label: "VOL / DURASI", w: 65, align: "center" as const },
+      { label: "JUMLAH TOTAL (RP)", w: 95, align: "right" as const },
+    ];
 
-  // Teks Header Tabel
-  let thX = margin;
-  colDef.forEach((col) => {
-    let tx = thX + 4;
-    const txtW = fontBold.widthOfTextAtSize(col.label, 7.5);
-    if (col.align === "center") {
-      tx = thX + (col.w - txtW) / 2;
-    } else if (col.align === "right") {
-      tx = thX + col.w - txtW - 6;
-    }
-    page.drawText(col.label, {
-      x: tx,
-      y: curY - 12.5,
-      size: 7.5,
-      font: fontBold,
-      color: rgb(1, 1, 1),
+    page.drawRectangle({
+      x: margin,
+      y: curY - thHeight,
+      width: contentWidth,
+      height: thHeight,
+      color: cHeaderBg,
     });
-    thX += col.w;
-  });
 
-  curY -= thHeight;
+    let thX = margin;
+    colDefRingkas.forEach((col) => {
+      let tx = thX + 4;
+      const txtW = fontBold.widthOfTextAtSize(col.label, 7.5);
+      if (col.align === "center") {
+        tx = thX + (col.w - txtW) / 2;
+      } else if (col.align === "right") {
+        tx = thX + col.w - txtW - 6;
+      }
+      page.drawText(col.label, {
+        x: tx,
+        y: curY - 12.5,
+        size: 7.5,
+        font: fontBold,
+        color: rgb(1, 1, 1),
+      });
+      thX += col.w;
+    });
 
-  // Baris-baris Data
-  const rowHeight = 22;
-  rincian.forEach((item, idx) => {
-    const isEven = idx % 2 === 1;
-    if (isEven) {
+    curY -= thHeight;
+
+    const rowH = 34;
+    page.drawRectangle({
+      x: margin,
+      y: curY - rowH,
+      width: contentWidth,
+      height: rowH,
+      color: rgb(0.99, 0.995, 1),
+    });
+    page.drawLine({
+      start: { x: margin, y: curY - rowH },
+      end: { x: pw - margin, y: curY - rowH },
+      thickness: 0.5,
+      color: cBorder,
+    });
+
+    let rx = margin;
+    // No
+    page.drawText("1", {
+      x: rx + (colDefRingkas[0].w - fontRegular.widthOfTextAtSize("1", 8)) / 2,
+      y: curY - 18,
+      size: 8,
+      font: fontRegular,
+      color: cDark,
+    });
+    rx += colDefRingkas[0].w;
+
+    // Deskripsi
+    page.drawText(`JASA PENYEDIAAN TENAGA AHLI IT — PROYEK ${header.namaProyek.toUpperCase()}`, {
+      x: rx + 6,
+      y: curY - 14,
+      size: 8,
+      font: fontBold,
+      color: cDark,
+    });
+    page.drawText(`Periode Penagihan: ${header.periode} | Berdasarkan Kontrak PO: ${header.nomorPo}`, {
+      x: rx + 6,
+      y: curY - 24,
+      size: 7,
+      font: fontRegular,
+      color: cMuted,
+    });
+    rx += colDefRingkas[1].w;
+
+    // PO
+    page.drawText("PO Sesuai", {
+      x: rx + (colDefRingkas[2].w - fontRegular.widthOfTextAtSize("PO Sesuai", 7.5)) / 2,
+      y: curY - 18,
+      size: 7.5,
+      font: fontRegular,
+      color: cDark,
+    });
+    rx += colDefRingkas[2].w;
+
+    // Vol
+    const volStr = `${rincian.length} Talenta`;
+    page.drawText(volStr, {
+      x: rx + (colDefRingkas[3].w - fontRegular.widthOfTextAtSize(volStr, 7.5)) / 2,
+      y: curY - 18,
+      size: 7.5,
+      font: fontRegular,
+      color: cDark,
+    });
+    rx += colDefRingkas[3].w;
+
+    // Jumlah
+    const dppStr = formatRp(dpp);
+    page.drawText(dppStr, {
+      x: rx + colDefRingkas[4].w - fontBold.widthOfTextAtSize(dppStr, 8.5) - 6,
+      y: curY - 18,
+      size: 8.5,
+      font: fontBold,
+      color: cDark,
+    });
+
+    curY -= rowH;
+
+    // Baris Carry-over jika ada
+    if (penyesuaianGr !== 0) {
+      page.drawRectangle({
+        x: margin,
+        y: curY - 22,
+        width: contentWidth,
+        height: 22,
+        color: rgb(0.99, 0.96, 0.96),
+      });
+      page.drawLine({
+        start: { x: margin, y: curY - 22 },
+        end: { x: pw - margin, y: curY - 22 },
+        thickness: 0.5,
+        color: cBorder,
+      });
+
+      page.drawText("Penyesuaian Selisih Evaluasi GR (Carry-over Periode Sebelumnya)", {
+        x: margin + 34,
+        y: curY - 14,
+        size: 8,
+        font: fontBold,
+        color: penyesuaianGr > 0 ? rgb(0.1, 0.5, 0.2) : cRed,
+      });
+
+      const selisihStr = (penyesuaianGr > 0 ? "+" : "") + formatRp(penyesuaianGr);
+      page.drawText(selisihStr, {
+        x: pw - margin - fontBold.widthOfTextAtSize(selisihStr, 8) - 6,
+        y: curY - 14,
+        size: 8,
+        font: fontBold,
+        color: penyesuaianGr > 0 ? rgb(0.1, 0.5, 0.2) : cRed,
+      });
+
+      curY -= 22;
+    }
+  } else {
+    // --- FORMAT RINCI (DETAIL) & BILINGUAL ---
+    const colDef = [
+      { label: "NO", w: 24, align: "center" as const },
+      { label: format === "bilingual" ? "DESCRIPTION / TALENT NAME" : "DESKRIPSI PEKERJAAN / TALENTA", w: 195, align: "left" as const },
+      { label: format === "bilingual" ? "LINE" : "LINE PO", w: 55, align: "center" as const },
+      { label: format === "bilingual" ? "WORK DAYS" : "HARI KERJA", w: 65, align: "center" as const },
+      { label: format === "bilingual" ? "RATE (IDR)" : "RATE BULANAN", w: 85, align: "right" as const },
+      { label: format === "bilingual" ? "AMOUNT (IDR)" : "JUMLAH (RP)", w: 99, align: "right" as const },
+    ];
+
+    page.drawRectangle({
+      x: margin,
+      y: curY - thHeight,
+      width: contentWidth,
+      height: thHeight,
+      color: cHeaderBg,
+    });
+
+    let thX = margin;
+    colDef.forEach((col) => {
+      let tx = thX + 4;
+      const txtW = fontBold.widthOfTextAtSize(col.label, 7.2);
+      if (col.align === "center") {
+        tx = thX + (col.w - txtW) / 2;
+      } else if (col.align === "right") {
+        tx = thX + col.w - txtW - 6;
+      }
+      page.drawText(col.label, {
+        x: tx,
+        y: curY - 12.5,
+        size: 7.2,
+        font: fontBold,
+        color: rgb(1, 1, 1),
+      });
+      thX += col.w;
+    });
+
+    curY -= thHeight;
+
+    const rowHeight = 22;
+    rincian.forEach((item, idx) => {
+      const isEven = idx % 2 === 1;
+      if (isEven) {
+        page.drawRectangle({
+          x: margin,
+          y: curY - rowHeight,
+          width: contentWidth,
+          height: rowHeight,
+          color: rgb(0.98, 0.985, 0.99),
+        });
+      }
+
+      page.drawLine({
+        start: { x: margin, y: curY - rowHeight },
+        end: { x: pw - margin, y: curY - rowHeight },
+        thickness: 0.5,
+        color: cBorder,
+      });
+
+      let rowX = margin;
+
+      // 1. No
+      const noStr = String(idx + 1);
+      page.drawText(noStr, {
+        x: rowX + (colDef[0].w - fontRegular.widthOfTextAtSize(noStr, 8)) / 2,
+        y: curY - 14,
+        size: 8,
+        font: fontRegular,
+        color: cDark,
+      });
+      rowX += colDef[0].w;
+
+      // 2. Deskripsi / Talenta
+      const namaTalenta = item.namaPersonel.toUpperCase();
+      page.drawText(namaTalenta, {
+        x: rowX + 6,
+        y: curY - 11,
+        size: 8,
+        font: fontBold,
+        color: cDark,
+      });
+      const subDesc = item.deskripsiLine ? item.deskripsiLine.slice(0, 38) : `Layanan Profesional IT - ${header.namaProyek}`;
+      page.drawText(subDesc, {
+        x: rowX + 6,
+        y: curY - 19,
+        size: 6.8,
+        font: fontRegular,
+        color: cMuted,
+      });
+      rowX += colDef[1].w;
+
+      // 3. Line PO
+      const lineStr = item.nomorLine ? `Line ${item.nomorLine}` : "-";
+      page.drawText(lineStr, {
+        x: rowX + (colDef[2].w - fontRegular.widthOfTextAtSize(lineStr, 7.5)) / 2,
+        y: curY - 14,
+        size: 7.5,
+        font: fontRegular,
+        color: cDark,
+      });
+      rowX += colDef[2].w;
+
+      // 4. Hari Kerja
+      const hariStr = `${item.hariKerjaDapatDitagihkan} / ${item.hariKerjaAcuanBulan} hr`;
+      page.drawText(hariStr, {
+        x: rowX + (colDef[3].w - fontRegular.widthOfTextAtSize(hariStr, 7.5)) / 2,
+        y: curY - 14,
+        size: 7.5,
+        font: fontRegular,
+        color: cDark,
+      });
+      rowX += colDef[3].w;
+
+      // 5. Rate Bulanan
+      const rateStr = formatRp(Number(item.nilaiRateDipakai || 0));
+      page.drawText(rateStr, {
+        x: rowX + colDef[4].w - fontRegular.widthOfTextAtSize(rateStr, 7.5) - 6,
+        y: curY - 14,
+        size: 7.5,
+        font: fontRegular,
+        color: cDark,
+      });
+      rowX += colDef[4].w;
+
+      // 6. Jumlah Hasil Hitung
+      const hitungStr = formatRp(Number(item.hasilHitung || 0));
+      page.drawText(hitungStr, {
+        x: rowX + colDef[5].w - fontBold.widthOfTextAtSize(hitungStr, 8) - 6,
+        y: curY - 14,
+        size: 8,
+        font: fontBold,
+        color: cDark,
+      });
+
+      curY -= rowHeight;
+    });
+
+    if (penyesuaianGr !== 0) {
       page.drawRectangle({
         x: margin,
         y: curY - rowHeight,
         width: contentWidth,
         height: rowHeight,
-        color: rgb(0.98, 0.985, 0.99),
+        color: rgb(0.99, 0.96, 0.96),
       });
+      page.drawLine({
+        start: { x: margin, y: curY - rowHeight },
+        end: { x: pw - margin, y: curY - rowHeight },
+        thickness: 0.5,
+        color: cBorder,
+      });
+
+      page.drawText("Penyesuaian Selisih Evaluasi GR (Carry-over Periode Sebelumnya)", {
+        x: margin + 30,
+        y: curY - 14,
+        size: 8,
+        font: fontBold,
+        color: penyesuaianGr > 0 ? rgb(0.1, 0.5, 0.2) : cRed,
+      });
+
+      const selisihStr = (penyesuaianGr > 0 ? "+" : "") + formatRp(penyesuaianGr);
+      page.drawText(selisihStr, {
+        x: pw - margin - fontBold.widthOfTextAtSize(selisihStr, 8) - 6,
+        y: curY - 14,
+        size: 8,
+        font: fontBold,
+        color: penyesuaianGr > 0 ? rgb(0.1, 0.5, 0.2) : cRed,
+      });
+
+      curY -= rowHeight;
     }
-
-    // Border bawah baris
-    page.drawLine({
-      start: { x: margin, y: curY - rowHeight },
-      end: { x: pw - margin, y: curY - rowHeight },
-      thickness: 0.5,
-      color: cBorder,
-    });
-
-    let rowX = margin;
-
-    // 1. No
-    const noStr = String(idx + 1);
-    page.drawText(noStr, {
-      x: rowX + (colDef[0].w - fontRegular.widthOfTextAtSize(noStr, 8)) / 2,
-      y: curY - 14,
-      size: 8,
-      font: fontRegular,
-      color: cDark,
-    });
-    rowX += colDef[0].w;
-
-    // 2. Deskripsi / Talenta
-    const namaTalenta = item.namaPersonel.toUpperCase();
-    page.drawText(namaTalenta, {
-      x: rowX + 6,
-      y: curY - 11,
-      size: 8,
-      font: fontBold,
-      color: cDark,
-    });
-    const subDesc = item.deskripsiLine ? item.deskripsiLine.slice(0, 38) : `Layanan Profesional IT - ${header.namaProyek}`;
-    page.drawText(subDesc, {
-      x: rowX + 6,
-      y: curY - 19,
-      size: 6.8,
-      font: fontRegular,
-      color: cMuted,
-    });
-    rowX += colDef[1].w;
-
-    // 3. Line PO
-    const lineStr = item.nomorLine ? `Line ${item.nomorLine}` : "-";
-    page.drawText(lineStr, {
-      x: rowX + (colDef[2].w - fontRegular.widthOfTextAtSize(lineStr, 7.5)) / 2,
-      y: curY - 14,
-      size: 7.5,
-      font: fontRegular,
-      color: cDark,
-    });
-    rowX += colDef[2].w;
-
-    // 4. Hari Kerja
-    const hariStr = `${item.hariKerjaDapatDitagihkan} / ${item.hariKerjaAcuanBulan} hr`;
-    page.drawText(hariStr, {
-      x: rowX + (colDef[3].w - fontRegular.widthOfTextAtSize(hariStr, 7.5)) / 2,
-      y: curY - 14,
-      size: 7.5,
-      font: fontRegular,
-      color: cDark,
-    });
-    rowX += colDef[3].w;
-
-    // 5. Rate Bulanan
-    const rateStr = formatRp(Number(item.nilaiRateDipakai || 0));
-    page.drawText(rateStr, {
-      x: rowX + colDef[4].w - fontRegular.widthOfTextAtSize(rateStr, 7.5) - 6,
-      y: curY - 14,
-      size: 7.5,
-      font: fontRegular,
-      color: cDark,
-    });
-    rowX += colDef[4].w;
-
-    // 6. Jumlah Hasil Hitung
-    const hitungStr = formatRp(Number(item.hasilHitung || 0));
-    page.drawText(hitungStr, {
-      x: rowX + colDef[5].w - fontBold.widthOfTextAtSize(hitungStr, 8) - 6,
-      y: curY - 14,
-      size: 8,
-      font: fontBold,
-      color: cDark,
-    });
-
-    curY -= rowHeight;
-  });
-
-  // Baris Penyesuaian Selisih GR (jika ada carry-over)
-  if (penyesuaianGr !== 0) {
-    page.drawRectangle({
-      x: margin,
-      y: curY - rowHeight,
-      width: contentWidth,
-      height: rowHeight,
-      color: rgb(0.99, 0.96, 0.96),
-    });
-    page.drawLine({
-      start: { x: margin, y: curY - rowHeight },
-      end: { x: pw - margin, y: curY - rowHeight },
-      thickness: 0.5,
-      color: cBorder,
-    });
-
-    page.drawText("Penyesuaian Selisih Evaluasi GR (Carry-over Periode Sebelumnya)", {
-      x: margin + 30,
-      y: curY - 14,
-      size: 8,
-      font: fontBold,
-      color: penyesuaianGr > 0 ? rgb(0.1, 0.5, 0.2) : cRed,
-    });
-
-    const selisihStr = (penyesuaianGr > 0 ? "+" : "") + formatRp(penyesuaianGr);
-    page.drawText(selisihStr, {
-      x: pw - margin - fontBold.widthOfTextAtSize(selisihStr, 8) - 6,
-      y: curY - 14,
-      size: 8,
-      font: fontBold,
-      color: penyesuaianGr > 0 ? rgb(0.1, 0.5, 0.2) : cRed,
-    });
-
-    curY -= rowHeight;
   }
 
   curY -= 12;
@@ -509,7 +681,6 @@ export async function GET(
   const summaryLeftX = pw - margin - summaryBoxW;
   const terbilangW = contentWidth - summaryBoxW - 14;
 
-  // Kotak Terbilang (Kiri)
   page.drawRectangle({
     x: margin,
     y: curY - 54,
@@ -520,7 +691,10 @@ export async function GET(
     borderWidth: 0.8,
   });
 
-  page.drawText("TERBILANG / AMOUNT IN WORDS:", {
+  const terbilangTitle = format === "bilingual"
+    ? "AMOUNT IN WORDS / TERBILANG:"
+    : "TERBILANG / AMOUNT IN WORDS:";
+  page.drawText(terbilangTitle, {
     x: margin + 8,
     y: curY - 12,
     size: 7,
@@ -528,7 +702,6 @@ export async function GET(
     color: cMuted,
   });
 
-  // Teks terbilang (bungkus jika panjang)
   const maxTerbilangW = terbilangW - 16;
   let baris1 = terbilangTeks;
   let baris2 = "";
@@ -567,7 +740,7 @@ export async function GET(
     });
   }
 
-  // Summary Finansial (Kanan)
+  // Summary Finansial
   const drawSummaryRow = (label: string, valStr: string, yPos: number, isGrandTotal = false) => {
     page.drawText(label, {
       x: summaryLeftX + 6,
@@ -586,8 +759,12 @@ export async function GET(
     });
   };
 
-  drawSummaryRow("Subtotal DPP", formatRp(dpp), curY - 12);
-  drawSummaryRow(`PPN (${tarifPpn}%)`, formatRp(nilaiPpn), curY - 26);
+  const lblDpp = format === "bilingual" ? "Subtotal DPP / Tax Base" : "Subtotal DPP";
+  const lblVat = format === "bilingual" ? `VAT / PPN (${tarifPpn}%)` : `PPN (${tarifPpn}%)`;
+  const lblTotal = format === "bilingual" ? "TOTAL AMOUNT / TAGIHAN" : "TOTAL TAGIHAN";
+
+  drawSummaryRow(lblDpp, formatRp(dpp), curY - 12);
+  drawSummaryRow(lblVat, formatRp(nilaiPpn), curY - 26);
 
   page.drawLine({
     start: { x: summaryLeftX, y: curY - 33 },
@@ -596,7 +773,7 @@ export async function GET(
     color: cDark,
   });
 
-  drawSummaryRow("TOTAL TAGIHAN", formatRp(grandTotal), curY - 47, true);
+  drawSummaryRow(lblTotal, formatRp(grandTotal), curY - 47, true);
 
   curY -= 68;
 
@@ -617,7 +794,10 @@ export async function GET(
     borderWidth: 0.8,
   });
 
-  page.drawText("INFORMASI REKENING PEMBAYARAN RESMI:", {
+  const rekTitle = format === "bilingual"
+    ? "OFFICIAL BANK ACCOUNT FOR PAYMENT / REKENING RESMI:"
+    : "INFORMASI REKENING PEMBAYARAN RESMI:";
+  page.drawText(rekTitle, {
     x: margin + 10,
     y: curY - 14,
     size: 7.5,
@@ -625,13 +805,27 @@ export async function GET(
     color: cRed,
   });
 
-  page.drawText("1. Bank Central Asia (BCA)", { x: margin + 10, y: curY - 28, size: 8, font: fontBold, color: cDark });
-  page.drawText("No. Rek: 541-098-7711  |  KCU Mega Kuningan Jakarta", { x: margin + 20, y: curY - 39, size: 7.5, font: fontRegular, color: cDark });
+  if (bankOption === "bca") {
+    page.drawText("Bank Central Asia (BCA)", { x: margin + 10, y: curY - 32, size: 9, font: fontBold, color: cDark });
+    page.drawText("Nomor Rekening : 541-098-7711", { x: margin + 10, y: curY - 46, size: 8.5, font: fontBold, color: cRed });
+    page.drawText("Kantor Cabang  : KCU Mega Kuningan Jakarta", { x: margin + 10, y: curY - 58, size: 8, font: fontRegular, color: cDark });
+    page.drawText("Atas Nama      : PT IDSTAR CIPTA TEKNOLOGI", { x: margin + 10, y: curY - 70, size: 8, font: fontBold, color: cDark });
+  } else if (bankOption === "mandiri") {
+    page.drawText("Bank Mandiri", { x: margin + 10, y: curY - 32, size: 9, font: fontBold, color: cDark });
+    page.drawText("Nomor Rekening : 124-00-1122334-9", { x: margin + 10, y: curY - 46, size: 8.5, font: fontBold, color: cRed });
+    page.drawText("Kantor Cabang  : KC Jakarta Bellagio Mansion", { x: margin + 10, y: curY - 58, size: 8, font: fontRegular, color: cDark });
+    page.drawText("Atas Nama      : PT IDSTAR CIPTA TEKNOLOGI", { x: margin + 10, y: curY - 70, size: 8, font: fontBold, color: cDark });
+  } else {
+    // Both BCA & Mandiri
+    page.drawText("1. Bank Central Asia (BCA)", { x: margin + 10, y: curY - 28, size: 8, font: fontBold, color: cDark });
+    page.drawText("No. Rek: 541-098-7711  |  KCU Mega Kuningan Jakarta", { x: margin + 20, y: curY - 39, size: 7.5, font: fontRegular, color: cDark });
 
-  page.drawText("2. Bank Mandiri", { x: margin + 10, y: curY - 52, size: 8, font: fontBold, color: cDark });
-  page.drawText("No. Rek: 124-00-1122334-9  |  KC Jakarta Bellagio Mansion", { x: margin + 20, y: curY - 63, size: 7.5, font: fontRegular, color: cDark });
+    page.drawText("2. Bank Mandiri", { x: margin + 10, y: curY - 52, size: 8, font: fontBold, color: cDark });
+    page.drawText("No. Rek: 124-00-1122334-9  |  KC Jakarta Bellagio Mansion", { x: margin + 20, y: curY - 63, size: 7.5, font: fontRegular, color: cDark });
 
-  page.drawText("Atas Nama: PT IDSTAR CIPTA TEKNOLOGI", { x: margin + 10, y: curY - 76, size: 8, font: fontBold, color: cDark });
+    page.drawText("Atas Nama: PT IDSTAR CIPTA TEKNOLOGI", { x: margin + 10, y: curY - 76, size: 8, font: fontBold, color: cDark });
+  }
+
   page.drawText("* Cantumkan No. Invoice pada berita transfer & kirim bukti transfer ke finance@idstar.group", {
     x: margin + 10,
     y: curY - 86,
@@ -717,12 +911,13 @@ export async function GET(
 
   const pdfBytes = await pdfDoc.save();
 
-  const namaFile = `Invoice-${nomorInv.replace(/[^a-zA-Z0-9_-]/g, "_")}.pdf`;
+  const namaFile = `Invoice-${nomorInv.replace(/[^a-zA-Z0-9_-]/g, "_")}-${format}.pdf`;
+  const disposition = isDownload ? "attachment" : "inline";
 
   return new NextResponse(Buffer.from(pdfBytes), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="${namaFile}"`,
+      "Content-Disposition": `${disposition}; filename="${namaFile}"`,
       "Cache-Control": "no-store",
     },
   });

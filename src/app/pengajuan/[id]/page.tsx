@@ -16,6 +16,7 @@ import { alias } from "drizzle-orm/pg-core";
 import { apakahKlienXl } from "@/lib/klien";
 import PembayaranPanel from "./pembayaran-panel";
 import ReminderModal from "./reminder-modal";
+import InvoiceModal from "./invoice-modal";
 import { tambahHari, selisihHari } from "@/lib/aging";
 
 const LABEL_STATUS: Record<string, string> = {
@@ -202,24 +203,17 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: 12 }}>
           <a href="/pengajuan" className="back-link" style={{ margin: 0 }}>&larr; Daftar Pengajuan</a>
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <a
-              href={`/api/pengajuan/${header.id}/invoice/pdf`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-secondary"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                textDecoration: "none",
-                fontWeight: 600,
-                padding: "8px 14px",
-                borderRadius: 6,
-              }}
-              title="Cetak atau unduh Invoice Resmi PT IDStar Cipta Teknologi dalam format PDF"
-            >
-              📄 Cetak Invoice PDF
-            </a>
+            <InvoiceModal
+              pengajuanId={header.id}
+              nomorInvoice={header.nomorInvoice || `DRAF-INV-${header.id}`}
+              nomorPo={header.nomorPo}
+              klien={header.klien || "XL Axiata"}
+              namaProyek={header.namaProyek}
+              periode={header.periode}
+              totalTagihan={totalTagihanFinal}
+              dpp={header.nilaiGrDisetujui ? Number(header.nilaiGrDisetujui) : total}
+              tarifPpn={header.tarifPpn ? Number(header.tarifPpn) : 11}
+            />
             <ReminderModal
               pengajuanId={header.id}
               nomorInvoice={header.nomorInvoice || `DRAF-INV-${header.id}`}

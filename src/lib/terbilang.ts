@@ -55,3 +55,4 @@ export function terbilang(n: number): string {
 
   return konversi(bulat).trim() + " Rupiah";
 }
+
