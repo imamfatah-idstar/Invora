@@ -130,10 +130,7 @@ export default function LoginClient() {
       {/* Panel kiri / atas brand IDStar */}
       <aside className="login-aside">
         <div className="login-aside-brand">
-          <Logo height={28} variant="white" />
-          <div className="login-aside-title">
-            <b>INVORA</b> &middot; Invoice Operations &amp; Revenue Assurance
-          </div>
+          <Logo height={32} variant="white" />
         </div>
 
         <div className="login-aside-values">
