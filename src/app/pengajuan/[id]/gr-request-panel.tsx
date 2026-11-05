@@ -109,6 +109,29 @@ export default function GrRequestPanel({
         (3) Upload client return file here and auto-merge &rarr; (4) Checker confirms verification.
       </p>
 
+      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 16 }}>
+        <a
+          href="https://www.getapprove.xlsmart.co.id/auth/login?nexturl=%252Fapproval-document%2523id%253Dcc5582a1-9e20-4926-865d-9e7d9c65b73c"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            backgroundColor: "#002d72",
+            borderColor: "#002d72",
+            color: "#ffffff",
+            fontWeight: 600,
+            textDecoration: "none",
+          }}
+          title="Redirect to official XL Get Approve Portal"
+        >
+          <span>🚀 Open Get Approve XL Portal</span>
+          <span style={{ fontSize: 12 }}>↗</span>
+        </a>
+      </div>
+
       {error && <div className="alert alert-danger">{error}</div>}
       {peringatan.length > 0 && (
         <div className="alert alert-danger">

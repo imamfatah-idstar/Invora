@@ -111,3 +111,21 @@ export function formatTanggalSelesaiIndo(periode: string): string {
   return `${lastDay}-${namaBulan}-${thn}`;
 }
 
+export function formatGrDate(d: Date = new Date()): string {
+  const tgl = String(d.getDate()).padStart(2, "0");
+  const bln = NAMA_BULAN_EN_SHORT[d.getMonth()] || "Oct";
+  const thn = d.getFullYear();
+  return `${tgl} ${bln} ${thn}`;
+}
+
+export function formatGrNominal(val: number | string): string {
+  const num = typeof val === "string" ? parseFloat(val || "0") : val;
+  return Math.round(num).toLocaleString("id-ID");
+}
+
+export function formatGrQty(val: number | string): string {
+  const num = typeof val === "string" ? parseFloat(val || "0") : val;
+  return num.toFixed(3).replace(".", ",");
+}
+
+

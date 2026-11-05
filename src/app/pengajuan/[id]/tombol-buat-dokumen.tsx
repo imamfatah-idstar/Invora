@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function TombolBuatDokumen({ pengajuanId, jenis }: { pengajuanId: number; jenis: "CAC" | "BAST" }) {
+export default function TombolBuatDokumen({ pengajuanId, jenis }: { pengajuanId: number; jenis: "CAC" | "BAST" | "GR" }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

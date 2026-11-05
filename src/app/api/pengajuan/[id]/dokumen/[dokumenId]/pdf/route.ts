@@ -18,11 +18,15 @@ import {
   formatRupiahKoma,
   formatHariTanggalIndo,
   formatTanggalSelesaiIndo,
+  formatGrDate,
+  formatGrNominal,
+  formatGrQty,
 } from "@/lib/xl-document-helpers";
 
 const LABEL_JENIS: Record<string, string> = {
   CAC: "Dokumen CAC (Konfirmasi Pengajuan Invoicing)",
   BAST: "Berita Acara Serah Terima (BAST)",
+  GR: "Dokumen Good Receipt (BAU Approval)",
 };
 
 function formatRupiah(nilai: string) {
@@ -788,6 +792,408 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `inline; filename="CAC-XL-${header.nomorPo}-${header.periode}.pdf"`,
+      },
+    });
+  }
+
+  // =========================================================================
+  // GR KHUSUS XL (Format resmi mengikuti Good_Receipt.pdf)
+  // =========================================================================
+  if (isKlienXl && dok.jenis === "GR") {
+    const grPdf = await PDFDocument.create();
+    const fontTimes = await grPdf.embedFont(StandardFonts.TimesRoman);
+    const fontTimesBold = await grPdf.embedFont(StandardFonts.TimesRomanBold);
+    const fontHelvetica = await grPdf.embedFont(StandardFonts.Helvetica);
+
+    // Default MMYYYY & Request IDs
+    const [thnStr, blnStr] = (header.periode || "").split("-");
+    const mmyyyy = blnStr && thnStr ? `${blnStr}${thnStr}` : "102026";
+    const reqIdSuffix = String(8000 + pengajuanId);
+
+    const defaultReqId = `ICPGA/Finance_Business_Partner_&_Budgeting/${mmyyyy}/${reqIdSuffix}`;
+    const defaultTitle = `Good_Receipt_Request_${header.nomorPo}_${periodeFormatted.replace(/\s+/g, " ")}`;
+    const defaultVendor = "PT. IDSTAR CIPTA TEKNOLOGI (0000123218)";
+    const defaultBastId = `BAST/Enterprise_Connectivity_Management/${mmyyyy}/8595`;
+    const defaultCacId = `CAC/Enterprise_Connectivity_Management/${mmyyyy}/8598`;
+    const defaultSow = "7a1a6279-d98e-4b17-ad0e-221bca5a4749.xlsx";
+
+    const requestId = searchParams.get("requestId") || defaultReqId;
+    const requestTitle = searchParams.get("requestTitle") || defaultTitle;
+    const vendorName = searchParams.get("vendorName") || defaultVendor;
+    const bastRequestId = searchParams.get("bastRequestId") || defaultBastId;
+    const cacRequestId = searchParams.get("cacRequestId") || defaultCacId;
+    const sowDocument = searchParams.get("sowDocument") || defaultSow;
+
+    const createdByName = searchParams.get("createdByName") || "Nitia Refa Cahyaningrum,";
+    const createdByRole = searchParams.get("createdByRole") || "Finance";
+    const createdByDate = searchParams.get("createdByDate") || "30 Oct 2026";
+
+    const approver1Name = searchParams.get("approver1Name") || "xlrpa-getapprove@xl.co.id,";
+    const approver1Role = searchParams.get("approver1Role") || "system integration";
+    const approver1Date = searchParams.get("approver1Date") || "30 Oct 2026";
+
+    const approver2Name = searchParams.get("approver2Name") || "vads.dnabila@xlsmart.co.id";
+    const approver2Date = searchParams.get("approver2Date") || "02 Nov 2026";
+
+    let itemsList: string[] = [];
+    const itemsParam = searchParams.get("items");
+    if (itemsParam) {
+      try {
+        itemsList = JSON.parse(itemsParam);
+      } catch {}
+    }
+    if (!itemsList || itemsList.length === 0) {
+      if (rincian && rincian.length > 0) {
+        itemsList = rincian.map((r, idx) => {
+          const slip = header.nomorGrSlip || "2000565039";
+          const lineStr = String(r.nomorLine || idx + 1).padStart(5, "0");
+          const year = thnStr || "2026";
+          const nominal = formatGrNominal(r.hasilHitung);
+          const qtyRatio =
+            r.hariKerjaAcuanBulan > 0
+              ? (r.hariKerjaDapatDitagihkan / r.hariKerjaAcuanBulan) * 5.8
+              : 5.0;
+          const qty = formatGrQty(qtyRatio);
+          return `${slip}-${lineStr}-${year} ; ${nominal} ; ${qty}`;
+        });
+      } else {
+        itemsList = [
+          "2000565039-00001-2026 ; 171.631.000 ; 5,818",
+          "2000565054-00002-2026 ; 1.014.000 ; 0,039",
+          "2000565055-00003-2026 ; 104.399.300 ; 4,778",
+          "2000565056-00004-2026 ; 46.607.880 ; 2,949",
+          "",
+        ];
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // PAGE 1: BAU Approval Form (Key-Value)
+    // -----------------------------------------------------------------------
+    const hal1 = grPdf.addPage(PageSizes.A4);
+    const { width: pw, height: ph } = hal1.getSize(); // 595.28 x 841.88
+
+    // Top Header Table: from x=27.98 to 567.30 (width=539.32), top y=28.35 to 80.03 (height=51.68)
+    const tblLeft = 27.98;
+    const tblW = 539.32;
+    const tblH = 51.68;
+    const tblBottomY = ph - 80.03; // 761.85
+    const dividerX = 144.53;
+
+    hal1.drawRectangle({
+      x: tblLeft,
+      y: tblBottomY,
+      width: tblW,
+      height: tblH,
+      borderWidth: 0.75,
+      borderColor: rgb(0, 0, 0),
+    });
+    hal1.drawLine({
+      start: { x: dividerX, y: tblBottomY },
+      end: { x: dividerX, y: tblBottomY + tblH },
+      thickness: 0.75,
+      color: rgb(0, 0, 0),
+    });
+
+    // Left Cell: XL Logo
+    try {
+      const logoPath = path.join(process.cwd(), "public", "xl-gr-logo.jpeg");
+      const logoBytes = await readFile(logoPath);
+      const xlLogo = await grPdf.embedJpg(logoBytes);
+      const logoW = 67.5;
+      const logoH = 38.25;
+      const logoX = tblLeft + (dividerX - tblLeft - logoW) / 2;
+      const logoY = tblBottomY + (tblH - logoH) / 2;
+      hal1.drawImage(xlLogo, { x: logoX, y: logoY, width: logoW, height: logoH });
+    } catch {
+      hal1.drawText("XL", { x: tblLeft + 40, y: tblBottomY + 18, size: 14, font: fontTimesBold });
+    }
+
+    // Right Cell: "BAU Approval"
+    const titleText = "BAU Approval";
+    const titleW = fontTimesBold.widthOfTextAtSize(titleText, 16);
+    const rightCellCenter = dividerX + (tblLeft + tblW - dividerX) / 2;
+    hal1.drawText(titleText, {
+      x: rightCellCenter - titleW / 2,
+      y: tblBottomY + 18,
+      size: 16,
+      font: fontTimesBold,
+      color: rgb(0, 0, 0),
+    });
+
+    // Key-Value Rows
+    const colLabelX = 33.34;
+    const colColonX = 242.74;
+    const colValX = 266.74;
+    let rowBaselineY = ph - 104.4; // 737.48
+
+    const fieldRows: Array<[string, string]> = [
+      ["Request Title", requestTitle || ""],
+      ["Vendor Name", vendorName],
+      ["BAST Request ID", bastRequestId],
+      ["CAC Request ID", cacRequestId],
+      ["SOW Document", sowDocument],
+    ];
+
+    itemsList.forEach((it, idx) => {
+      fieldRows.push([`GR Number Item #${idx + 1}`, it]);
+    });
+
+    for (const [label, val] of fieldRows) {
+      hal1.drawText(label, { x: colLabelX, y: rowBaselineY, size: 10, font: fontTimes, color: rgb(0, 0, 0) });
+      hal1.drawText(":", { x: colColonX, y: rowBaselineY, size: 10, font: fontTimes, color: rgb(0, 0, 0) });
+      if (val) {
+        hal1.drawText(val, { x: colValX, y: rowBaselineY, size: 10, font: fontTimes, color: rgb(0, 0, 0) });
+      }
+      rowBaselineY -= 21.0;
+    }
+
+    // Footer Page 1
+    const footerY = 21.45;
+    hal1.drawText(`Request ID: ${requestId}`, {
+      x: 197.6,
+      y: footerY,
+      size: 6,
+      font: fontHelvetica,
+      color: rgb(0, 0, 0),
+    });
+    hal1.drawText("Page 1 of 2", {
+      x: 515.3,
+      y: footerY,
+      size: 6,
+      font: fontHelvetica,
+      color: rgb(0, 0, 0),
+    });
+
+    // -----------------------------------------------------------------------
+    // PAGE 2: APPROVAL PAGES (3 Cards)
+    // -----------------------------------------------------------------------
+    const hal2 = grPdf.addPage(PageSizes.A4);
+
+    // Top Header Box: x=42.0 to 553.30 (width=511.3), top y=42.0 to 194.8 (height=152.8)
+    const p2BoxLeft = 42.0;
+    const p2BoxW = 511.3;
+    const p2BoxH = 152.8;
+    const p2BoxBottomY = ph - 194.8;
+    const p2Center = p2BoxLeft + p2BoxW / 2;
+
+    hal2.drawRectangle({
+      x: p2BoxLeft,
+      y: p2BoxBottomY,
+      width: p2BoxW,
+      height: p2BoxH,
+      borderWidth: 0.75,
+      borderColor: rgb(0, 0, 0),
+    });
+
+    // Horizontal Dividers in Top Header Box
+    const div1Y = ph - 56.5;
+    const div2Y = ph - 79.0;
+    const div3Y = ph - 133.0;
+
+    hal2.drawLine({ start: { x: p2BoxLeft, y: div1Y }, end: { x: p2BoxLeft + p2BoxW, y: div1Y }, thickness: 0.75, color: rgb(0, 0, 0) });
+    hal2.drawLine({ start: { x: p2BoxLeft, y: div2Y }, end: { x: p2BoxLeft + p2BoxW, y: div2Y }, thickness: 0.75, color: rgb(0, 0, 0) });
+    hal2.drawLine({ start: { x: p2BoxLeft, y: div3Y }, end: { x: p2BoxLeft + p2BoxW, y: div3Y }, thickness: 0.75, color: rgb(0, 0, 0) });
+
+    // Header Texts (Centered)
+    const tApprovalPages = "APPROVAL PAGES";
+    hal2.drawText(tApprovalPages, {
+      x: p2Center - fontTimes.widthOfTextAtSize(tApprovalPages, 12) / 2,
+      y: ph - 51.5,
+      size: 12,
+      font: fontTimes,
+      color: rgb(0, 0, 0),
+    });
+
+    const tDocType = "Document Type : IT CAPEX PO GR Approval";
+    hal2.drawText(tDocType, {
+      x: p2Center - fontTimes.widthOfTextAtSize(tDocType, 12) / 2,
+      y: ph - 73.0,
+      size: 12,
+      font: fontTimes,
+      color: rgb(0, 0, 0),
+    });
+
+    const tDocTitle = `Document Title : ${requestTitle}`;
+    hal2.drawText(tDocTitle, {
+      x: p2Center - fontTimes.widthOfTextAtSize(tDocTitle, 12) / 2,
+      y: ph - 100.0,
+      size: 12,
+      font: fontTimes,
+      color: rgb(0, 0, 0),
+    });
+
+    const tReqId = `Request Id : ${requestId}`;
+    hal2.drawText(tReqId, {
+      x: p2Center - fontTimes.widthOfTextAtSize(tReqId, 12) / 2,
+      y: ph - 150.0,
+      size: 12,
+      font: fontTimes,
+      color: rgb(0, 0, 0),
+    });
+
+    // Approval Cards (3 Columns): x: 72.8 to 527.2 (width=454.4), y: 195.6 to 384.6 (height=189.0)
+    const cardLeft = 72.8;
+    const cardTotalW = 454.4;
+    const cardH = 189.0;
+    const cardBottomY = ph - 384.6;
+    const cardTopY = ph - 195.6;
+
+    const cardDivX1 = 224.2;
+    const cardDivX2 = 375.8;
+
+    hal2.drawRectangle({
+      x: cardLeft,
+      y: cardBottomY,
+      width: cardTotalW,
+      height: cardH,
+      borderWidth: 0.75,
+      borderColor: rgb(0, 0, 0),
+    });
+
+    // Vertical dividers between cards
+    hal2.drawLine({ start: { x: cardDivX1, y: cardBottomY }, end: { x: cardDivX1, y: cardTopY }, thickness: 0.75, color: rgb(0, 0, 0) });
+    hal2.drawLine({ start: { x: cardDivX2, y: cardBottomY }, end: { x: cardDivX2, y: cardTopY }, thickness: 0.75, color: rgb(0, 0, 0) });
+
+    // Horizontal dividers within cards
+    const cardHeadDivY = ph - 210.1;
+    const cardDateDivY = ph - 368.4;
+    hal2.drawLine({ start: { x: cardLeft, y: cardHeadDivY }, end: { x: cardLeft + cardTotalW, y: cardHeadDivY }, thickness: 0.75, color: rgb(0, 0, 0) });
+    hal2.drawLine({ start: { x: cardLeft, y: cardDateDivY }, end: { x: cardLeft + cardTotalW, y: cardDateDivY }, thickness: 0.75, color: rgb(0, 0, 0) });
+
+    const c1Center = cardLeft + (cardDivX1 - cardLeft) / 2;
+    const c2Center = cardDivX1 + (cardDivX2 - cardDivX1) / 2;
+    const c3Center = cardDivX2 + (cardLeft + cardTotalW - cardDivX2) / 2;
+
+    // Card 1: Created By
+    const tCreatedBy = "Created By";
+    hal2.drawText(tCreatedBy, {
+      x: c1Center - fontTimes.widthOfTextAtSize(tCreatedBy, 12) / 2,
+      y: ph - 205.5,
+      size: 12,
+      font: fontTimes,
+      color: rgb(0, 0, 0),
+    });
+    try {
+      const signCreatedPath = path.join(process.cwd(), "public", "gr-sign-created.png");
+      const signCreatedBytes = await readFile(signCreatedPath);
+      const signCreated = await grPdf.embedPng(signCreatedBytes);
+      hal2.drawImage(signCreated, { x: c1Center - 75 / 2, y: ph - 280.0, width: 75, height: 60 });
+    } catch {}
+    hal2.drawText(createdByName, {
+      x: c1Center - fontTimes.widthOfTextAtSize(createdByName, 12) / 2,
+      y: ph - 303.0,
+      size: 12,
+      font: fontTimes,
+      color: rgb(0, 0, 0),
+    });
+    hal2.drawText(createdByRole, {
+      x: c1Center - fontTimes.widthOfTextAtSize(createdByRole, 12) / 2,
+      y: ph - 317.0,
+      size: 12,
+      font: fontTimes,
+      color: rgb(0, 0, 0),
+    });
+    hal2.drawText(createdByDate, {
+      x: c1Center - fontTimes.widthOfTextAtSize(createdByDate, 12) / 2,
+      y: ph - 378.0,
+      size: 12,
+      font: fontTimes,
+      color: rgb(0, 0, 0),
+    });
+
+    // Card 2: Approved By (RPA System Integration)
+    const tApprovedBy = "Approved By";
+    hal2.drawText(tApprovedBy, {
+      x: c2Center - fontTimes.widthOfTextAtSize(tApprovedBy, 12) / 2,
+      y: ph - 205.5,
+      size: 12,
+      font: fontTimes,
+      color: rgb(0, 0, 0),
+    });
+    try {
+      const signRpaPath = path.join(process.cwd(), "public", "gr-sign-rpa.jpeg");
+      const signRpaBytes = await readFile(signRpaPath);
+      const signRpa = await grPdf.embedJpg(signRpaBytes);
+      hal2.drawImage(signRpa, { x: c2Center - 80 / 2, y: ph - 279.2, width: 80, height: 58.33 });
+    } catch {}
+    hal2.drawText(approver1Name, {
+      x: c2Center - fontTimes.widthOfTextAtSize(approver1Name, 12) / 2,
+      y: ph - 303.0,
+      size: 12,
+      font: fontTimes,
+      color: rgb(0, 0, 0),
+    });
+    hal2.drawText(approver1Role, {
+      x: c2Center - fontTimes.widthOfTextAtSize(approver1Role, 12) / 2,
+      y: ph - 317.0,
+      size: 12,
+      font: fontTimes,
+      color: rgb(0, 0, 0),
+    });
+    hal2.drawText(approver1Date, {
+      x: c2Center - fontTimes.widthOfTextAtSize(approver1Date, 12) / 2,
+      y: ph - 378.0,
+      size: 12,
+      font: fontTimes,
+      color: rgb(0, 0, 0),
+    });
+
+    // Card 3: Approved By (Client PIC)
+    hal2.drawText(tApprovedBy, {
+      x: c3Center - fontTimes.widthOfTextAtSize(tApprovedBy, 12) / 2,
+      y: ph - 205.5,
+      size: 12,
+      font: fontTimes,
+      color: rgb(0, 0, 0),
+    });
+    try {
+      const signAppPath = path.join(process.cwd(), "public", "gr-sign-approved.png");
+      const signAppBytes = await readFile(signAppPath);
+      const signApp = await grPdf.embedPng(signAppBytes);
+      hal2.drawImage(signApp, { x: c3Center - 33.79 / 2, y: ph - 280.0, width: 33.79, height: 60 });
+    } catch {}
+    hal2.drawText(approver2Name, {
+      x: c3Center - fontTimes.widthOfTextAtSize(approver2Name, 12) / 2,
+      y: ph - 303.0,
+      size: 12,
+      font: fontTimes,
+      color: rgb(0, 0, 0),
+    });
+    hal2.drawText(approver2Date, {
+      x: c3Center - fontTimes.widthOfTextAtSize(approver2Date, 12) / 2,
+      y: ph - 378.0,
+      size: 12,
+      font: fontTimes,
+      color: rgb(0, 0, 0),
+    });
+
+    // Footer Page 2
+    hal2.drawText(`Request ID: ${requestId}`, {
+      x: 197.6,
+      y: footerY,
+      size: 6,
+      font: fontHelvetica,
+      color: rgb(0, 0, 0),
+    });
+    hal2.drawText("Page 2 of 2", {
+      x: 515.3,
+      y: footerY,
+      size: 6,
+      font: fontHelvetica,
+      color: rgb(0, 0, 0),
+    });
+
+    // Dokumen PO Asli (Halaman 3+, opsional jika ada)
+    if (header.pathFilePoAsli) {
+      await tempelFile(grPdf, header.pathFilePoAsli).catch(() => {});
+    }
+
+    const pdfBytes = await grPdf.save();
+    return new NextResponse(Buffer.from(pdfBytes), {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `inline; filename="Good_Receipt_${header.nomorPo}_${header.periode}.pdf"`,
       },
     });
   }

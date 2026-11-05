@@ -27,7 +27,7 @@ const LABEL_STATUS: Record<string, string> = {
   diajukan: "Submitted",
 };
 
-const LABEL_JENIS_DOKUMEN: Record<string, string> = { CAC: "CAC", BAST: "BAST" };
+const LABEL_JENIS_DOKUMEN: Record<string, string> = { CAC: "CAC", BAST: "BAST", GR: "GR (Good Receipt)" };
 
 function formatRupiah(nilai: string) {
   return "Rp" + Number(nilai).toLocaleString("id-ID", { minimumFractionDigits: 2 });
@@ -356,6 +356,7 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
               {bisaBuatDokumen && isKlienXl && <TombolBuatDokumen pengajuanId={header.id} jenis="CAC" />}
               {bisaBuatDokumen && <TombolBuatDokumen pengajuanId={header.id} jenis="BAST" />}
+              {bisaBuatDokumen && isKlienXl && <TombolBuatDokumen pengajuanId={header.id} jenis="GR" />}
               {isKlienXl && (
                 <a
                   href="https://www.getapprove.xlsmart.co.id/auth/login?nexturl=%252Fapproval-document%2523id%253Dcc5582a1-9e20-4926-865d-9e7d9c65b73c"

@@ -35,8 +35,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const body = await request.json().catch(() => null);
   const jenis = body?.jenis;
-  if (jenis !== "CAC" && jenis !== "BAST") {
-    return NextResponse.json({ error: 'jenis wajib "CAC" atau "BAST".' }, { status: 400 });
+  if (jenis !== "CAC" && jenis !== "BAST" && jenis !== "GR") {
+    return NextResponse.json({ error: 'jenis wajib "CAC", "BAST", atau "GR".' }, { status: 400 });
   }
 
   const [dok] = await db.insert(dokumen).values({

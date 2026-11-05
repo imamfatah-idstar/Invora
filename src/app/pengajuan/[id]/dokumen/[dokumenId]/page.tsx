@@ -1,7 +1,7 @@
 import { db } from "@/db";
 import {
   dokumen, pengajuan, pengajuanDetail, personel, po, poLineItem, userXl,
-  konfirmasi, checkerReview, users, lampiranPengajuan,
+  konfirmasi, checkerReview, users, lampiranPengajuan, grRequest,
 } from "@/db/schema";
 import { eq, desc, and } from "drizzle-orm";
 import { notFound } from "next/navigation";
@@ -13,6 +13,7 @@ import { apakahKlienXl } from "@/lib/klien";
 import BastNonXlView from "./bast-non-xl-view";
 import BastXlView from "./bast-xl-view";
 import CacXlView from "./cac-xl-view";
+import GrXlView from "./gr-xl-view";
 
 function formatRupiah(nilai: string) {
   return "Rp" + Number(nilai).toLocaleString("id-ID", { minimumFractionDigits: 2 });
@@ -21,6 +22,7 @@ function formatRupiah(nilai: string) {
 const LABEL_JENIS: Record<string, string> = {
   CAC: "Dokumen CAC (Konfirmasi Pengajuan Invoicing)",
   BAST: "Berita Acara Serah Terima (BAST)",
+  GR: "Dokumen Good Receipt (BAU Approval)",
 };
 
 export default async function HalamanDokumen({ params }: { params: Promise<{ id: string; dokumenId: string }> }) {
@@ -34,6 +36,7 @@ export default async function HalamanDokumen({ params }: { params: Promise<{ id:
     .select({
       periode: pengajuan.periode, versi: pengajuan.versi,
       keteranganTahap: pengajuan.keteranganTahap,
+      nomorGrSlip: pengajuan.nomorGrSlip,
       nilaiGrDisetujui: pengajuan.nilaiGrDisetujui,
       nomorPo: po.nomorPo, namaProyek: po.namaProyek, nilaiItem: po.nilaiItem,
       namaUserXl: userXl.nama, kontakUserXl: userXl.kontak,
@@ -44,6 +47,15 @@ export default async function HalamanDokumen({ params }: { params: Promise<{ id:
     .innerJoin(userXl, eq(pengajuan.userXlId, userXl.id))
     .where(eq(pengajuan.id, pengajuanId));
   if (!header) notFound();
+
+  const [grReq] = await db
+    .select({
+      namaFileGabungan: grRequest.namaFileGabungan,
+      namaFileBalikanXl: grRequest.namaFileBalikanXl,
+    })
+    .from(grRequest)
+    .where(eq(grRequest.pengajuanId, pengajuanId))
+    .limit(1);
 
   const isKlienXl = apakahKlienXl(header.klien);
 
@@ -121,6 +133,26 @@ export default async function HalamanDokumen({ params }: { params: Promise<{ id:
         defaultFinanceNama="Dewi Ani Mulyakarti"
         defaultFinanceJabatan="Finance Manager"
         dibuatPada={dok.dibuatPada}
+      />
+    );
+  }
+
+  // Jika klien XL dan dokumen adalah GR, gunakan format GR XL resmi (sesuai Good_Receipt.pdf)
+  if (isKlienXl && dok.jenis === "GR") {
+    return (
+      <GrXlView
+        pengajuanId={pengajuanId}
+        dokumenId={dok.id}
+        dokumenVersi={dok.versi}
+        nomorPo={header.nomorPo}
+        namaProyek={header.namaProyek}
+        periode={header.periode}
+        klien={header.klien || "XL Axiata"}
+        nomorGrSlip={header.nomorGrSlip}
+        nilaiGrDisetujui={header.nilaiGrDisetujui}
+        rincian={rincian}
+        dibuatPada={dok.dibuatPada}
+        defaultSowDocument={grReq?.namaFileGabungan || grReq?.namaFileBalikanXl || "7a1a6279-d98e-4b17-ad0e-221bca5a4749.xlsx"}
       />
     );
   }
