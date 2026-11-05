@@ -3,46 +3,17 @@
 import LoginBackground from "@/components/login-background";
 import Logo from "@/components/logo";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 type AkunDemo = {
-  role: "admin" | "checker" | "petugas";
-  judul: string;
+  label: "admin" | "checker" | "input";
   email: string;
-  icon: string;
-  badgeBg: string;
-  badgeColor: string;
-  deskripsi: string;
 };
 
 const DAFTAR_AKUN_DEMO: AkunDemo[] = [
-  {
-    role: "admin",
-    judul: "Super Admin",
-    email: "admin@contoh.local",
-    icon: "🛡️",
-    badgeBg: "rgba(147, 51, 234, 0.12)",
-    badgeColor: "#9333ea",
-    deskripsi: "Kelola akun & hak akses, kalender libur, reset data uji",
-  },
-  {
-    role: "checker",
-    judul: "Checker (Pemeriksa)",
-    email: "checker@contoh.local",
-    icon: "🕵️",
-    badgeBg: "rgba(37, 99, 235, 0.12)",
-    badgeColor: "#2563eb",
-    deskripsi: "Review & setujui pengajuan, verifikasi paket Request GR",
-  },
-  {
-    role: "petugas",
-    judul: "Petugas Input Data",
-    email: "petugas@contoh.local",
-    icon: "👨‍💼",
-    badgeBg: "rgba(234, 36, 42, 0.12)",
-    badgeColor: "#ea242a",
-    deskripsi: "Buat pengajuan, prorata, alokasi Cross PO, cetak CAC/BAST",
-  },
+  { label: "admin", email: "admin@contoh.local" },
+  { label: "checker", email: "checker@contoh.local" },
+  { label: "input", email: "petugas@contoh.local" },
 ];
 
 export default function LoginClient() {
@@ -55,6 +26,18 @@ export default function LoginClient() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleDemoModal, setGoogleDemoModal] = useState(false);
   const [customGoogleEmail, setCustomGoogleEmail] = useState("imam.fatah2@idstar.group");
+  const [demoDropdownOpen, setDemoDropdownOpen] = useState(false);
+  const demoDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (demoDropdownRef.current && !demoDropdownRef.current.contains(event.target as Node)) {
+        setDemoDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Tangkap pesan error dari URL callback (misal penolakan domain bukan @idstar.group)
   useEffect(() => {
@@ -262,83 +245,125 @@ export default function LoginClient() {
           </form>
 
           {/* Pemisah Demo */}
-          <div style={{ display: "flex", alignItems: "center", margin: "22px 0 16px", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", margin: "22px 0 14px", gap: 12 }}>
             <div style={{ flex: 1, height: 1, background: "var(--color-border)" }} />
             <span style={{ fontSize: 12, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              ⚡ Atau 1-Click Demo Login
+              ⚡ 1-Click Demo Login
             </span>
             <div style={{ flex: 1, height: 1, background: "var(--color-border)" }} />
           </div>
 
-          {/* 3 Akun Demo */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {DAFTAR_AKUN_DEMO.map((item) => {
-              const isItemLoading = demoLoading === item.email;
-              return (
-                <button
-                  key={item.role}
-                  type="button"
-                  disabled={loading || Boolean(demoLoading)}
-                  onClick={() => handleDemoLogin(item.email)}
-                  className="login-demo-btn"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "10px 14px",
-                    background: "#ffffff",
-                    border: "1px solid var(--color-border)",
-                    borderRadius: 10,
-                    cursor: "pointer",
-                    textAlign: "left",
-                    transition: "all 0.15s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = item.badgeColor;
-                    e.currentTarget.style.boxShadow = `0 2px 8px ${item.badgeBg}`;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = "var(--color-border)";
-                    e.currentTarget.style.boxShadow = "none";
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1 }}>
-                    <span style={{ fontSize: 20 }}>{item.icon}</span>
-                    <div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ fontWeight: 700, fontSize: 13, color: "#111827" }}>{item.judul}</span>
-                        <span style={{
-                          fontSize: 10,
-                          fontWeight: 700,
-                          background: item.badgeBg,
-                          color: item.badgeColor,
-                          padding: "2px 6px",
-                          borderRadius: 4,
-                          textTransform: "uppercase"
-                        }}>
-                          {item.role}
-                        </span>
-                      </div>
-                      <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 2 }}>
-                        {item.deskripsi}
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: item.badgeColor,
-                    padding: "4px 8px",
-                    borderRadius: 6,
-                    background: item.badgeBg,
-                    flexShrink: 0,
-                    marginLeft: 10
-                  }}>
-                    {isItemLoading ? "Masuk..." : "Masuk →"}
-                  </div>
-                </button>
-              );
-            })}
+          {/* Dropdown Akun Demo */}
+          <div ref={demoDropdownRef} style={{ position: "relative" }}>
+            <button
+              type="button"
+              disabled={loading || Boolean(demoLoading)}
+              onClick={() => setDemoDropdownOpen((prev) => !prev)}
+              style={{
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "10px 14px",
+                background: "#ffffff",
+                border: "1px solid var(--color-border)",
+                borderRadius: 8,
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#374151",
+                cursor: "pointer",
+                transition: "all 0.15s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "var(--color-primary, #ea242a)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "var(--color-border)";
+              }}
+            >
+              <span>{demoLoading ? `Masuk sebagai ${demoLoading}...` : "Pilih Akun Demo"}</span>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                style={{
+                  transform: demoDropdownOpen ? "rotate(180deg)" : "rotate(0deg)",
+                  transition: "transform 0.2s ease",
+                  color: "#6b7280",
+                }}
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+
+            {demoDropdownOpen && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "calc(100% + 6px)",
+                  left: 0,
+                  right: 0,
+                  background: "#ffffff",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: 8,
+                  boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08)",
+                  zIndex: 50,
+                  display: "flex",
+                  flexDirection: "column",
+                  padding: "6px",
+                  gap: "4px",
+                }}
+              >
+                {DAFTAR_AKUN_DEMO.map((item) => {
+                  const isItemLoading = demoLoading === item.email;
+                  return (
+                    <button
+                      key={item.label}
+                      type="button"
+                      disabled={loading || Boolean(demoLoading)}
+                      onClick={() => {
+                        setDemoDropdownOpen(false);
+                        handleDemoLogin(item.email);
+                      }}
+                      style={{
+                        width: "100%",
+                        padding: "10px 14px",
+                        background: isItemLoading ? "#f3f4f6" : "transparent",
+                        border: "none",
+                        borderRadius: 6,
+                        textAlign: "left",
+                        fontSize: 13.5,
+                        fontWeight: 600,
+                        color: "#1f2937",
+                        cursor: "pointer",
+                        transition: "all 0.15s ease",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "#f3f4f6";
+                        e.currentTarget.style.color = "var(--color-primary, #ea242a)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "transparent";
+                        e.currentTarget.style.color = "#1f2937";
+                      }}
+                    >
+                      <span>{item.label}</span>
+                      {isItemLoading && (
+                        <span style={{ fontSize: 11, color: "var(--color-text-muted)" }}>Masuk...</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div style={{ textAlign: "center", marginTop: 16, fontSize: 11, color: "var(--color-text-muted)" }}>
