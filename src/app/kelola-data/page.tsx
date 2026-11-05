@@ -17,7 +17,7 @@ import { db } from "@/db";
 //    kelola-data ini pengecualian eksplisit yang diminta pengguna (bagian 48).
 //  - role petugas (pengguna sehari-hari Data Referensi) tetap bisa akses.
 export default async function HalamanKelolaData() {
-  const user = await wajibRole(["petugas", "admin"]);
+  const user = await wajibRole(["admin"]);
 
   const tabel = { personel, rateCard, po, poLineItem, pemetaanPersonelPo, pengajuan, pengajuanDetail, timesheet, dokumen, lampiranPengajuan, grRequest, grRequestRiwayat, konfirmasi, checkerReview };
   const jumlah: Record<string, number> = {};

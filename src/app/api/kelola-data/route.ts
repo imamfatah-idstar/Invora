@@ -27,13 +27,13 @@ async function jumlahSemuaTabel() {
 }
 
 export async function GET() {
-  const gagal = await wajibRoleApi(["petugas", "admin"]);
+  const gagal = await wajibRoleApi(["admin"]);
   if (gagal) return gagal;
   return NextResponse.json(await jumlahSemuaTabel());
 }
 
 export async function POST(request: NextRequest) {
-  const gagal = await wajibRoleApi(["petugas", "admin"]);
+  const gagal = await wajibRoleApi(["admin"]);
   if (gagal) return gagal;
   const user = await userSaatIni();
 

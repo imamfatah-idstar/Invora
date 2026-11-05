@@ -45,7 +45,7 @@ export default async function Dashboard() {
       deskripsi: "Register emails, assign roles (Data Entry / Checker), activate/deactivate accounts.",
       icon: "👥"
     }] : []),
-    ...(user.role === "petugas" || user.role === "admin" ? [{
+    ...(user.role === "admin" ? [{
       href: "/kelola-data",
       label: "Data Management",
       deskripsi: "Bulk reset test/staging data (Personnel, POs, Rate Cards, Submissions, etc.).",
