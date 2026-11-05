@@ -66,6 +66,8 @@ dev.db
 *.dump
 /*.sql
 !drizzle/*.sql
+/backups/
+/backups/*
 
 # =========================================================================
 # FILE UNGGAHAN USER / OPERASIONAL (Timesheet, scan PO asli, dokumen CAC/BAST)

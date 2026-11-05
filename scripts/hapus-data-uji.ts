@@ -18,11 +18,11 @@ import { db } from "../src/db";
 import {
   reminderLog, pembayaran, grRequestRiwayat, grRequest, lampiranPengajuan, dokumen, checkerReview,
   konfirmasi, timesheet, pengajuanDetail, pengajuan, pemetaanPersonelPo,
-  poLineItem, rateCard, po, personel,
+  poLineItem, rateCard, po, personel, auditLog,
 } from "../src/db/schema";
 
 async function hitungSemua() {
-  const tabel = { reminderLog, pembayaran, grRequestRiwayat, grRequest, lampiranPengajuan, dokumen, checkerReview, konfirmasi, timesheet, pengajuanDetail, pengajuan, pemetaanPersonelPo, poLineItem, rateCard, po, personel };
+  const tabel = { reminderLog, pembayaran, grRequestRiwayat, grRequest, lampiranPengajuan, dokumen, checkerReview, konfirmasi, timesheet, pengajuanDetail, pengajuan, pemetaanPersonelPo, poLineItem, rateCard, po, personel, auditLog };
   const hasil: Record<string, number> = {};
   for (const [nama, t] of Object.entries(tabel)) {
     hasil[nama] = (await db.select().from(t as never)).length;
@@ -43,6 +43,7 @@ async function main() {
   }
 
   console.log("\nMenghapus (child -> parent)...");
+  await db.delete(auditLog);
   await db.delete(reminderLog);
   await db.delete(pembayaran);
   await db.delete(grRequestRiwayat);
@@ -62,7 +63,7 @@ async function main() {
 
   console.log("Selesai. Jumlah baris SESUDAH hapus:");
   console.log(await hitungSemua());
-  console.log("\nTidak disentuh: users, sessions, user_xl, kalender_kerja, audit_log.");
+  console.log("\nTidak disentuh: users, sessions, user_xl, kalender_kerja.");
   process.exit(0);
 }
 
