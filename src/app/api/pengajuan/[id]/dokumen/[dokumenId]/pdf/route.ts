@@ -11,6 +11,12 @@ import { eq, desc, and } from "drizzle-orm";
 import { wajibRoleApi } from "@/lib/require-role-api";
 import { LABEL_LAMPIRAN_BALANCE } from "@/lib/lampiran-label";
 import { apakahKlienXl } from "@/lib/klien";
+import {
+  formatTanggalLengkapIndo,
+  formatTanggalDokumen,
+  formatPeriodeBulan,
+  formatRupiahKoma,
+} from "@/lib/xl-document-helpers";
 
 const LABEL_JENIS: Record<string, string> = {
   CAC: "Dokumen CAC (Konfirmasi Pengajuan Invoicing)",
@@ -63,7 +69,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     .select({
       periode: pengajuan.periode, versi: pengajuan.versi,
       keteranganTahap: pengajuan.keteranganTahap,
-      nomorPo: po.nomorPo, namaProyek: po.namaProyek, namaUserXl: userXl.nama,
+      nilaiGrDisetujui: pengajuan.nilaiGrDisetujui,
+      nomorPo: po.nomorPo, namaProyek: po.namaProyek, nilaiItem: po.nilaiItem,
+      namaUserXl: userXl.nama, kontakUserXl: userXl.kontak,
       klien: po.klien,
       pathFilePoAsli: po.pathFilePoAsli,
     })
@@ -76,11 +84,18 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const isKlienXl = apakahKlienXl(header.klien);
 
   const { searchParams } = new URL(request.url);
-  const pihak1Nama = searchParams.get("pihak1Nama") || header.namaUserXl || "Bpk/Ibu PIC Klien";
-  const pihak1Jabatan = searchParams.get("pihak1Jabatan") || "Project Manager / PIC";
-  const pihak2Nama = searchParams.get("pihak2Nama") || "Aris Munandar";
-  const pihak2Jabatan = searchParams.get("pihak2Jabatan") || "Account Director";
-  const tglDokumen = searchParams.get("tgl") || "21 Oktober 2026";
+  const pihak1Nama = searchParams.get("pihak1Nama") || header.namaUserXl || (isKlienXl ? "Ratna Tri Wulandari" : "Bpk/Ibu PIC Klien");
+  const pihak1Jabatan = searchParams.get("pihak1Jabatan") || header.kontakUserXl || (isKlienXl ? "GM Integration & AI Orchestration" : "Project Manager / PIC");
+  const pihak2Nama = searchParams.get("pihak2Nama") || (isKlienXl ? "Dewi Ani Mulyakarti" : "Aris Munandar");
+  const pihak2Jabatan = searchParams.get("pihak2Jabatan") || (isKlienXl ? "Finance Manager" : "Account Director");
+  const pekerjaan = searchParams.get("pekerjaan") || "Jasa IT";
+  const tglDokumen = searchParams.get("tgl") || formatTanggalDokumen();
+  const termsPayment = searchParams.get("termsPayment") || "9 Months";
+  const contractStatus = searchParams.get("contractStatus") || "Amend Signed";
+  const projectLocation = searchParams.get("projectLocation") || "Headquarter";
+  const locationSap = searchParams.get("locationSap") || "0010";
+  const { periodeFormatted, workCompletedDate } = formatPeriodeBulan(header.periode);
+  const workCompleted = searchParams.get("workCompleted") || workCompletedDate;
 
   const rincian = await db
     .select({
@@ -273,7 +288,317 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     });
   }
 
-  // ---- Halaman 1: sertifikat CAC/BAST XL, digambar langsung dengan pdf-lib ----
+  // Load official images if available
+  const xlLogoPath = path.join(process.cwd(), "public", "xlsmart-logo.png");
+  const idstarStampPath = path.join(process.cwd(), "public", "idstar-stamp.png");
+  const [xlLogoBytes, idstarStampBytes] = await Promise.all([
+    readFile(xlLogoPath).catch(() => null),
+    readFile(idstarStampPath).catch(() => null),
+  ]);
+
+  // =========================================================================
+  // 1. FORMAT BAST KHUSUS XL (MENGIKUTI BAST_PO.pdf)
+  // =========================================================================
+  if (isKlienXl && dok.jenis === "BAST") {
+    const gabungan = await PDFDocument.create();
+    const font = await gabungan.embedFont(StandardFonts.Helvetica);
+    const fontBold = await gabungan.embedFont(StandardFonts.HelveticaBold);
+    const idstarStampImg = idstarStampBytes ? await gabungan.embedPng(idstarStampBytes).catch(() => null) : null;
+
+    const hal1 = gabungan.addPage(PageSizes.A4);
+    const { width: pw, height: ph } = hal1.getSize();
+    const marginX = 65;
+    const tglInfo = formatTanggalLengkapIndo();
+    const teksPeriodeFinal = header.keteranganTahap
+      ? `${periodeFormatted} (${header.keteranganTahap})`
+      : periodeFormatted;
+
+    // Header Kiri
+    let y = ph - 45;
+    hal1.drawText("PT XLSMART Telecom Sejahtera Tbk", { x: marginX, y, size: 10.5, font: fontBold });
+    y -= 14;
+    hal1.drawText("XL Axiata Tower", { x: marginX, y, size: 9, font });
+    y -= 12;
+    hal1.drawText("Jl. HR Rasuna Said Blok X5 Kav.11-12", { x: marginX, y, size: 9, font });
+    y -= 12;
+    hal1.drawText("Kuningan Timur, Setiabudi, Jakarta Selatan", { x: marginX, y, size: 9, font });
+    y -= 12;
+    hal1.drawText("DKI Jakarta Raya 12950 Indonesia", { x: marginX, y, size: 9, font });
+
+    // Judul Dokumen (Tengah)
+    y -= 38;
+    const judulBast = "BERITA ACARA SERAH TERIMA";
+    const judulBastW = fontBold.widthOfTextAtSize(judulBast, 14);
+    hal1.drawText(judulBast, { x: (pw - judulBastW) / 2, y, size: 14, font: fontBold });
+    y -= 16;
+    const dateOfCreation = `Date of Creation : ${tglDokumen}`;
+    const docW = font.widthOfTextAtSize(dateOfCreation, 10);
+    hal1.drawText(dateOfCreation, { x: (pw - docW) / 2, y, size: 10, font });
+
+    // Paragraf Pembuka
+    y -= 32;
+    hal1.drawText(`Pada hari ini ${tglInfo.hari}, tanggal ${tglInfo.tglTerbilang}, bulan ${tglInfo.bulan}, tahun ${tglInfo.tahunTerbilang},`, {
+      x: marginX, y, size: 9.5, font,
+    });
+    y -= 14;
+    hal1.drawText("kami yang bertandatangan di bawah ini :", { x: marginX, y, size: 9.5, font });
+
+    // Pihak 1 (XL)
+    y -= 24;
+    hal1.drawText("1.", { x: marginX + 15, y, size: 9.5, font: fontBold });
+    hal1.drawText(pihak1Nama, { x: marginX + 35, y, size: 9.5, font: fontBold });
+    hal1.drawText(`: ${pihak1Jabatan}`, { x: marginX + 185, y, size: 9.5, font });
+    y -= 14;
+    hal1.drawText("PT XL Smart Telecom Sejahtera Tbk", { x: marginX + 192, y, size: 9.5, font });
+    y -= 13;
+    hal1.drawText("Jalan HR Rasuna Said X5 Kav. 11-12, Kuningan", { x: marginX + 192, y, size: 9.5, font });
+    y -= 13;
+    hal1.drawText("Timur, Setiabudi, Jakarta Selatan, 12950", { x: marginX + 192, y, size: 9.5, font });
+
+    // Pihak 2 (IDStar)
+    y -= 20;
+    hal1.drawText("2.", { x: marginX + 15, y, size: 9.5, font: fontBold });
+    hal1.drawText(pihak2Nama, { x: marginX + 35, y, size: 9.5, font: fontBold });
+    hal1.drawText(`: ${pihak2Jabatan} PT ID Star Teknologi`, { x: marginX + 185, y, size: 9.5, font });
+    y -= 14;
+    hal1.drawText("Wisma Staco Lt 7, Jalan Casablanca Kav. 18 Menteng", { x: marginX + 192, y, size: 9.5, font });
+    y -= 13;
+    hal1.drawText("Dalam Tebet, Jakarta Selatan 12870", { x: marginX + 192, y, size: 9.5, font });
+
+    // Pemeriksaan Pekerjaan
+    y -= 26;
+    hal1.drawText("Telah melaksanakan pemeriksaan atas pelaksanaan dari :", { x: marginX, y, size: 9.5, font });
+    y -= 18;
+    hal1.drawText("Pekerjaan", { x: marginX, y, size: 9.5, font });
+    hal1.drawText(`: ${pekerjaan}`, { x: marginX + 185, y, size: 9.5, font });
+    y -= 14;
+    hal1.drawText("No. PO", { x: marginX, y, size: 9.5, font });
+    hal1.drawText(`: ${header.nomorPo}`, { x: marginX + 185, y, size: 9.5, font });
+
+    // Pernyataan / Deklarasi
+    y -= 26;
+    hal1.drawText(`Dengan ini menyatakan dengan sebenarnya bahwa selama pelaksanaan periode ${teksPeriodeFinal}.`, {
+      x: marginX, y, size: 9.5, font,
+    });
+    y -= 18;
+    hal1.drawText("-", { x: marginX, y, size: 9.5, font });
+    hal1.drawText("Supplier yang bersangkutan telah menyelesaikan pekerjaan sesuai dengan yang diisyaratkan", {
+      x: marginX + 14, y, size: 9.5, font,
+    });
+    y -= 14;
+    hal1.drawText("-", { x: marginX, y, size: 9.5, font });
+    hal1.drawText("Selama masa pelaksanaan tidak pernah melakukan kelalaian", {
+      x: marginX + 14, y, size: 9.5, font,
+    });
+
+    // Penutup
+    y -= 24;
+    hal1.drawText("Demikian Berita Acara ini dibuat dengan sebenarnya dan dalam rangkap 2 (dua)", {
+      x: marginX, y, size: 9.5, font,
+    });
+    y -= 13;
+    hal1.drawText("untuk dapat digunakan sebagaimana mestinya.", { x: marginX, y, size: 9.5, font });
+
+    // Tanda Tangan Side-by-Side
+    y -= 54;
+    const ttdKiriX = marginX + 10;
+    const ttdKananX = marginX + 270;
+    hal1.drawText("PT IDStar Teknologi", { x: ttdKiriX, y, size: 10, font: fontBold });
+    hal1.drawText("PT XLSMART Telecom Sejahtera Tbk", { x: ttdKananX, y, size: 10, font: fontBold });
+
+    // Stampel IDStar
+    if (idstarStampImg) {
+      hal1.drawImage(idstarStampImg, {
+        x: ttdKiriX,
+        y: y - 48,
+        width: 105,
+        height: 33,
+      });
+    }
+
+    y -= 62;
+    hal1.drawText(pihak2Nama, { x: ttdKiriX, y, size: 9.5, font: fontBold });
+    hal1.drawText(pihak1Nama, { x: ttdKananX, y, size: 9.5, font: fontBold });
+    // Underline nama
+    const p2W = fontBold.widthOfTextAtSize(pihak2Nama, 9.5);
+    const p1W = fontBold.widthOfTextAtSize(pihak1Nama, 9.5);
+    hal1.drawLine({ start: { x: ttdKiriX, y: y - 2 }, end: { x: ttdKiriX + p2W, y: y - 2 }, thickness: 0.75, color: rgb(0, 0, 0) });
+    hal1.drawLine({ start: { x: ttdKananX, y: y - 2 }, end: { x: ttdKananX + p1W, y: y - 2 }, thickness: 0.75, color: rgb(0, 0, 0) });
+
+    y -= 13;
+    hal1.drawText(pihak2Jabatan, { x: ttdKiriX, y, size: 8.5, font });
+    hal1.drawText(pihak1Jabatan, { x: ttdKananX, y, size: 8.5, font });
+
+    // Footer
+    hal1.drawText("Confidential and Proprietary to PT XLSMART Telecom Sejahtera Tbk", {
+      x: marginX, y: 45, size: 7.5, font, color: rgb(0.35, 0.35, 0.35),
+    });
+
+    // Lampiran Balance PO (Halaman 2)
+    if (lampiranBalance?.pathFile) {
+      await tempelFile(gabungan, lampiranBalance.pathFile).catch(() => {});
+    }
+
+    // Dokumen PO Asli (Halaman 3+)
+    if (header.pathFilePoAsli) {
+      await tempelFile(gabungan, header.pathFilePoAsli).catch(() => {});
+    }
+
+    const pdfBytes = await gabungan.save();
+    return new NextResponse(Buffer.from(pdfBytes), {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `inline; filename="BAST-XL-${header.nomorPo}-${header.periode}.pdf"`,
+      },
+    });
+  }
+
+  // =========================================================================
+  // 2. FORMAT CAC KHUSUS XL (MENGIKUTI CAC_PO.pdf)
+  // =========================================================================
+  if (isKlienXl && dok.jenis === "CAC") {
+    const gabungan = await PDFDocument.create();
+    const font = await gabungan.embedFont(StandardFonts.Helvetica);
+    const fontBold = await gabungan.embedFont(StandardFonts.HelveticaBold);
+    const xlLogoImg = xlLogoBytes ? await gabungan.embedPng(xlLogoBytes).catch(() => null) : null;
+    const idstarStampImg = idstarStampBytes ? await gabungan.embedPng(idstarStampBytes).catch(() => null) : null;
+
+    const hal1 = gabungan.addPage(PageSizes.A4);
+    const { width: pw, height: ph } = hal1.getSize();
+    const marginX = 70;
+    let y = ph - 50;
+
+    // Logo XLSMART di kanan atas
+    if (xlLogoImg) {
+      hal1.drawImage(xlLogoImg, {
+        x: pw - marginX - 115,
+        y: y - 10,
+        width: 115,
+        height: 26,
+      });
+    }
+
+    // Judul Dokumen (Tengah)
+    y -= 36;
+    const judulCac = "COMMERCIAL ACCEPTANCE CERTIFICATE";
+    const judulCacW = fontBold.widthOfTextAtSize(judulCac, 13.5);
+    hal1.drawText(judulCac, { x: (pw - judulCacW) / 2, y, size: 13.5, font: fontBold });
+
+    // Grid Metadata
+    y -= 32;
+    const xKey = marginX;
+    const xVal = marginX + 165;
+    const barisMeta: [string, string][] = [
+      ["Date of Creation", `: ${tglDokumen}`],
+      ["Supplier Name", ": PT. IDStar Cipta Teknologi"],
+      ["Status of Acceptance", ": 100 %"],
+      ["Project Name", `: ${header.namaProyek}`],
+      ["Contract Status", `: ${contractStatus}`],
+      ["Terms Payment", `: ${termsPayment}`],
+      ["Purchase Order", `: ${header.nomorPo}`],
+      ["Project Location", `: ${projectLocation}`],
+      ["Functional Location in SAP", `: ${locationSap}`],
+      ["Work Completed", `: ${workCompleted}`],
+      ["PO Value", `: ${formatRupiahKoma(header.nilaiItem)}`],
+      ["GR Value", `: ${formatRupiahKoma(header.nilaiGrDisetujui || total)}`],
+      ["Type of Project", ": Services"],
+      ["Delivery Date (for Material)", ":"],
+      ["Receipt Date (for Material)", ":"],
+    ];
+
+    for (const [k, v] of barisMeta) {
+      hal1.drawText(k, { x: xKey, y, size: 9, font });
+      hal1.drawText(v, { x: xVal, y, size: 9, font });
+      y -= 13.5;
+    }
+
+    // Certification Clause
+    y -= 16;
+    hal1.drawText("Certification:", { x: marginX, y, size: 9, font: fontBold });
+    // Garis bawah Certification:
+    const certW = fontBold.widthOfTextAtSize("Certification:", 9);
+    hal1.drawLine({ start: { x: marginX, y: y - 1.5 }, end: { x: marginX + certW, y: y - 1.5 }, thickness: 0.75, color: rgb(0, 0, 0) });
+
+    y -= 14;
+    hal1.drawText("This is to certify that PT XLSMART Telecom Sejahtera Tbk has accepted the Product or Services", {
+      x: marginX, y, size: 8.5, font,
+    });
+    y -= 11.5;
+    hal1.drawText("as identified in Purchase Order referenced above.", {
+      x: marginX, y, size: 8.5, font,
+    });
+
+    y -= 16;
+    hal1.drawText("With the approval by both party, The Supplier entitle to issue invoice starting from the date of", {
+      x: marginX, y, size: 8.5, font,
+    });
+    y -= 11.5;
+    hal1.drawText("vendor approved date and PT XLSMART Telecom Sejahtera Tbk will release payment as stated", {
+      x: marginX, y, size: 8.5, font,
+    });
+    y -= 11.5;
+    hal1.drawText("in the Value of GR.", {
+      x: marginX, y, size: 8.5, font,
+    });
+
+    // Dual Signatures matching CAC_PO.pdf
+    y -= 42;
+    const xLine = marginX + 230;
+
+    // Supplier Signatory (Dewi Ani Mulyakarti)
+    hal1.drawText(pihak2Nama, { x: marginX, y, size: 9, font: fontBold });
+    hal1.drawText("_______________________________", { x: xLine, y, size: 9, font });
+    // Embed Stamp above date
+    if (idstarStampImg) {
+      hal1.drawImage(idstarStampImg, {
+        x: xLine + 40,
+        y: y - 2,
+        width: 80,
+        height: 25,
+      });
+    }
+    y -= 13;
+    hal1.drawText(pihak2Jabatan, { x: marginX, y, size: 8.5, font });
+    hal1.drawText(`Date: ${tglDokumen}`, { x: xLine, y, size: 8.5, font });
+
+    // Client Signatory (Ratna Tri Wulandari)
+    y -= 34;
+    hal1.drawText(pihak1Nama, { x: marginX, y, size: 9, font: fontBold });
+    hal1.drawText("_______________________________", { x: xLine, y, size: 9, font });
+    y -= 13;
+    hal1.drawText(pihak1Jabatan, { x: marginX, y, size: 8.5, font });
+    hal1.drawText("Date:", { x: xLine, y, size: 8.5, font });
+
+    // Footer
+    hal1.drawText("Confidential and Proprietary to PT XL AXIATA Tbk.", {
+      x: marginX, y: 48, size: 7.5, font, color: rgb(0.35, 0.35, 0.35),
+    });
+    hal1.drawText("This slip can be used as supporting document for invoice submission to XL.", {
+      x: marginX, y: 38, size: 7.5, font, color: rgb(0.35, 0.35, 0.35),
+    });
+
+    // Lampiran Balance PO (Halaman 2)
+    if (lampiranBalance?.pathFile) {
+      await tempelFile(gabungan, lampiranBalance.pathFile).catch(() => {});
+    }
+
+    // Dokumen PO Asli (Halaman 3+)
+    if (header.pathFilePoAsli) {
+      await tempelFile(gabungan, header.pathFilePoAsli).catch(() => {});
+    }
+
+    const pdfBytes = await gabungan.save();
+    return new NextResponse(Buffer.from(pdfBytes), {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `inline; filename="CAC-XL-${header.nomorPo}-${header.periode}.pdf"`,
+      },
+    });
+  }
+
+  // =========================================================================
+  // 3. FALLBACK / FORMAT STANDAR LAINNYA
+  // =========================================================================
   const gabungan = await PDFDocument.create();
   const font = await gabungan.embedFont(StandardFonts.Helvetica);
   const fontBold = await gabungan.embedFont(StandardFonts.HelveticaBold);

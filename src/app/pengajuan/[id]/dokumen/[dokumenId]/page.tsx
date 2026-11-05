@@ -11,6 +11,8 @@ import Logo from "@/components/logo";
 import { LABEL_LAMPIRAN_BALANCE } from "@/lib/lampiran-label";
 import { apakahKlienXl } from "@/lib/klien";
 import BastNonXlView from "./bast-non-xl-view";
+import BastXlView from "./bast-xl-view";
+import CacXlView from "./cac-xl-view";
 
 function formatRupiah(nilai: string) {
   return "Rp" + Number(nilai).toLocaleString("id-ID", { minimumFractionDigits: 2 });
@@ -32,7 +34,9 @@ export default async function HalamanDokumen({ params }: { params: Promise<{ id:
     .select({
       periode: pengajuan.periode, versi: pengajuan.versi,
       keteranganTahap: pengajuan.keteranganTahap,
-      nomorPo: po.nomorPo, namaProyek: po.namaProyek, namaUserXl: userXl.nama,
+      nilaiGrDisetujui: pengajuan.nilaiGrDisetujui,
+      nomorPo: po.nomorPo, namaProyek: po.namaProyek, nilaiItem: po.nilaiItem,
+      namaUserXl: userXl.nama, kontakUserXl: userXl.kontak,
       klien: po.klien,
     })
     .from(pengajuan)
@@ -78,6 +82,48 @@ export default async function HalamanDokumen({ params }: { params: Promise<{ id:
     .orderBy(desc(checkerReview.waktu)).limit(1);
 
   const total = rincian.reduce((acc, r) => acc + Number(r.hasilHitung), 0);
+
+  // Jika klien XL dan dokumen adalah BAST, gunakan format BAST XL resmi (sesuai BAST_PO.pdf)
+  if (isKlienXl && dok.jenis === "BAST") {
+    return (
+      <BastXlView
+        pengajuanId={pengajuanId}
+        dokumenId={dok.id}
+        dokumenVersi={dok.versi}
+        nomorPo={header.nomorPo}
+        namaProyek={header.namaProyek}
+        periode={header.periode}
+        keteranganTahap={header.keteranganTahap}
+        defaultUserXlNama={header.namaUserXl}
+        defaultUserXlJabatan={header.kontakUserXl || "GM Integration & AI Orchestration"}
+        defaultFinanceNama="Dewi Ani Mulyakarti"
+        defaultFinanceJabatan="Finance Manager"
+        defaultPekerjaan="Jasa IT"
+        dibuatPada={dok.dibuatPada}
+      />
+    );
+  }
+
+  // Jika klien XL dan dokumen adalah CAC, gunakan format CAC XL resmi (sesuai CAC_PO.pdf)
+  if (isKlienXl && dok.jenis === "CAC") {
+    return (
+      <CacXlView
+        pengajuanId={pengajuanId}
+        dokumenId={dok.id}
+        dokumenVersi={dok.versi}
+        nomorPo={header.nomorPo}
+        namaProyek={header.namaProyek}
+        periode={header.periode}
+        poValue={header.nilaiItem}
+        grValue={header.nilaiGrDisetujui || total}
+        defaultUserXlNama={header.namaUserXl}
+        defaultUserXlJabatan={header.kontakUserXl || "GM Integration & AI Orchestration"}
+        defaultFinanceNama="Dewi Ani Mulyakarti"
+        defaultFinanceJabatan="Finance Manager"
+        dibuatPada={dok.dibuatPada}
+      />
+    );
+  }
 
   // Jika klien Non-XL dan dokumen adalah BAST, gunakan format BAST Non-XL khusus (1 halaman, klausul resmi 2 pihak)
   if (!isKlienXl && dok.jenis === "BAST") {
