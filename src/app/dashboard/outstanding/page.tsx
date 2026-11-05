@@ -136,18 +136,18 @@ export default async function HalamanOutstanding() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16 }}>
           <div>
             <h1 style={{ margin: "4px 0 6px", fontSize: 24, fontWeight: 800 }}>
-              Monitoring Outstanding Invoice &amp; Aging Schedule
+              Outstanding Invoices &amp; Aging Schedule
             </h1>
             <p className="subtitle" style={{ margin: 0, fontSize: 14 }}>
-              Pantau status piutang berjalan, umur penagihan, jadwal jatuh tempo klien, dan peringatan dini keterlambatan pembayaran.
+              Monitor pending receivables, aging buckets, client payment due dates, and early delay warnings.
             </p>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
             <a href="/pengajuan" className="btn">
-              📋 Pengajuan
+              📋 Submissions
             </a>
             <a href="/summary-po" className="btn">
-              📊 Summary PO
+              📊 PO Summary
             </a>
           </div>
         </div>

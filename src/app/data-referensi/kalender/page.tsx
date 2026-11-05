@@ -5,9 +5,9 @@ import FormTambahKalender from "./kalender-form";
 import TombolHapus from "./hapus-button";
 
 const LABEL_TIPE: Record<string, string> = {
-  kerja: "Hari kerja (override)",
-  libur_nasional: "Libur nasional",
-  cuti_bersama: "Cuti bersama",
+  kerja: "Working Day (Override)",
+  libur_nasional: "National Holiday",
+  cuti_bersama: "Collective Leave",
 };
 
 export default async function HalamanKalender() {
@@ -15,25 +15,25 @@ export default async function HalamanKalender() {
 
   return (
     <div>
-      <h1>Kalender Kerja</h1>
+      <h1>Working Calendar</h1>
       <p className="subtitle">
-        Sabtu &amp; Minggu otomatis dianggap hari nonkerja oleh mesin perhitungan —
-        di sini Anda hanya perlu menandai <b>pengecualian</b>: libur nasional, cuti bersama, atau override hari kerja.
+        Saturdays &amp; Sundays are automatically treated as non-working days by the calculation engine —
+        only register <b>exceptions</b> here: national holidays, collective leave, or working day overrides.
       </p>
       <FormTambahKalender />
       <div className="table-wrap">
         <table>
-          <thead><tr><th>Tanggal</th><th>Tipe</th><th>Keterangan</th><th></th></tr></thead>
+          <thead><tr><th>Date</th><th>Type</th><th>Description</th><th></th></tr></thead>
           <tbody>
             {daftar.map((k) => (
               <tr key={k.tanggal}>
                 <td>{k.tanggal}</td>
                 <td>{LABEL_TIPE[k.tipe] ?? k.tipe}</td>
                 <td>{k.keterangan ?? "-"}</td>
-                <td><TombolHapus url={`/api/kalender/${k.tanggal}`} konfirmasi={`Hapus entri kalender ${k.tanggal}?`} /></td>
+                <td><TombolHapus url={`/api/kalender/${k.tanggal}`} konfirmasi={`Delete calendar entry ${k.tanggal}?`} /></td>
               </tr>
             ))}
-            {daftar.length === 0 && <tr><td colSpan={4} className="table-empty">Belum ada data.</td></tr>}
+            {daftar.length === 0 && <tr><td colSpan={4} className="table-empty">No records found.</td></tr>}
           </tbody>
         </table>
       </div>

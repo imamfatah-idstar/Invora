@@ -37,23 +37,23 @@ export default function InputTagihanTahap({
   return (
     <div>
       <div className="alert alert-warning">
-        PO ini bertipe <b>tagihan tahap</b> — nilai tidak dihitung otomatis. Isi nominal tagihan tiap personel
-        untuk tahap ini (kosongkan kalau personel tidak ditagihkan di pengajuan ini).
+        This PO uses <b>milestone / stage billing</b> — values are not calculated automatically. Enter billing amounts for each personnel
+        for this milestone (leave blank if personnel is not billed in this submission).
       </div>
       <div className="toolbar">
         <div className="field" style={{ minWidth: 280 }}>
-          <label>Keterangan tahap</label>
+          <label>Milestone / Stage description</label>
           <input
             value={keterangan}
             onChange={(e) => onKeterangan(e.target.value)}
-            placeholder='cth. "Tahap I (50%)"'
+            placeholder='e.g. "Phase I (50%)"'
           />
         </div>
       </div>
       <div className="table-wrap">
         <table>
           <thead><tr>
-            <th>Personel</th><th>Rate card (acuan)</th><th>Nilai tagihan tahap ini (Rp, sebelum PPN)</th>
+            <th>Personnel</th><th>Rate card (reference)</th><th>Milestone billing amount (Rp, before VAT)</th>
           </tr></thead>
           <tbody>
             {baris.map((b) => (
@@ -63,7 +63,7 @@ export default function InputTagihanTahap({
                 <td>
                   <input
                     inputMode="decimal"
-                    placeholder="cth 25000000.00"
+                    placeholder="e.g. 25000000.00"
                     value={nilai[b.personelId] ?? ""}
                     onChange={(e) => onNilai(b.personelId, e.target.value)}
                   />
@@ -71,13 +71,13 @@ export default function InputTagihanTahap({
               </tr>
             ))}
             {baris.length === 0 && (
-              <tr><td colSpan={3} className="table-empty">Tidak ada personel terpetakan ke PO ini untuk periode tersebut.</td></tr>
+              <tr><td colSpan={3} className="table-empty">No personnel mapped to this PO for the selected period.</td></tr>
             )}
           </tbody>
         </table>
       </div>
       <p className="card" style={{ display: "inline-block", padding: "10px 16px", fontSize: 15 }}>
-        Total tahap ini: <b>{formatRupiah(String(totalNilaiTahap(nilai)))}</b>
+        Total for this milestone: <b>{formatRupiah(String(totalNilaiTahap(nilai)))}</b>
       </p>
     </div>
   );

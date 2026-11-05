@@ -22,7 +22,7 @@ export function evaluasiSelisihGr(nilaiPengajuan: string | number, nilaiGrDisetu
       nilaiGrDisetujui: null,
       selisih: null,
       kategori: "belum_dicatat",
-      keterangan: "Nilai GR disetujui belum dicatat oleh Petugas.",
+      keterangan: "Approved GR value has not been recorded yet.",
     };
   }
 
@@ -35,7 +35,7 @@ export function evaluasiSelisihGr(nilaiPengajuan: string | number, nilaiGrDisetu
       nilaiGrDisetujui: grDec.toFixed(2),
       selisih: "0.00",
       kategori: "impas",
-      keterangan: "Nilai GR disetujui sama persis dengan nilai pengajuan (Impas / 100% Match).",
+      keterangan: "Approved GR matches submission amount exactly (Balanced / 100% Match).",
     };
   }
 
@@ -45,7 +45,7 @@ export function evaluasiSelisihGr(nilaiPengajuan: string | number, nilaiGrDisetu
       nilaiGrDisetujui: grDec.toFixed(2),
       selisih: selisihDec.toFixed(2),
       kategori: "kekurangan_gr",
-      keterangan: `Kekurangan GR: Rp${Number(selisihDec.toFixed(2)).toLocaleString("id-ID")} akan otomatis ditambahkan ke pengajuan berikutnya.`,
+      keterangan: `GR Under-delivery: Rp${Number(selisihDec.toFixed(2)).toLocaleString("id-ID")} will be automatically added to the next submission.`,
     };
   }
 
@@ -54,7 +54,7 @@ export function evaluasiSelisihGr(nilaiPengajuan: string | number, nilaiGrDisetu
     nilaiGrDisetujui: grDec.toFixed(2),
     selisih: selisihDec.toFixed(2),
     kategori: "kelebihan_gr",
-    keterangan: `Kelebihan GR: Rp${Number(selisihDec.abs().toFixed(2)).toLocaleString("id-ID")} akan otomatis dipotongkan dari pengajuan berikutnya.`,
+    keterangan: `GR Surplus: Rp${Number(selisihDec.abs().toFixed(2)).toLocaleString("id-ID")} will be automatically deducted from the next submission.`,
   };
 }
 

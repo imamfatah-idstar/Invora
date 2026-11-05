@@ -59,7 +59,7 @@ export default function TabelPersonel({ daftar }: { daftar: BarisPersonel[] }) {
               <th style={{ width: 28 }}>
                 <input type="checkbox" checked={terpilih.size === daftarUrut.length && daftarUrut.length > 0} onChange={toggleSemua} />
               </th>
-              <Th label="Nama" k="nama" />
+              <Th label="Name" k="nama" />
               <Th label="Status" k="status" />
               <th></th>
             </tr>
@@ -69,15 +69,15 @@ export default function TabelPersonel({ daftar }: { daftar: BarisPersonel[] }) {
               <tr key={p.id}>
                 <td><input type="checkbox" checked={terpilih.has(p.id)} onChange={() => toggle(p.id)} /></td>
                 <td>{p.nama}</td>
-                <td><span className={`badge ${p.status === "aktif" ? "badge-siap_diajukan" : "badge-draft"}`}>{p.status}</span></td>
+                <td><span className={`badge ${p.status === "aktif" ? "badge-siap_diajukan" : "badge-draft"}`}>{p.status === "aktif" ? "Active" : "Inactive"}</span></td>
                 <td style={{ display: "flex", gap: 8 }}>
                   <a href={`/data-referensi/personel/${p.id}/edit`} className="btn-text">Edit</a>
-                  <TombolHapus url={`/api/personel/${p.id}`} konfirmasi={`Hapus personel "${p.nama}"?`} />
+                  <TombolHapus url={`/api/personel/${p.id}`} konfirmasi={`Delete personnel "${p.nama}"?`} />
                 </td>
               </tr>
             ))}
             {daftarUrut.length === 0 && (
-              <tr><td colSpan={4} className="table-empty">Belum ada data.</td></tr>
+              <tr><td colSpan={4} className="table-empty">No records found.</td></tr>
             )}
           </tbody>
         </table>

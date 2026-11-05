@@ -10,7 +10,7 @@ export default function FormChecker({ pengajuanId }: { pengajuanId: number }) {
 
   async function kirim(hasil: "siap_diajukan" | "perlu_revisi") {
     if (hasil === "perlu_revisi" && !catatan.trim()) {
-      setError("Isi catatan alasan revisi terlebih dahulu.");
+      setError("Please provide revision notes first.");
       return;
     }
     setLoading(true); setError(null);
@@ -20,15 +20,15 @@ export default function FormChecker({ pengajuanId }: { pengajuanId: number }) {
       body: JSON.stringify({ hasil, catatan }),
     });
     setLoading(false);
-    if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Gagal mengirim hasil pemeriksaan."); return; }
+    if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Failed to submit review decision."); return; }
     router.refresh();
   }
 
   return (
     <div className="card" style={{ maxWidth: 480 }}>
-      <h3 style={{ marginTop: 0 }}>Pemeriksaan Checker</h3>
+      <h3 style={{ marginTop: 0 }}>Checker Review</h3>
       <div className="field">
-        <label>Catatan (wajib kalau meminta revisi)</label>
+        <label>Notes (required when requesting revision)</label>
         <textarea
           value={catatan}
           onChange={(e) => setCatatan(e.target.value)}
@@ -36,8 +36,8 @@ export default function FormChecker({ pengajuanId }: { pengajuanId: number }) {
         />
       </div>
       <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-        <button onClick={() => kirim("siap_diajukan")} disabled={loading} className="btn btn-primary">Setujui — Siap Diajukan</button>
-        <button onClick={() => kirim("perlu_revisi")} disabled={loading} className="btn btn-danger">Minta Revisi</button>
+        <button onClick={() => kirim("siap_diajukan")} disabled={loading} className="btn btn-primary">Approve — Ready to Submit</button>
+        <button onClick={() => kirim("perlu_revisi")} disabled={loading} className="btn btn-danger">Request Revision</button>
       </div>
       {error && <div className="alert alert-danger" style={{ marginTop: 10 }}>{error}</div>}
     </div>

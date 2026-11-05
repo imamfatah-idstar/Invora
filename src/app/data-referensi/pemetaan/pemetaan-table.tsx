@@ -74,11 +74,11 @@ export default function TabelPemetaan({ daftar }: { daftar: BarisPemetaan[] }) {
             <th style={{ width: 28 }}>
               <input type="checkbox" checked={terpilih.size === daftarUrut.length && daftarUrut.length > 0} onChange={toggleSemua} />
             </th>
-            <Th label="Personel" k="namaPersonel" />
-            <Th label="PO" k="nomorPo" />
+            <Th label="Personnel" k="namaPersonel" />
+            <Th label="PO No." k="nomorPo" />
             <th>PO Line</th>
-            <Th label="Berlaku Dari" k="berlakuDari" />
-            <Th label="Berlaku Sampai" k="berlakuSampai" />
+            <Th label="Valid From" k="berlakuDari" />
+            <Th label="Valid Until" k="berlakuSampai" />
             <th></th>
           </tr></thead>
           <tbody>
@@ -89,11 +89,11 @@ export default function TabelPemetaan({ daftar }: { daftar: BarisPemetaan[] }) {
                 <td>{m.nomorPo}</td>
                 <td>{m.poLineText ? `Line ${m.poLineNomor} — ${m.poLineText}` : "-"}</td>
                 <td>{m.berlakuDari}</td>
-                <td>{m.berlakuSampai ?? "masih berlaku"}</td>
-                <td><TombolHapus url={`/api/pemetaan/${m.id}`} konfirmasi="Hapus pemetaan ini?" /></td>
+                <td>{m.berlakuSampai ?? "Ongoing"}</td>
+                <td><TombolHapus url={`/api/pemetaan/${m.id}`} konfirmasi="Delete this mapping?" /></td>
               </tr>
             ))}
-            {daftarUrut.length === 0 && <tr><td colSpan={7} className="table-empty">Belum ada data.</td></tr>}
+            {daftarUrut.length === 0 && <tr><td colSpan={7} className="table-empty">No records found.</td></tr>}
           </tbody>
         </table>
       </div>

@@ -249,21 +249,21 @@ export default function OutstandingView({
   // Export CSV
   function unduhCsv() {
     const headers = [
-      "No Invoice",
-      "No Faktur Pajak",
-      "Klien",
-      "No PO",
-      "Nama Proyek",
-      "Periode",
-      "Tanggal Submit",
-      "Jatuh Tempo (TOP)",
-      "Umur (Hari)",
-      "Keterlambatan (Hari)",
-      "Kategori Aging",
+      "Invoice No",
+      "Tax Invoice No",
+      "Client",
+      "PO No",
+      "Project Name",
+      "Period",
+      "Submit Date",
+      "Due Date (TOP)",
+      "Age (Days)",
+      "Overdue (Days)",
+      "Aging Category",
       "DPP (Rp)",
-      "PPN (Rp)",
-      "Total Tagihan (Rp)",
-      "Sisa Piutang (Rp)",
+      "VAT (Rp)",
+      "Total Amount (Rp)",
+      "Outstanding Balance (Rp)",
     ];
 
     const rows = filteredItems.map((item) => [
@@ -317,7 +317,7 @@ export default function OutstandingView({
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text-muted)" }}>
-              TOTAL PIUTANG OUTSTANDING
+              TOTAL OUTSTANDING RECEIVABLES
             </span>
             <span style={{ fontSize: 18 }}>💼</span>
           </div>
@@ -325,7 +325,7 @@ export default function OutstandingView({
             {formatRupiah(summary.totalPiutang)}
           </div>
           <div style={{ fontSize: 12.5, color: "var(--color-text-muted)" }}>
-            <b>{summary.totalInvoiceCount}</b> invoice belum lunas
+            <b>{summary.totalInvoiceCount}</b> unpaid invoice(s)
           </div>
         </div>
 
@@ -342,7 +342,7 @@ export default function OutstandingView({
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text-muted)" }}>
-              TOTAL OVERDUE (LEWAT JATUH TEMPO)
+              TOTAL OVERDUE (PAST DUE DATE)
             </span>
             <span style={{ fontSize: 18 }}>⚠️</span>
           </div>
@@ -350,7 +350,7 @@ export default function OutstandingView({
             {formatRupiah(summary.totalOverdue)}
           </div>
           <div style={{ fontSize: 12.5, color: "#b91c1c" }}>
-            <b>{summary.overdueCount}</b> invoice perlu penagihan intensif
+            <b>{summary.overdueCount}</b> invoice(s) require active follow-up
           </div>
         </div>
 
@@ -367,7 +367,7 @@ export default function OutstandingView({
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text-muted)" }}>
-              JATUH TEMPO SEGERA (H-7)
+              DUE SOON (WITHIN 7 DAYS)
             </span>
             <span style={{ fontSize: 18 }}>⏳</span>
           </div>
@@ -375,7 +375,7 @@ export default function OutstandingView({
             {formatRupiah(summary.dueSoonNominal)}
           </div>
           <div style={{ fontSize: 12.5, color: "var(--color-text-muted)" }}>
-            <b>{summary.dueSoonCount}</b> invoice jatuh tempo minggu ini
+            <b>{summary.dueSoonCount}</b> invoice(s) due this week
           </div>
         </div>
 
@@ -392,15 +392,15 @@ export default function OutstandingView({
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text-muted)" }}>
-              RATA-RATA UMUR PIUTANG (DSO)
+              AVERAGE RECEIVABLE AGE (DSO)
             </span>
             <span style={{ fontSize: 18 }}>⏱️</span>
           </div>
           <div style={{ fontSize: 24, fontWeight: 800, color: "#065f46" }}>
-            {summary.rataRataUmur} <span style={{ fontSize: 15, fontWeight: 500 }}>Hari</span>
+            {summary.rataRataUmur} <span style={{ fontSize: 15, fontWeight: 500 }}>Days</span>
           </div>
           <div style={{ fontSize: 12.5, color: "var(--color-text-muted)" }}>
-            Term of Payment (TOP): <b>{topHari} Hari</b>
+            Term of Payment (TOP): <b>{topHari} Days</b>
           </div>
         </div>
       </div>
@@ -410,10 +410,10 @@ export default function OutstandingView({
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
           <div>
             <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>
-              Distribusi Umur Piutang (Aging Schedule Breakdown)
+              Aging Schedule Breakdown
             </h3>
             <p className="subtitle" style={{ margin: "4px 0 0", fontSize: 13 }}>
-              Klasifikasi tagihan berdasarkan usia sejak tanggal pengajuan invoice resmi ke klien.
+              Invoice classification by age since submission date to client.
             </p>
           </div>
           {/* Pengatur Term of Payment */}
@@ -433,10 +433,10 @@ export default function OutstandingView({
                 background: "var(--color-surface)",
               }}
             >
-              <option value={30}>TOP 30 Hari (Default)</option>
-              <option value={45}>TOP 45 Hari</option>
-              <option value={60}>TOP 60 Hari</option>
-              <option value={90}>TOP 90 Hari</option>
+              <option value={30}>TOP 30 Days (Default)</option>
+              <option value={45}>TOP 45 Days</option>
+              <option value={60}>TOP 60 Days</option>
+              <option value={90}>TOP 90 Days</option>
             </select>
           </div>
         </div>
@@ -453,19 +453,19 @@ export default function OutstandingView({
           }}
         >
           <div
-            title={`0-30 Hari: ${summary.buckets["0-30"].percentage}%`}
+            title={`0-30 Days: ${summary.buckets["0-30"].percentage}%`}
             style={{ width: `${summary.buckets["0-30"].percentage}%`, background: "#10b981", transition: "all 0.3s" }}
           />
           <div
-            title={`31-60 Hari: ${summary.buckets["31-60"].percentage}%`}
+            title={`31-60 Days: ${summary.buckets["31-60"].percentage}%`}
             style={{ width: `${summary.buckets["31-60"].percentage}%`, background: "#eab308", transition: "all 0.3s" }}
           />
           <div
-            title={`61-90 Hari: ${summary.buckets["61-90"].percentage}%`}
+            title={`61-90 Days: ${summary.buckets["61-90"].percentage}%`}
             style={{ width: `${summary.buckets["61-90"].percentage}%`, background: "#f97316", transition: "all 0.3s" }}
           />
           <div
-            title={`>90 Hari: ${summary.buckets[">90"].percentage}%`}
+            title={`>90 Days: ${summary.buckets[">90"].percentage}%`}
             style={{ width: `${summary.buckets[">90"].percentage}%`, background: "#ef4444", transition: "all 0.3s" }}
           />
         </div>
@@ -484,7 +484,7 @@ export default function OutstandingView({
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#065f46" }}>0 – 30 HARI</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#065f46" }}>0 – 30 DAYS</span>
               <span
                 style={{
                   fontSize: 11,
@@ -502,7 +502,7 @@ export default function OutstandingView({
               {formatRupiah(summary.buckets["0-30"].nominal)}
             </div>
             <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 2 }}>
-              {summary.buckets["0-30"].percentage}% dari total &middot; Lancar
+              {summary.buckets["0-30"].percentage}% of total &middot; Current
             </div>
           </div>
 
@@ -518,7 +518,7 @@ export default function OutstandingView({
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#854d0e" }}>31 – 60 HARI</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#854d0e" }}>31 – 60 DAYS</span>
               <span
                 style={{
                   fontSize: 11,
@@ -536,7 +536,7 @@ export default function OutstandingView({
               {formatRupiah(summary.buckets["31-60"].nominal)}
             </div>
             <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 2 }}>
-              {summary.buckets["31-60"].percentage}% dari total &middot; Overdue Ringan
+              {summary.buckets["31-60"].percentage}% of total &middot; Minor Overdue
             </div>
           </div>
 
@@ -552,7 +552,7 @@ export default function OutstandingView({
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#9a3412" }}>61 – 90 HARI</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#9a3412" }}>61 – 90 DAYS</span>
               <span
                 style={{
                   fontSize: 11,
@@ -570,7 +570,7 @@ export default function OutstandingView({
               {formatRupiah(summary.buckets["61-90"].nominal)}
             </div>
             <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 2 }}>
-              {summary.buckets["61-90"].percentage}% dari total &middot; Overdue Sedang
+              {summary.buckets["61-90"].percentage}% of total &middot; Moderate Overdue
             </div>
           </div>
 
@@ -586,7 +586,7 @@ export default function OutstandingView({
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#991b1b" }}>&gt; 90 HARI</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#991b1b" }}>&gt; 90 DAYS</span>
               <span
                 style={{
                   fontSize: 11,
@@ -604,7 +604,7 @@ export default function OutstandingView({
               {formatRupiah(summary.buckets[">90"].nominal)}
             </div>
             <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 2 }}>
-              {summary.buckets[">90"].percentage}% dari total &middot; Kritis / High Risk
+              {summary.buckets[">90"].percentage}% of total &middot; Critical / High Risk
             </div>
           </div>
         </div>
@@ -626,7 +626,7 @@ export default function OutstandingView({
           {/* Search Box */}
           <input
             type="text"
-            placeholder="Cari No. Invoice, PO, Klien, Proyek..."
+            placeholder="Search Invoice No., PO, Client, Project..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
@@ -651,7 +651,7 @@ export default function OutstandingView({
               background: "var(--color-surface)",
             }}
           >
-            <option value="semua">Semua Klien</option>
+            <option value="semua">All Clients</option>
             {daftarKlien.map((k) => (
               <option key={k} value={k}>
                 {k}
@@ -671,11 +671,11 @@ export default function OutstandingView({
               background: "var(--color-surface)",
             }}
           >
-            <option value="semua">Semua Umur Piutang</option>
-            <option value="0-30">0 – 30 Hari (Lancar)</option>
-            <option value="31-60">31 – 60 Hari (Overdue Ringan)</option>
-            <option value="61-90">61 – 90 Hari (Overdue Sedang)</option>
-            <option value=">90">&gt; 90 Hari (Overdue Kritis)</option>
+            <option value="semua">All Aging Buckets</option>
+            <option value="0-30">0 – 30 Days (Current)</option>
+            <option value="31-60">31 – 60 Days (Minor Overdue)</option>
+            <option value="61-90">61 – 90 Days (Moderate Overdue)</option>
+            <option value=">90">&gt; 90 Days (Critical Overdue)</option>
           </select>
 
           {/* Filter Status Pembayaran */}
@@ -690,9 +690,9 @@ export default function OutstandingView({
               background: "var(--color-surface)",
             }}
           >
-            <option value="outstanding">Status: Belum Lunas (Outstanding)</option>
-            <option value="paid">Status: Sudah Lunas (Paid)</option>
-            <option value="all">Status: Semua Tagihan</option>
+            <option value="outstanding">Status: Unpaid (Outstanding)</option>
+            <option value="paid">Status: Paid</option>
+            <option value="all">Status: All Invoices</option>
           </select>
 
           {/* Urutkan */}
@@ -707,10 +707,10 @@ export default function OutstandingView({
               background: "var(--color-surface)",
             }}
           >
-            <option value="terlambat">Urutkan: Keterlambatan Tertinggi</option>
-            <option value="nominal">Urutkan: Nominal Terbesar</option>
-            <option value="terbaru">Urutkan: Tanggal Terbaru</option>
-            <option value="nomor">Urutkan: Nomor Invoice</option>
+            <option value="terlambat">Sort by: Highest Delay</option>
+            <option value="nominal">Sort by: Highest Balance</option>
+            <option value="terbaru">Sort by: Newest Date</option>
+            <option value="nomor">Sort by: Invoice Number</option>
           </select>
         </div>
 
@@ -729,7 +729,7 @@ export default function OutstandingView({
           }}
         >
           <span>📥</span>
-          <span>Ekspor CSV</span>
+          <span>Export CSV</span>
         </button>
       </div>
 
@@ -738,23 +738,23 @@ export default function OutstandingView({
         <table>
           <thead>
             <tr>
-              <th>No. Invoice &amp; Faktur</th>
-              <th>Klien &amp; No. PO</th>
-              <th>Proyek &amp; Periode</th>
-              <th style={{ textAlign: "right" }}>Total (+PPN)</th>
-              <th style={{ textAlign: "right" }}>Terbayar</th>
-              <th style={{ textAlign: "right" }}>Sisa Piutang</th>
-              <th>Jatuh Tempo</th>
-              <th style={{ textAlign: "center" }}>Status Bayar</th>
-              <th style={{ textAlign: "center" }}>Status Aging</th>
-              <th>Aksi</th>
+              <th>Invoice &amp; Tax Inv.</th>
+              <th>Client &amp; PO No.</th>
+              <th>Project &amp; Period</th>
+              <th style={{ textAlign: "right" }}>Total (+VAT)</th>
+              <th style={{ textAlign: "right" }}>Paid</th>
+              <th style={{ textAlign: "right" }}>Outstanding Balance</th>
+              <th>Due Date</th>
+              <th style={{ textAlign: "center" }}>Payment Status</th>
+              <th style={{ textAlign: "center" }}>Aging Status</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {filteredItems.length === 0 ? (
               <tr>
                 <td colSpan={10} style={{ textAlign: "center", padding: "32px 16px", color: "var(--color-text-muted)" }}>
-                  Tidak ada invoice yang sesuai dengan kriteria filter.
+                  No invoices match the selected filter criteria.
                 </td>
               </tr>
             ) : (
@@ -787,10 +787,10 @@ export default function OutstandingView({
                       <div style={{ fontWeight: 700, color: "#111827" }}>{item.nomorInvoice}</div>
                       {item.nomorFakturPajak ? (
                         <div style={{ fontSize: 11.5, color: "var(--color-text-muted)" }}>
-                          Faktur: {item.nomorFakturPajak}
+                          Tax Inv: {item.nomorFakturPajak}
                         </div>
                       ) : (
-                        <div style={{ fontSize: 11.5, color: "#9ca3af" }}>Faktur belum diisi</div>
+                        <div style={{ fontSize: 11.5, color: "#9ca3af" }}>Tax Inv. not entered</div>
                       )}
                     </td>
                     <td>
@@ -802,7 +802,7 @@ export default function OutstandingView({
                         {item.namaProyek}
                       </div>
                       <div style={{ fontSize: 11.5, color: "var(--color-text-muted)" }}>
-                        Periode: <b>{item.periode}</b>
+                        Period: <b>{item.periode}</b>
                       </div>
                     </td>
                     <td style={{ textAlign: "right", fontFamily: "var(--font-mono, monospace)" }}>
@@ -818,15 +818,15 @@ export default function OutstandingView({
                       <div style={{ fontSize: 12.5, fontWeight: 600 }}>{item.tanggalJatuhTempo}</div>
                       {isOverdue ? (
                         <div style={{ fontSize: 11.5, fontWeight: 700, color: "#dc2626" }}>
-                          Lewat {item.hariTerlambat} hari
+                          {item.hariTerlambat} days overdue
                         </div>
                       ) : isDueSoon ? (
                         <div style={{ fontSize: 11.5, fontWeight: 700, color: "#d97706" }}>
-                          Sisa {Math.abs(item.hariTerlambat)} hari lagi
+                          {Math.abs(item.hariTerlambat)} days remaining
                         </div>
                       ) : (
                         <div style={{ fontSize: 11.5, color: "var(--color-text-muted)" }}>
-                          Sisa {Math.abs(item.hariTerlambat)} hari
+                          {Math.abs(item.hariTerlambat)} days
                         </div>
                       )}
                     </td>
@@ -853,10 +853,10 @@ export default function OutstandingView({
                         }}
                       >
                         {item.statusBayar === "paid"
-                          ? "Lunas ✓"
+                          ? "Paid ✓"
                           : item.statusBayar === "partial"
-                          ? "Sebagian"
-                          : "Belum Bayar"}
+                          ? "Partial"
+                          : "Unpaid"}
                       </span>
                     </td>
                     <td style={{ textAlign: "center" }}>
@@ -871,7 +871,15 @@ export default function OutstandingView({
                           color: badgeColor,
                         }}
                       >
-                        {item.statusAging}
+                        {item.statusAging === "Lancar"
+                          ? "Current"
+                          : item.statusAging === "Overdue Ringan"
+                          ? "Minor Overdue"
+                          : item.statusAging === "Overdue Sedang"
+                          ? "Moderate Overdue"
+                          : item.statusAging === "Overdue Kritis"
+                          ? "Critical Overdue"
+                          : "Paid"}
                       </span>
                     </td>
                     <td>
@@ -881,7 +889,7 @@ export default function OutstandingView({
                           target="_blank"
                           rel="noopener noreferrer"
                           className="btn"
-                          title="Cetak / Unduh Invoice Resmi PDF"
+                          title="Print / Download Official PDF Invoice"
                           style={{
                             fontSize: 11.5,
                             padding: "4px 8px",
@@ -904,13 +912,13 @@ export default function OutstandingView({
                             whiteSpace: "nowrap",
                           }}
                         >
-                          Detail &rarr;
+                          Details &rarr;
                         </a>
                         {item.statusBayar !== "paid" && (
                           <a
                             href={`/pengajuan/${item.id}`}
                             className="btn"
-                            title="Buka form & buat pengingat jatuh tempo ke klien"
+                            title="Open form & send payment due reminder to client"
                             style={{
                               fontSize: 11.5,
                               padding: "4px 8px",
@@ -921,7 +929,7 @@ export default function OutstandingView({
                               border: `1px solid ${isOverdue ? "#fca5a5" : isDueSoon ? "#fde68a" : "#cbd5e1"}`,
                             }}
                           >
-                            ✉️ Ingatkan
+                            ✉️ Remind
                           </a>
                         )}
                       </div>

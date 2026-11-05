@@ -57,7 +57,7 @@ export default async function HalamanRateCard() {
   return (
     <div>
       <h1>Rate Card</h1>
-      <p className="subtitle">Rate bulanan personel beserta masa berlaku.</p>
+      <p className="subtitle">Personnel monthly billing rates and effective validity periods.</p>
       <FormTambahRateCard daftarPersonel={daftarPersonel.map((p) => ({ id: p.id, nama: p.nama }))} />
       <TabelRateCard daftar={daftar} />
     </div>

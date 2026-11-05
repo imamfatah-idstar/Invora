@@ -17,10 +17,10 @@ export default async function HalamanBuatPengajuan() {
     <>
       <Topbar nama={userLogin.nama} role={userLogin.role} />
       <main className="page">
-        <a href="/pengajuan" className="back-link">&larr; Daftar Pengajuan</a>
-        <h1>Buat Pengajuan</h1>
+        <a href="/pengajuan" className="back-link">&larr; Submissions</a>
+        <h1>Create Submission</h1>
         <p className="subtitle">
-          Pilih PO, User XL, dan periode — sistem otomatis menghitung prorata tiap personel yang terpetakan ke PO ini.
+          Select PO, Client Approver, and period — the system automatically calculates prorata for each personnel mapped to this PO.
         </p>
         <FormBuatPengajuan
           daftarPo={daftarPo.map((p) => ({ id: p.id, label: `${p.nomorPo} — ${p.namaProyek}` }))}

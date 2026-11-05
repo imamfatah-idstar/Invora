@@ -21,8 +21,8 @@ export default async function HalamanPemetaan() {
 
   return (
     <div>
-      <h1>Pemetaan Personel &harr; PO</h1>
-      <p className="subtitle">PO bersifat bundling, tidak mencantumkan nama personel — pemetaan disimpan terpisah.</p>
+      <h1>Personnel &harr; PO Mapping</h1>
+      <p className="subtitle">Bundled POs do not list resource names — mapping allocations are maintained here.</p>
       <FormTambahPemetaan
         daftarPersonel={daftarPersonel.map((p) => ({ id: p.id, label: p.nama }))}
         daftarPo={daftarPo.map((p) => ({ id: p.id, label: p.nomorPo }))}

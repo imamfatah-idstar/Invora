@@ -65,11 +65,11 @@ export default function TabelSummaryPo({
       <table>
         <thead>
           <tr>
-            <Th label="Nomor PO" k="nomorPo" />
-            <Th label="Nama Proyek" k="namaProyek" />
-            <Th label="Nilai PO" k="nilaiItem" />
-            <Th label="Nilai Sudah di-GR" k="nilaiGr" />
-            <Th label="Saldo PO" k="saldo" />
+            <Th label="PO Number" k="nomorPo" />
+            <Th label="Project Name" k="namaProyek" />
+            <Th label="PO Value" k="nilaiItem" />
+            <Th label="Approved GR Value" k="nilaiGr" />
+            <Th label="PO Balance" k="saldo" />
           </tr>
         </thead>
         <tbody>
@@ -85,13 +85,13 @@ export default function TabelSummaryPo({
             </tr>
           ))}
           {daftarUrut.length === 0 && (
-            <tr><td colSpan={5} className="table-empty">Belum ada PO untuk tahun {tahunDipilih}.</td></tr>
+            <tr><td colSpan={5} className="table-empty">No PO data available for year {tahunDipilih}.</td></tr>
           )}
         </tbody>
         {daftarUrut.length > 0 && (
           <tfoot>
             <tr>
-              <td colSpan={2}><b>Total tahun {tahunDipilih}</b></td>
+              <td colSpan={2}><b>Total Year {tahunDipilih}</b></td>
               <td><b>{formatRupiah(totalNilaiPo)}</b></td>
               <td><b>{formatRupiah(totalGr)}</b></td>
               <td><b>{formatRupiah(totalSaldo)}</b></td>

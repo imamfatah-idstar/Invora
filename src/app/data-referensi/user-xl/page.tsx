@@ -9,8 +9,8 @@ export default async function HalamanUserXl() {
   const daftar = await db.select().from(userXl).orderBy(desc(userXl.id));
   return (
     <div>
-      <h1>User XL</h1>
-      <p className="subtitle">Pemberi keputusan/approval di luar aplikasi — keputusan dicatat internal.</p>
+      <h1>Client Approvers (User XL)</h1>
+      <p className="subtitle">External client decision-makers / approvers — approvals are tracked internally.</p>
       <FormImporUserXl />
       <FormTambahUserXl />
       <TabelUserXl daftar={daftar} />

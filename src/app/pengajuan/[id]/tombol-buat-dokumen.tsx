@@ -15,7 +15,7 @@ export default function TombolBuatDokumen({ pengajuanId, jenis }: { pengajuanId:
       body: JSON.stringify({ jenis }),
     });
     setLoading(false);
-    if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Gagal membuat dokumen."); return; }
+    if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Failed to generate document."); return; }
     const data = await res.json();
     router.push(`/pengajuan/${pengajuanId}/dokumen/${data.id}`);
     router.refresh();
@@ -24,7 +24,7 @@ export default function TombolBuatDokumen({ pengajuanId, jenis }: { pengajuanId:
   return (
     <div style={{ display: "inline-block" }}>
       <button onClick={buat} disabled={loading} className="btn">
-        {loading ? "Membuat..." : `Buat ${jenis}`}
+        {loading ? "Generating..." : `Generate ${jenis}`}
       </button>
       {error && <div className="alert alert-danger" style={{ marginTop: 8 }}>{error}</div>}
     </div>

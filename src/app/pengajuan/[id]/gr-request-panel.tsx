@@ -25,15 +25,15 @@ type BarisRiwayat = {
 };
 
 const LABEL_LANGKAH: Record<string, string> = {
-  generate: "Generate sheet Vendor",
-  balikan: "Unggah balikan XL",
-  gabung: "Gabungkan otomatis",
-  cek: "Konfirmasi sudah dicek",
+  generate: "Generate Vendor sheet",
+  balikan: "Upload client return file",
+  gabung: "Auto-merge sheets",
+  cek: "Confirm verification",
 };
 
 function formatTanggalJam(iso: string | null) {
   if (!iso) return "-";
-  return new Date(iso).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
+  return new Date(iso).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" });
 }
 
 export default function GrRequestPanel({
@@ -49,7 +49,7 @@ export default function GrRequestPanel({
   async function unduhGenerate() {
     setError(null); setLoading("generate");
     const res = await fetch(`/api/pengajuan/${pengajuanId}/gr-request`);
-    if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Gagal generate."); setLoading(null); return; }
+    if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Failed to generate."); setLoading(null); return; }
     const p = res.headers.get("X-Peringatan");
     setPeringatan(p ? JSON.parse(decodeURIComponent(p)) : []);
     const blob = await res.blob();
@@ -66,13 +66,13 @@ export default function GrRequestPanel({
   async function unggahBalikan(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!file) { setError("Pilih file dulu."); return; }
+    if (!file) { setError("Please select a file first."); return; }
     setLoading("balikan");
     const formData = new FormData();
     formData.set("file", file);
     const res = await fetch(`/api/pengajuan/${pengajuanId}/gr-request/balikan`, { method: "POST", body: formData });
     setLoading(null);
-    if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Gagal mengunggah."); return; }
+    if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Failed to upload."); return; }
     setFile(null);
     (e.target as HTMLFormElement).reset();
     router.refresh();
@@ -83,7 +83,7 @@ export default function GrRequestPanel({
     const res = await fetch(`/api/pengajuan/${pengajuanId}/gr-request/gabung`, { method: "POST" });
     const d = await res.json().catch(() => ({}));
     setLoading(null);
-    if (!res.ok) { setError(d.error ?? "Gagal menggabungkan."); return; }
+    if (!res.ok) { setError(d.error ?? "Failed to merge."); return; }
     setPeringatan(d.peringatan ?? []);
     router.refresh();
   }
@@ -96,17 +96,17 @@ export default function GrRequestPanel({
       body: JSON.stringify({ catatan }),
     });
     setLoading(null);
-    if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Gagal menandai."); return; }
+    if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Failed to mark as verified."); return; }
     setCatatan("");
     router.refresh();
   }
 
   return (
     <div className="card" style={{ marginTop: 20 }}>
-      <h3 style={{ marginTop: 0 }}>GR Request (Excel) — untuk Get Approve</h3>
+      <h3 style={{ marginTop: 0 }}>GR Request (Excel) — for Get Approve Portal</h3>
       <p className="subtitle">
-        Alur: (1) generate sheet Vendor &rarr; (2) kirim ke tim XL, tim isi sheet SOW &amp; COVER &rarr;
-        (3) unggah balikannya di sini, gabungkan otomatis &rarr; (4) Checker konfirmasi sudah dicek.
+        Workflow: (1) Generate Vendor sheet &rarr; (2) Send to client team, client completes SOW &amp; COVER sheets &rarr;
+        (3) Upload client return file here and auto-merge &rarr; (4) Checker confirms verification.
       </p>
 
       {error && <div className="alert alert-danger">{error}</div>}
@@ -119,19 +119,19 @@ export default function GrRequestPanel({
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div>
           <p style={{ margin: "0 0 6px" }}>
-            <b>Langkah 1 — Generate sheet Vendor</b>{" "}
-            {data?.namaFileGenerate && <span className="subtitle">— terakhir: {data.namaFileGenerate} ({formatTanggalJam(data.digeneratePada)})</span>}
+            <b>Step 1 — Generate Vendor sheet</b>{" "}
+            {data?.namaFileGenerate && <span className="subtitle">— latest: {data.namaFileGenerate} ({formatTanggalJam(data.digeneratePada)})</span>}
           </p>
           <button type="button" className="btn btn-primary" disabled={loading !== null} onClick={unduhGenerate}>
-            {loading === "generate" ? "Generate..." : "Generate & Unduh"}
+            {loading === "generate" ? "Generating..." : "Generate & Download"}
           </button>
         </div>
 
         <div>
           <p style={{ margin: "0 0 6px" }}>
-            <b>Langkah 2 — Unggah balikan dari XL</b> (sheet SOW &amp; COVER sudah terisi){" "}
+            <b>Step 2 — Upload return file from client</b> (SOW &amp; COVER sheets filled){" "}
             {data?.namaFileBalikanXl && (
-              <span className="subtitle">— terakhir: {data.namaFileBalikanXl} ({formatTanggalJam(data.diunggahBalikanPada)}{data.namaDiunggahBalikanOleh ? `, oleh ${data.namaDiunggahBalikanOleh}` : ""})</span>
+              <span className="subtitle">— latest: {data.namaFileBalikanXl} ({formatTanggalJam(data.diunggahBalikanPada)}{data.namaDiunggahBalikanOleh ? `, by ${data.namaDiunggahBalikanOleh}` : ""})</span>
             )}
           </p>
           <form onSubmit={unggahBalikan} className="toolbar">
@@ -139,57 +139,57 @@ export default function GrRequestPanel({
               <input type="file" accept=".xlsx" onChange={(e) => setFile(e.target.files?.[0] ?? null)} required />
             </div>
             <button type="submit" className="btn btn-primary" disabled={loading !== null}>
-              {loading === "balikan" ? "Mengunggah..." : data?.namaFileBalikanXl ? "Ganti File" : "Unggah"}
+              {loading === "balikan" ? "Uploading..." : data?.namaFileBalikanXl ? "Replace File" : "Upload"}
             </button>
           </form>
         </div>
 
         <div>
           <p style={{ margin: "0 0 6px" }}>
-            <b>Langkah 3 — Gabungkan otomatis</b>{" "}
+            <b>Step 3 — Auto-merge sheets</b>{" "}
             {data?.namaFileGabungan && (
-              <span className="subtitle">— terakhir: {data.namaFileGabungan} ({formatTanggalJam(data.digabungPada)})</span>
+              <span className="subtitle">— latest: {data.namaFileGabungan} ({formatTanggalJam(data.digabungPada)})</span>
             )}
           </p>
           <button type="button" className="btn btn-primary" disabled={loading !== null || !data?.namaFileBalikanXl} onClick={gabungkan}>
-            {loading === "gabung" ? "Menggabungkan..." : "Gabungkan Otomatis"}
+            {loading === "gabung" ? "Merging..." : "Auto-merge"}
           </button>
           {data?.namaFileGabungan && (
             <a href={`/api/pengajuan/${pengajuanId}/gr-request/file/gabungan`} className="btn-text" style={{ marginLeft: 10 }}>
-              Unduh hasil gabungan
+              Download merged file
             </a>
           )}
         </div>
 
         <div>
-          <p style={{ margin: "0 0 6px" }}><b>Langkah 4 — Konfirmasi sudah dicek tim</b></p>
+          <p style={{ margin: "0 0 6px" }}><b>Step 4 — Checker verification confirmation</b></p>
           {data?.dicekPada ? (
             <p style={{ margin: 0, color: "var(--color-success, #1a7f37)" }}>
-              &#10003; Sudah dicek oleh <b>{data.namaDicekOleh}</b> pada {formatTanggalJam(data.dicekPada)}
-              {data.catatanCek && <><br /><span className="subtitle">Catatan: {data.catatanCek}</span></>}
+              &#10003; Verified by <b>{data.namaDicekOleh}</b> on {formatTanggalJam(data.dicekPada)}
+              {data.catatanCek && <><br /><span className="subtitle">Notes: {data.catatanCek}</span></>}
             </p>
           ) : role === "checker" ? (
             <div className="toolbar">
               <div className="field" style={{ minWidth: 260 }}>
-                <input placeholder="Catatan (opsional)" value={catatan} onChange={(e) => setCatatan(e.target.value)} />
+                <input placeholder="Notes (optional)" value={catatan} onChange={(e) => setCatatan(e.target.value)} />
               </div>
               <button type="button" className="btn btn-primary" disabled={loading !== null || !data?.namaFileGabungan} onClick={tandaiDicek}>
-                {loading === "cek" ? "Menandai..." : "Tandai Sudah Dicek"}
+                {loading === "cek" ? "Confirming..." : "Mark as Verified"}
               </button>
             </div>
           ) : (
-            <p className="subtitle" style={{ margin: 0 }}>Menunggu konfirmasi Checker.</p>
+            <p className="subtitle" style={{ margin: 0 }}>Awaiting Checker confirmation.</p>
           )}
         </div>
       </div>
 
       {riwayat.length > 0 && (
         <div style={{ marginTop: 20 }}>
-          <p style={{ margin: "0 0 6px" }}><b>Riwayat Versi</b></p>
+          <p style={{ margin: "0 0 6px" }}><b>Version History</b></p>
           <div className="table-wrap">
             <table>
               <thead><tr>
-                <th>Langkah</th><th>File</th><th>Waktu</th><th>Oleh</th><th></th>
+                <th>Step</th><th>File</th><th>Timestamp</th><th>By</th><th></th>
               </tr></thead>
               <tbody>
                 {riwayat.map((r) => (
@@ -200,7 +200,7 @@ export default function GrRequestPanel({
                     <td>{r.namaUser ?? "-"}</td>
                     <td>
                       {r.namaFile && (
-                        <a href={`/api/pengajuan/${pengajuanId}/gr-request/riwayat/${r.id}`} className="btn-text">Unduh</a>
+                        <a href={`/api/pengajuan/${pengajuanId}/gr-request/riwayat/${r.id}`} className="btn-text">Download</a>
                       )}
                     </td>
                   </tr>

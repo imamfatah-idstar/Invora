@@ -20,8 +20,11 @@ import InvoiceModal from "./invoice-modal";
 import { tambahHari, selisihHari } from "@/lib/aging";
 
 const LABEL_STATUS: Record<string, string> = {
-  draft: "Draft", menunggu_checker: "Menunggu Checker", perlu_revisi: "Perlu Revisi",
-  siap_diajukan: "Siap Diajukan", diajukan: "Diajukan",
+  draft: "Draft",
+  menunggu_checker: "Pending Review",
+  perlu_revisi: "Needs Revision",
+  siap_diajukan: "Ready to Submit",
+  diajukan: "Submitted",
 };
 
 const LABEL_JENIS_DOKUMEN: Record<string, string> = { CAC: "CAC", BAST: "BAST" };
@@ -201,7 +204,7 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
       <Topbar nama={userLogin.nama} role={userLogin.role} />
       <main className="page">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: 12 }}>
-          <a href="/pengajuan" className="back-link" style={{ margin: 0 }}>&larr; Daftar Pengajuan</a>
+          <a href="/pengajuan" className="back-link" style={{ margin: 0 }}>&larr; Submissions</a>
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <InvoiceModal
               pengajuanId={header.id}
@@ -239,29 +242,29 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
             />
           </div>
         </div>
-        <h1>Pengajuan {header.periode} — {header.nomorPo}</h1>
+        <h1>Submission {header.periode} — {header.nomorPo}</h1>
         <p className="subtitle">
-          Proyek: <b>{header.namaProyek}</b> &middot; User XL: <b>{header.namaUserXl}</b> &middot;
-          Status: <span className={`badge badge-${header.status}`}>{LABEL_STATUS[header.status] ?? header.status}</span> &middot; Versi: {header.versi}
+          Project: <b>{header.namaProyek}</b> &middot; Client Approver: <b>{header.namaUserXl}</b> &middot;
+          Status: <span className={`badge badge-${header.status}`}>{LABEL_STATUS[header.status] ?? header.status}</span> &middot; Version: {header.versi}
           {header.klien && (
-            <> &middot; Klien: <b>{header.klien}</b>{" "}
+            <> &middot; Client: <b>{header.klien}</b>{" "}
               <span className={`badge ${isKlienXl ? "badge-siap_diajukan" : "badge-draft"}`}>
-                {isKlienXl ? "XL — proses CAC" : "Non-XL — tanpa CAC"}
+                {isKlienXl ? "XL — CAC Workflow" : "Non-XL — Direct Invoice"}
               </span>
             </>
           )}
           {header.keteranganTahap && (
-            <> &middot; Tagihan tahap: <b>{header.keteranganTahap}</b></>
+            <> &middot; Milestone billing: <b>{header.keteranganTahap}</b></>
           )}
           {!bastAda && (header.status === "siap_diajukan" || header.status === "diajukan") && (
-            <span className="badge badge-danger" style={{ marginLeft: 8 }} title="Dokumen BAST belum dibuat">
-              ⚠️ BAST Belum Dibuat
+            <span className="badge badge-danger" style={{ marginLeft: 8 }} title="BAST document not yet created">
+              ⚠️ BAST Not Created
             </span>
           )}
         </p>
         {(header.approvalAlokasiUserXlPemberi || header.approvalAlokasiTanggal || header.approvalAlokasiReferensi) && (
           <p className="subtitle">
-            Approval alokasi lintas-PO (dicatat manual): <b>{header.approvalAlokasiUserXlPemberi ?? "-"}</b>
+            Cross-PO allocation approval (recorded): <b>{header.approvalAlokasiUserXlPemberi ?? "-"}</b>
             {header.approvalAlokasiTanggal && <> &middot; {header.approvalAlokasiTanggal}</>}
             {header.approvalAlokasiReferensi && <> &middot; ref: {header.approvalAlokasiReferensi}</>}
           </p>
@@ -270,8 +273,8 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
         <div className="table-wrap">
           <table>
             <thead><tr>
-              <th>Personel</th><th>PO Line</th><th>Rate</th>
-              <th>Hari Ditagihkan / Acuan</th><th>Sumber</th><th>Hasil Hitung</th>
+              <th>Personnel</th><th>PO Line</th><th>Rate</th>
+              <th>Billable Days / Target</th><th>Source</th><th>Calculated Amount</th>
             </tr></thead>
             <tbody>
               {rincian.map((r) => {
@@ -292,14 +295,14 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
                   <td>{r.sumberHitung === "manual" ? "-" : `${r.hariKerjaDapatDitagihkan} / ${r.hariKerjaAcuanBulan}`}</td>
                   <td>
                     <span className={`badge ${r.sumberHitung === "timesheet" ? "badge-siap_diajukan" : ""}`}>
-                      {r.sumberHitung === "timesheet" ? "Timesheet" : r.sumberHitung === "manual" ? "Manual (tahap)" : "Kalender"}
+                      {r.sumberHitung === "timesheet" ? "Timesheet" : r.sumberHitung === "manual" ? "Manual (milestone)" : "Calendar"}
                     </span>
                   </td>
                   <td>
                     {formatRupiah(r.hasilHitung)}
                     {sebagian && (
                       <div style={{ fontSize: 12, color: "var(--color-muted, #666)" }}>
-                        sebagian dari {formatRupiah(r.nilaiPenuh!)} — sisanya ditagihkan di PO lain
+                        partial of {formatRupiah(r.nilaiPenuh!)} — remainder billed to other PO
                       </div>
                     )}
                   </td>
@@ -315,7 +318,7 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
 
         {bisaEdit && (
           <div style={{ marginTop: 12, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-            <a href={`/pengajuan/${header.id}/edit`} className="btn">Edit Rincian</a>
+            <a href={`/pengajuan/${header.id}/edit`} className="btn">Edit Line Items</a>
             <TombolKonfirmasi pengajuanId={header.id} />
           </div>
         )}
@@ -331,24 +334,23 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
         )}
         {!bisaKonfirmasi && !bisaDicek && !bisaBuatDokumen && header.status !== "siap_diajukan" && header.status !== "diajukan" && (
           <p className="subtitle" style={{ marginTop: 12 }}>
-            Tidak ada aksi untuk Anda pada status ini (role Anda: {userLogin.role}).
+            No pending action for your role at this stage (Role: {userLogin.role}).
           </p>
         )}
         {header.status === "siap_diajukan" && (
           <div className="alert alert-success" style={{ marginTop: 12 }}>
-            ✓ Sudah diperiksa Checker dan siap diajukan ke XL.
+            ✓ Reviewed by Checker and ready for submission.
           </div>
         )}
 
         {bisaBuatDokumen && (
           <div className="card" style={{ marginTop: 20 }}>
-            <h3 style={{ marginTop: 0 }}>Dokumen {isKlienXl ? "CAC / BAST" : "BAST"}</h3>
+            <h3 style={{ marginTop: 0 }}>Documents: {isKlienXl ? "CAC / BAST" : "BAST"}</h3>
             <p className="subtitle">
               {isKlienXl ? (
-                <>Draf internal berdasarkan data pengajuan ini, mengikuti template resmi CAC/BAST yang sudah
-                dikonfirmasi — tetap gunakan Get Approve CAC / COUPA untuk pengajuan resmi ke XL.</>
+                <>Internal drafts based on this submission data following official CAC/BAST formatting — submit to Get Approve CAC / COUPA for official approval.</>
               ) : (
-                <>Klien Non-XL — proses resmi tanpa CAC. BAST 1 halaman formal (klausul Pihak Pertama &amp; Kedua) + timesheet sebagai kelengkapan dokumen dan dasar penagihan invoice.</>
+                <>Non-XL client — formal BAST document with timesheets as billing support documentation.</>
               )}
             </p>
             <div style={{ display: "flex", gap: 10 }}>
@@ -359,7 +361,7 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
             {daftarDokumen.length > 0 && (
               <div className="table-wrap" style={{ marginTop: 16 }}>
                 <table>
-                  <thead><tr><th>Jenis</th><th>Versi</th><th>Status</th><th>Dibuat</th><th></th></tr></thead>
+                  <thead><tr><th>Document Type</th><th>Version</th><th>Status</th><th>Created At</th><th></th></tr></thead>
                   <tbody>
                     {daftarDokumen.map((d) => (
                       <tr key={d.id}>
@@ -367,7 +369,7 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
                         <td>{d.versi}</td>
                         <td><span className="badge badge-draft">{d.status}</span></td>
                         <td>{d.dibuatPada}</td>
-                        <td><a href={`/pengajuan/${header.id}/dokumen/${d.id}`} className="btn-text">Buka</a></td>
+                        <td><a href={`/pengajuan/${header.id}/dokumen/${d.id}`} className="btn-text">Open</a></td>
                       </tr>
                     ))}
                   </tbody>
@@ -379,24 +381,24 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
 
         {bisaKelengkapan && (
           <div className="card" style={{ marginTop: 20 }}>
-            <h3 style={{ marginTop: 0 }}>Status Proses CAC &rarr; Realisasi GR &rarr; Invoice Resmi</h3>
+            <h3 style={{ marginTop: 0 }}>Processing Milestones: CAC &rarr; Approved GR &rarr; Official Invoice</h3>
             <p className="subtitle">
-              Siklus lengkap MVP 4: Pelacakan tanggal proses, pencatatan nomor GR Slip resmi &amp; nominal realisasi GR disetujui, kalkulasi otomatis Deficiency GR (selisih), serta penerbitan Faktur Pajak &amp; Invoice Resmi.
+              End-to-end milestone tracking, official GR Slip recording, approved GR amount, automatic Deficiency GR calculation, and Tax Invoice &amp; Official Invoice issuance.
             </p>
             {header.penyesuaianSelisihGrMasuk && Number(header.penyesuaianSelisihGrMasuk) !== 0 && (
               <div className="alert alert-info" style={{ marginTop: 8, marginBottom: 12 }}>
-                ℹ️ <b>Penyesuaian Selisih GR dari Periode Sebelumnya:</b> Pengajuan ini memuat carry-over selisih GR sebesar{" "}
-                <b>{Number(header.penyesuaianSelisihGrMasuk) > 0 ? "+" : ""}{formatRupiah(header.penyesuaianSelisihGrMasuk)}</b> yang telah diperhitungkan ke dalam total tagihan.
+                ℹ️ <b>GR Adjustment from Previous Period:</b> This submission includes a carry-over GR variance of{" "}
+                <b>{Number(header.penyesuaianSelisihGrMasuk) > 0 ? "+" : ""}{formatRupiah(header.penyesuaianSelisihGrMasuk)}</b> accounted into the total billing.
               </div>
             )}
             <p style={{ margin: "0 0 4px", fontSize: 14 }}>
-              Tanggal Submit CAC (otomatis): <b>{header.tanggalSubmitCac ?? "belum diloloskan Checker"}</b>
+              CAC Submitted Date: <b>{header.tanggalSubmitCac ?? "Pending Checker Review"}</b>
               {header.tanggalSubmitCac && header.tanggalApproveInvoice && (
-                <> &middot; total proses sampai invoice disetujui: <b>{Math.round((new Date(header.tanggalApproveInvoice + "T00:00:00Z").getTime() - new Date(header.tanggalSubmitCac + "T00:00:00Z").getTime()) / 86400000)} hari</b></>
+                <> &middot; total turnaround to approved invoice: <b>{Math.round((new Date(header.tanggalApproveInvoice + "T00:00:00Z").getTime() - new Date(header.tanggalSubmitCac + "T00:00:00Z").getTime()) / 86400000)} days</b></>
               )}
-              {header.nomorInvoice && <> &middot; Nomor Invoice: <b>{header.nomorInvoice}</b></>}
+              {header.nomorInvoice && <> &middot; Invoice No.: <b>{header.nomorInvoice}</b></>}
               {header.nomorGrSlip && <> &middot; GR Slip: <b>{header.nomorGrSlip}</b></>}
-              {header.nilaiGrDisetujui && <> &middot; GR Disetujui: <b>{formatRupiah(header.nilaiGrDisetujui)}</b></>}
+              {header.nilaiGrDisetujui && <> &middot; Approved GR: <b>{formatRupiah(header.nilaiGrDisetujui)}</b></>}
             </p>
             <FormStatusProses
               pengajuanId={header.id}
@@ -445,44 +447,41 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
 
         {bisaKelengkapan && (
           <div className="card" style={{ marginTop: 20 }}>
-            <h3 style={{ marginTop: 0 }}>Kelengkapan Dokumen — sebelum ajukan ke Get Approve/COUPA</h3>
+            <h3 style={{ marginTop: 0 }}>Document Readiness Checklist — prior to submission to Get Approve/COUPA</h3>
             <p className="subtitle">
-              Siapkan semua ini dulu di sini — CAC, BAST, spreadsheet tracking PO, dan dokumen pendukung lain
-              sesuai kebutuhan — baru lampirkan saat mengajukan CAC/BAST ke Get Approve atau invoice ke COUPA
-              (otomasi pengajuannya sendiri belum dibangun, ini baru tempat menyiapkan lampirannya).
+              Prepare all required billing documents here — CAC, BAST, PO tracking spreadsheets, and any client-specific attachments.
             </p>
             <ul style={{ margin: "0 0 16px 0", paddingLeft: 18, fontSize: 14 }}>
               {isKlienXl ? (
-                <li>{cacAda ? "✓" : "○"} Dokumen CAC {cacAda ? "sudah dibuat" : "belum dibuat"}</li>
+                <li>{cacAda ? "✓" : "○"} CAC Document {cacAda ? "created" : "not yet created"}</li>
               ) : isTagihanTahap ? (
-                <li>✓ Tagihan tahap (manual) — timesheet tidak disyaratkan {header.keteranganTahap ? `(${header.keteranganTahap})` : ""}</li>
+                <li>✓ Milestone billing (manual) — timesheet not required {header.keteranganTahap ? `(${header.keteranganTahap})` : ""}</li>
               ) : (
-                <li>{semuaPakaiTimesheet ? "✓" : "○"} Timesheet {semuaPakaiTimesheet ? "sudah jadi dasar hitung semua personel" : "belum lengkap untuk semua personel (klien Non-XL wajib timesheet)"}</li>
+                <li>{semuaPakaiTimesheet ? "✓" : "○"} Timesheets {semuaPakaiTimesheet ? "completed for all personnel" : "incomplete for some personnel (mandatory for Non-XL)"}</li>
               )}
               <li>
-                {bastAda ? "✓" : "○"} Dokumen BAST {bastAda ? "sudah dibuat" : "belum dibuat"}
-                {!bastAda && <span className="badge badge-danger" style={{ marginLeft: 6, fontSize: 11 }}>Wajib</span>}
+                {bastAda ? "✓" : "○"} BAST Document {bastAda ? "created" : "not yet created"}
+                {!bastAda && <span className="badge badge-danger" style={{ marginLeft: 6, fontSize: 11 }}>Required</span>}
               </li>
-              <li>{poAsliAda ? "✓" : "○"} Dokumen PO Asli — {poAsliAda ? header.namaFilePoAsli : <>belum diunggah, <a href="/data-referensi/po">unggah di Data Referensi · PO/Item</a></>}</li>
-              <li>{lampiranBalanceAda ? "✓" : "○"} Lampiran Balance PO (potongan tabel dari spreadsheet tracking) {lampiranBalanceAda ? "sudah diunggah" : "belum diunggah"}</li>
-              <li>{lampiranLain.length > 0 ? "✓" : "○"} Lampiran tambahan lain (spreadsheet, dokumen pendukung lain) — {lampiranLain.length} file diunggah</li>
+              <li>{poAsliAda ? "✓" : "○"} Original PO Document — {poAsliAda ? header.namaFilePoAsli : <>not yet uploaded, <a href="/data-referensi/po">upload under Reference Data · PO / Line Items</a></>}</li>
+              <li>{lampiranBalanceAda ? "✓" : "○"} PO Balance Attachment (tracking spreadsheet excerpt) {lampiranBalanceAda ? "uploaded" : "not yet uploaded"}</li>
+              <li>{lampiranLain.length > 0 ? "✓" : "○"} Additional attachments (spreadsheets, supporting docs) — {lampiranLain.length} file(s) uploaded</li>
             </ul>
             <p className="subtitle" style={{ fontSize: 12, marginBottom: 4 }}>
-              Untuk halaman Lampiran Balance PO, isi label persis <b>&quot;{LABEL_LAMPIRAN_BALANCE}&quot;</b> supaya otomatis
-              ditempel sebagai halaman 2 di PDF gabungan CAC/BAST.
+              For the PO Balance attachment, label it exactly <b>&quot;{LABEL_LAMPIRAN_BALANCE}&quot;</b> to automatically append it as Page 2 in the merged CAC/BAST PDF.
             </p>
             <FormLampiran pengajuanId={header.id} labelSaran={LABEL_LAMPIRAN_BALANCE} />
             {daftarLampiran.length > 0 && (
               <div className="table-wrap" style={{ marginTop: 16 }}>
                 <table>
-                  <thead><tr><th>Label</th><th>Nama File</th><th>Diunggah</th><th></th></tr></thead>
+                  <thead><tr><th>Label</th><th>File Name</th><th>Uploaded At</th><th></th></tr></thead>
                   <tbody>
                     {daftarLampiran.map((l) => (
                       <tr key={l.id}>
                         <td>{l.label}{l.label === LABEL_LAMPIRAN_BALANCE && " ✓"}</td>
                         <td>{l.namaFile}</td>
                         <td>{l.diunggahPada}</td>
-                        <td><TombolHapusLampiran pengajuanId={header.id} lampiranId={l.id} konfirmasi={`Hapus lampiran "${l.label}"?`} /></td>
+                        <td><TombolHapusLampiran pengajuanId={header.id} lampiranId={l.id} konfirmasi={`Delete attachment "${l.label}"?`} /></td>
                       </tr>
                     ))}
                   </tbody>
@@ -494,15 +493,15 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
 
         {(riwayatKonfirmasi.length > 0 || riwayatChecker.length > 0) && (
           <div className="card" style={{ marginTop: 24 }}>
-            <h3 style={{ marginTop: 0 }}>Riwayat</h3>
+            <h3 style={{ marginTop: 0 }}>Submission History &amp; Audit Trail</h3>
             <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13.5, color: "var(--color-text-muted)" }}>
               {riwayatKonfirmasi.map((k, i) => (
-                <li key={`k${i}`}>Dikonfirmasi oleh <b>{k.namaUser}</b> (versi {k.versi}) — {k.waktu}</li>
+                <li key={`k${i}`}>Confirmed by <b>{k.namaUser}</b> (version {k.versi}) — {k.waktu}</li>
               ))}
               {riwayatChecker.map((c, i) => (
                 <li key={`c${i}`}>
-                  Diperiksa oleh <b>{c.namaUser}</b> — hasil: <b>{LABEL_STATUS[c.hasil] ?? c.hasil}</b>
-                  {c.catatan ? ` (catatan: ${c.catatan})` : ""} — {c.waktu}
+                  Reviewed by <b>{c.namaUser}</b> — result: <b>{LABEL_STATUS[c.hasil] ?? c.hasil}</b>
+                  {c.catatan ? ` (note: ${c.catatan})` : ""} — {c.waktu}
                 </li>
               ))}
             </ul>

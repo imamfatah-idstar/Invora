@@ -43,16 +43,16 @@ export default async function HalamanEditPengajuan({ params }: { params: Promise
     <>
       <Topbar nama={userLogin.nama} role={userLogin.role} />
       <main className="page">
-        <a href={`/pengajuan/${pengajuanId}`} className="back-link">&larr; Detail Pengajuan</a>
-        <h1>Edit Pengajuan — {header.periode}</h1>
+        <a href={`/pengajuan/${pengajuanId}`} className="back-link">&larr; Submission Details</a>
+        <h1>Edit Submission — {header.periode}</h1>
         <p className="subtitle">
-          PO: <b>{header.nomorPo}</b> ({header.namaProyek}) &middot; User XL: <b>{header.namaUserXl}</b>
-          &nbsp;— periode, PO dan User XL tidak bisa diubah, hanya pilihan personel.
+          PO: <b>{header.nomorPo}</b> ({header.namaProyek}) &middot; Client Approver: <b>{header.namaUserXl}</b>
+          &nbsp;— period, PO and Client Approver cannot be modified, only personnel selection and amounts.
         </p>
 
         {alasanRevisi?.catatan && (
           <div className="alert alert-warning">
-            <b>Catatan revisi dari Checker:</b> {alasanRevisi.catatan}
+            <b>Checker revision notes:</b> {alasanRevisi.catatan}
           </div>
         )}
 

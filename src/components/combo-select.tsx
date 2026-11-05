@@ -10,7 +10,7 @@ export default function ComboSelect({
   value,
   onChange,
   opsi,
-  placeholderCari = "Cari nama...",
+  placeholderCari = "Search...",
   kosongLabel,
   disabled,
 }: {
@@ -71,7 +71,7 @@ export default function ComboSelect({
         onClick={() => setBuka((b) => !b)}
       >
         <span className={terpilih ? "" : "combo-select-placeholder"}>
-          {terpilih ? terpilih.label : (kosongLabel ?? "- pilih -")}
+          {terpilih ? terpilih.label : (kosongLabel ?? "- select -")}
         </span>
         <span className="combo-select-caret">▾</span>
       </button>
@@ -111,7 +111,7 @@ export default function ComboSelect({
               </li>
             ))}
             {opsiTersaring.length === 0 && (
-              <li className="combo-select-empty">Tidak ada nama yang cocok.</li>
+              <li className="combo-select-empty">No matching results found.</li>
             )}
           </ul>
         </div>

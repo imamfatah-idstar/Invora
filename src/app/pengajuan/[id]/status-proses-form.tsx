@@ -5,11 +5,11 @@ import Decimal from "decimal.js";
 import { evaluasiSelisihGr, hitungTotalInvoice } from "@/lib/deficiency-gr";
 
 const LABEL: Record<string, string> = {
-  tanggalCacApproved: "Tanggal CAC Approved (Get Approve)",
-  tanggalRequestGr: "Tanggal Request GR (submit di Get Approve)",
-  tanggalGrDisetujui: "Tanggal GR Approved",
-  tanggalSubmitInvoice: "Tanggal Submit Invoice (COUPA)",
-  tanggalApproveInvoice: "Tanggal Approve Invoice (COUPA)",
+  tanggalCacApproved: "CAC Approval Date (Get Approve)",
+  tanggalRequestGr: "GR Request Date (Submitted in Get Approve)",
+  tanggalGrDisetujui: "GR Approval Date",
+  tanggalSubmitInvoice: "Invoice Submission Date (COUPA)",
+  tanggalApproveInvoice: "Invoice Approval Date (COUPA)",
 };
 
 const URUTAN = ["tanggalCacApproved", "tanggalRequestGr", "tanggalGrDisetujui", "tanggalSubmitInvoice", "tanggalApproveInvoice"] as const;
@@ -89,7 +89,7 @@ export default function FormStatusProses({
     setLoading(false);
     if (!res.ok) {
       const d = await res.json().catch(() => ({}));
-      setError(d.error ?? "Gagal menyimpan.");
+      setError(d.error ?? "Failed to save.");
       return;
     }
     setSukses(true);
@@ -100,39 +100,39 @@ export default function FormStatusProses({
     <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 12 }}>
       {!bastAda && (
         <div className="alert alert-warning" style={{ margin: 0, padding: "8px 12px", fontSize: 13 }}>
-          ⚠️ <b>Peringatan BAST:</b> Dokumen BAST belum dibuat untuk pengajuan ini. Pastikan BAST sudah disiapkan sebelum submit invoice ke klien.
+          ⚠️ <b>BAST Warning:</b> BAST document has not been generated for this submission. Please ensure BAST is prepared before submitting invoice to client.
         </div>
       )}
 
       {/* Bagian 1: Realisasi GR & Deficiency GR (MVP 4) */}
       <div style={{ background: "var(--color-bg-alt, #f8fafc)", padding: "14px 16px", borderRadius: 8, border: "1px solid var(--color-border, #e2e8f0)" }}>
         <h4 style={{ margin: "0 0 10px 0", fontSize: 14, color: "var(--color-primary, #0f172a)" }}>
-          1. Realisasi GR Aktual &amp; Deficiency GR (Selisih)
+          1. Actual GR Realization &amp; Deficiency GR (Variance)
         </h4>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
           <div className="field">
-            <label>Nomor GR Slip Resmi</label>
+            <label>Official GR Slip Number</label>
             <input
               type="text"
-              placeholder="cth. GR-2026-09-00123 / PO-SLIP-45"
+              placeholder="e.g. GR-2026-09-00123 / PO-SLIP-45"
               value={nomorGrSlip}
               onChange={(e) => setNomorGrSlip(e.target.value)}
             />
             <p className="subtitle" style={{ margin: "4px 0 0", fontSize: 11.5 }}>
-              Nomor dokumen Goods Receipt resmi dari portal klien / COUPA.
+              Official Goods Receipt document number from client portal / COUPA.
             </p>
           </div>
           <div className="field">
-            <label>Nilai GR Disetujui Klien (sebelum PPN)</label>
+            <label>Client Approved GR Value (before VAT)</label>
             <input
               type="number"
               step="any"
-              placeholder={`cth. ${totalPengajuan.toFixed(2)}`}
+              placeholder={`e.g. ${totalPengajuan.toFixed(2)}`}
               value={nilaiGrDisetujui}
               onChange={(e) => setNilaiGrDisetujui(e.target.value)}
             />
             <p className="subtitle" style={{ margin: "4px 0 0", fontSize: 11.5 }}>
-              Total diajukan: <b>Rp{Number(totalPengajuan).toLocaleString("id-ID", { minimumFractionDigits: 2 })}</b>
+              Total submitted: <b>Rp{Number(totalPengajuan).toLocaleString("id-ID", { minimumFractionDigits: 2 })}</b>
             </p>
           </div>
         </div>
@@ -166,10 +166,10 @@ export default function FormStatusProses({
                   : "#1d4ed8",
             }}
           >
-            <b>Deficiency GR ({statusDeficiency.kategori === "impas" ? "Impas" : statusDeficiency.kategori === "kekurangan_gr" ? "Kekurangan GR" : "Kelebihan GR"}):</b> {statusDeficiency.keterangan}
+            <b>Deficiency GR ({statusDeficiency.kategori === "impas" ? "Balanced" : statusDeficiency.kategori === "kekurangan_gr" ? "GR Under-delivery" : "GR Surplus"}):</b> {statusDeficiency.keterangan}
             {statusDeficiency.selisih && (
               <div style={{ marginTop: 4, fontWeight: "bold" }}>
-                Selisih: {Number(statusDeficiency.selisih) >= 0 ? "+" : ""}Rp{Number(statusDeficiency.selisih).toLocaleString("id-ID", { minimumFractionDigits: 2 })}
+                Variance: {Number(statusDeficiency.selisih) >= 0 ? "+" : ""}Rp{Number(statusDeficiency.selisih).toLocaleString("id-ID", { minimumFractionDigits: 2 })}
               </div>
             )}
           </div>
@@ -179,40 +179,40 @@ export default function FormStatusProses({
       {/* Bagian 2: Invoice & Faktur Pajak Resmi */}
       <div style={{ background: "var(--color-bg-alt, #f8fafc)", padding: "14px 16px", borderRadius: 8, border: "1px solid var(--color-border, #e2e8f0)" }}>
         <h4 style={{ margin: "0 0 10px 0", fontSize: 14, color: "var(--color-primary, #0f172a)" }}>
-          2. Penerbitan Invoice Resmi &amp; Faktur Pajak
+          2. Official Invoice Issuance &amp; Tax Invoice
         </h4>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
           <div className="field">
-            <label>Nomor Invoice</label>
+            <label>Invoice Number</label>
             <input
               type="text"
-              placeholder="cth 798/INV-IDS/IX/2026"
+              placeholder="e.g. 798/INV-IDS/IX/2026"
               value={nomorInvoice}
               onChange={(e) => setNomorInvoice(e.target.value)}
               disabled={terkunciNomorInvoice}
             />
             <p className="subtitle" style={{ margin: "4px 0 0", fontSize: 11.5 }}>
               {!isKlienXl
-                ? "Input manual — satu urutan bersama semua customer."
+                ? "Manual input — shared sequence across all clients."
                 : (grRequestSudahDicek || nomorInvoiceAwal
-                  ? "Input manual — satu urutan bersama semua customer."
-                  : "Terkunci — GR Request belum diverifikasi Checker.")}
+                  ? "Manual input — shared sequence across all clients."
+                  : "Locked — GR Request bundle not yet verified by Checker.")}
             </p>
           </div>
           <div className="field">
-            <label>Nomor Faktur Pajak</label>
+            <label>Tax Invoice Number</label>
             <input
               type="text"
-              placeholder="cth. 010.002-26.12345678"
+              placeholder="e.g. 010.002-26.12345678"
               value={nomorFakturPajak}
               onChange={(e) => setNomorFakturPajak(e.target.value)}
             />
             <p className="subtitle" style={{ margin: "4px 0 0", fontSize: 11.5 }}>
-              Nomor seri Faktur Pajak elektronik (e-Faktur DJP).
+              Official electronic Tax Invoice serial number (e-Faktur DJP).
             </p>
           </div>
           <div className="field">
-            <label>Tanggal Faktur Pajak</label>
+            <label>Tax Invoice Date</label>
             <input
               type="date"
               value={tanggalFakturPajak}
@@ -220,11 +220,11 @@ export default function FormStatusProses({
             />
           </div>
           <div className="field">
-            <label>Tarif PPN</label>
+            <label>VAT Rate</label>
             <select value={tarifPpn} onChange={(e) => setTarifPpn(e.target.value)}>
-              <option value="11.00">11% (Standar PPh/PPN UU HPP)</option>
-              <option value="12.00">12% (Ketentuan Penyesuaian PPN)</option>
-              <option value="0.00">0% (Bebas PPN / Non-PKP)</option>
+              <option value="11.00">11% (Standard UU HPP)</option>
+              <option value="12.00">12% (VAT Adjustment)</option>
+              <option value="0.00">0% (VAT Exempt / Non-Taxable)</option>
             </select>
           </div>
         </div>
@@ -232,21 +232,21 @@ export default function FormStatusProses({
         {/* Live Rincian Nilai Invoice */}
         <div style={{ marginTop: 12, padding: "10px 14px", background: "#fff", border: "1px dashed var(--color-border, #cbd5e1)", borderRadius: 6, fontSize: 13 }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-            <span style={{ color: "var(--color-text-muted)" }}>Dasar Pengenaan Pajak (DPP / GR Disetujui):</span>
+            <span style={{ color: "var(--color-text-muted)" }}>Tax Base (DPP / Approved GR):</span>
             <b>Rp{Number(rincianInvoice.dasarPengenaanPajak).toLocaleString("id-ID", { minimumFractionDigits: 2 })}</b>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-            <span style={{ color: "var(--color-text-muted)" }}>PPN ({tarifPpn}%):</span>
+            <span style={{ color: "var(--color-text-muted)" }}>VAT ({tarifPpn}%):</span>
             <b>Rp{Number(rincianInvoice.nilaiPpn).toLocaleString("id-ID", { minimumFractionDigits: 2 })}</b>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 4, borderTop: "1px solid #e2e8f0", fontSize: 14 }}>
-            <span style={{ fontWeight: 600 }}>Total Tagihan Invoice (termasuk PPN):</span>
+            <span style={{ fontWeight: 600 }}>Total Invoice Amount (incl. VAT):</span>
             <span style={{ fontWeight: 700, color: "var(--color-primary, #0f172a)" }}>
               Rp{Number(rincianInvoice.totalDenganPpn).toLocaleString("id-ID", { minimumFractionDigits: 2 })}
             </span>
           </div>
           <div style={{ marginTop: 6, fontSize: 11.5, color: "var(--color-text-muted)" }}>
-            * Sesuai ketentuan BRD, nilai invoice sebelum PPN terkunci sama persis dengan nilai GR disetujui.
+            * As per BRD guidelines, invoice value before VAT is locked to client-approved GR value.
           </div>
         </div>
       </div>
@@ -254,7 +254,7 @@ export default function FormStatusProses({
       {/* Bagian 3: Urutan Tanggal Status Proses */}
       <div>
         <h4 style={{ margin: "0 0 10px 0", fontSize: 14, color: "var(--color-primary, #0f172a)" }}>
-          3. Tanggal-Tanggal Siklus Proses (CAC &rarr; GR &rarr; Invoice)
+          3. Process Lifecycle Dates (CAC &rarr; GR &rarr; Invoice)
         </h4>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
           {URUTAN.map((field) => (
@@ -272,9 +272,9 @@ export default function FormStatusProses({
 
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 8 }}>
         <button type="submit" disabled={loading} className="btn btn-primary">
-          {loading ? "Menyimpan Data..." : "Simpan Status & Data Realisasi"}
+          {loading ? "Saving Data..." : "Save Status & Realization Data"}
         </button>
-        {sukses && <span style={{ color: "var(--color-success)", fontSize: 13, fontWeight: "bold" }}>✓ Data GR &amp; Invoice Berhasil Disimpan</span>}
+        {sukses && <span style={{ color: "var(--color-success)", fontSize: 13, fontWeight: "bold" }}>✓ GR &amp; Invoice Data Successfully Saved</span>}
       </div>
       {error && <div className="alert alert-danger" style={{ margin: 0 }}>{error}</div>}
     </form>

@@ -58,7 +58,7 @@ export default function TabelUserXl({ daftar }: { daftar: BarisUserXl[] }) {
             <th style={{ width: 28 }}>
               <input type="checkbox" checked={terpilih.size === daftarUrut.length && daftarUrut.length > 0} onChange={toggleSemua} />
             </th>
-            <Th label="Nama" k="nama" /><Th label="Kontak" k="kontak" /><th></th>
+            <Th label="Name" k="nama" /><Th label="Contact" k="kontak" /><th></th>
           </tr></thead>
           <tbody>
             {daftarUrut.map((u) => (
@@ -68,11 +68,11 @@ export default function TabelUserXl({ daftar }: { daftar: BarisUserXl[] }) {
                 <td>{u.kontak ?? "-"}</td>
                 <td style={{ display: "flex", gap: 8 }}>
                   <a href={`/data-referensi/user-xl/${u.id}/edit`} className="btn-text">Edit</a>
-                  <TombolHapus url={`/api/user-xl/${u.id}`} konfirmasi={`Hapus User XL "${u.nama}"?`} />
+                  <TombolHapus url={`/api/user-xl/${u.id}`} konfirmasi={`Delete Client Approver "${u.nama}"?`} />
                 </td>
               </tr>
             ))}
-            {daftarUrut.length === 0 && <tr><td colSpan={4} className="table-empty">Belum ada data.</td></tr>}
+            {daftarUrut.length === 0 && <tr><td colSpan={4} className="table-empty">No records found.</td></tr>}
           </tbody>
         </table>
       </div>

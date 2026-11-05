@@ -26,17 +26,17 @@ export default function FormTambahKalender() {
 
   return (
     <form onSubmit={handleSubmit} className="toolbar">
-      <div className="field"><label>Tanggal</label><input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} required /></div>
+      <div className="field"><label>Date</label><input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} required /></div>
       <div className="field">
-        <label>Tipe</label>
+        <label>Type</label>
         <select value={tipe} onChange={(e) => setTipe(e.target.value)}>
-          <option value="libur_nasional">Libur nasional</option>
-          <option value="cuti_bersama">Cuti bersama</option>
-          <option value="kerja">Hari kerja (override)</option>
+          <option value="libur_nasional">National Holiday</option>
+          <option value="cuti_bersama">Collective Leave</option>
+          <option value="kerja">Working Day (Override)</option>
         </select>
       </div>
-      <div className="field" style={{ minWidth: 220 }}><label>Keterangan</label><input placeholder="cth Hari Kemerdekaan" value={keterangan} onChange={(e) => setKeterangan(e.target.value)} /></div>
-      <button type="submit" disabled={loading} className="btn btn-primary">{loading ? "Menyimpan..." : "Tambah"}</button>
+      <div className="field" style={{ minWidth: 220 }}><label>Description</label><input placeholder="e.g. Independence Day" value={keterangan} onChange={(e) => setKeterangan(e.target.value)} /></div>
+      <button type="submit" disabled={loading} className="btn btn-primary">{loading ? "Saving..." : "Add Entry"}</button>
       {error && <div className="alert alert-danger" style={{ margin: 0 }}>{error}</div>}
     </form>
   );

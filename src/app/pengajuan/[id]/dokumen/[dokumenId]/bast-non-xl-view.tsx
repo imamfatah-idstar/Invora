@@ -88,7 +88,7 @@ export default function BastNonXlView({
       {/* Toolbar Atas */}
       <div className="doc-toolbar no-print">
         <Link href={`/pengajuan/${pengajuanId}`} className="back-link">
-          &larr; Detail Pengajuan
+          &larr; Submission Details
         </Link>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <button
@@ -96,11 +96,11 @@ export default function BastNonXlView({
             className="btn"
             onClick={() => setShowConfig(!showConfig)}
           >
-            {showConfig ? "Sembunyikan Form Pihak" : "⚙️ Edit Pihak & Tanggal"}
+            {showConfig ? "Hide Signatories Form" : "⚙️ Edit Signatories & Date"}
           </button>
           <TombolCetak />
           <a href={urlPdf} target="_blank" className="btn btn-primary">
-            ⬇ Unduh PDF BAST Non-XL
+            ⬇ Download Non-XL BAST PDF
           </a>
         </div>
       </div>
@@ -110,56 +110,56 @@ export default function BastNonXlView({
         <div className="card no-print" style={{ marginBottom: 20, background: "#fafbfc" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
             <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>
-              ⚙️ Pengaturan Pihak Penandatangan BAST Non-XL
+              ⚙️ Non-XL BAST Signatories &amp; Date Settings
             </h3>
             <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
-              Data ini langsung tersinkron ke dokumen di bawah &amp; PDF unduhan
+              This data is instantly synced to the document below and downloaded PDF
             </span>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
             <div className="field">
-              <label>Pihak Pertama — Nama ({namaKlienResmi})</label>
+              <label>First Party — Name ({namaKlienResmi})</label>
               <input
                 type="text"
                 value={pihak1Nama}
                 onChange={(e) => setPihak1Nama(e.target.value)}
-                placeholder="Nama PIC Klien"
+                placeholder="Client PIC Name"
               />
             </div>
             <div className="field">
-              <label>Pihak Pertama — Jabatan</label>
+              <label>First Party — Designation / Title</label>
               <input
                 type="text"
                 value={pihak1Jabatan}
                 onChange={(e) => setPihak1Jabatan(e.target.value)}
-                placeholder="Jabatan di Klien"
+                placeholder="Designation at Client"
               />
             </div>
             <div className="field">
-              <label>Pihak Kedua — Nama (IDStar)</label>
+              <label>Second Party — Name (IDStar)</label>
               <input
                 type="text"
                 value={pihak2Nama}
                 onChange={(e) => setPihak2Nama(e.target.value)}
-                placeholder="Nama Pejabat IDStar"
+                placeholder="IDStar Signatory Name"
               />
             </div>
             <div className="field">
-              <label>Pihak Kedua — Jabatan</label>
+              <label>Second Party — Designation / Title</label>
               <input
                 type="text"
                 value={pihak2Jabatan}
                 onChange={(e) => setPihak2Jabatan(e.target.value)}
-                placeholder="Jabatan di IDStar"
+                placeholder="Designation at IDStar"
               />
             </div>
             <div className="field" style={{ gridColumn: "1 / -1" }}>
-              <label>Tanggal Dokumen BAST</label>
+              <label>BAST Document Date</label>
               <input
                 type="text"
                 value={tanggalDokumen}
                 onChange={(e) => setTanggalDokumen(e.target.value)}
-                placeholder="Contoh: 21 Oktober 2026"
+                placeholder="e.g. 21 October 2026"
               />
             </div>
           </div>

@@ -10,12 +10,12 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   title: "INVORA — Invoice Operations & Revenue Assurance (IDStar)",
-  description: "INVORA (Invoice Operations & Revenue Assurance) — Platform sistem operasional invoicing & revenue assurance IDStar Group",
+  description: "INVORA (Invoice Operations & Revenue Assurance) — Invoicing operations & revenue assurance system platform for IDStar Group",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="id" className={plusJakartaSans.variable}>
+    <html lang="en" className={plusJakartaSans.variable}>
       <body>
         {children}
         <Footer />

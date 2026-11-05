@@ -6,9 +6,9 @@ import type { Role } from "@/lib/auth";
 // peran "petugas" itu peran INPUT DATA — bukan Administrator — sesuai
 // permintaan pengguna (lihat PROJECT_INSTRUCTIONS.md bagian 20).
 const LABEL_ROLE: Record<Role, string> = {
-  admin: "Admin",
-  petugas: "Input Data",
-  checker: "Checker",
+  admin: "Administrator",
+  petugas: "Data Entry",
+  checker: "Checker / Reviewer",
 };
 
 export function labelRole(role: string): string {

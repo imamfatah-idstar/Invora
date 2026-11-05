@@ -29,23 +29,23 @@ export default function FormTambahRateCard({ daftarPersonel }: { daftarPersonel:
   }
 
   if (daftarPersonel.length === 0) {
-    return <div className="alert alert-danger">Belum ada Personel. Tambahkan Personel dulu sebelum membuat Rate Card.</div>;
+    return <div className="alert alert-danger">No Personnel found. Please add Personnel first before creating a Rate Card.</div>;
   }
 
   return (
     <form onSubmit={handleSubmit} className="toolbar">
       <div className="field">
-        <label>Personel</label>
+        <label>Personnel</label>
         <ComboSelect
           value={personelId}
           onChange={(v) => setPersonelId(Number(v))}
           opsi={daftarPersonel.map((p) => ({ value: p.id, label: p.nama }))}
         />
       </div>
-      <div className="field" style={{ minWidth: 200 }}><label>Nilai rate bulanan</label><input placeholder="cth 10000000.00" value={nilaiRate} onChange={(e) => setNilaiRate(e.target.value)} required /></div>
-      <div className="field"><label>Berlaku dari</label><input type="date" value={berlakuDari} onChange={(e) => setBerlakuDari(e.target.value)} required /></div>
-      <div className="field"><label>Berlaku sampai (opsional)</label><input type="date" value={berlakuSampai} onChange={(e) => setBerlakuSampai(e.target.value)} /></div>
-      <button type="submit" disabled={loading} className="btn btn-primary">{loading ? "Menyimpan..." : "Tambah"}</button>
+      <div className="field" style={{ minWidth: 200 }}><label>Monthly Rate (Rp)</label><input placeholder="e.g. 10000000.00" value={nilaiRate} onChange={(e) => setNilaiRate(e.target.value)} required /></div>
+      <div className="field"><label>Valid From</label><input type="date" value={berlakuDari} onChange={(e) => setBerlakuDari(e.target.value)} required /></div>
+      <div className="field"><label>Valid Until (Optional)</label><input type="date" value={berlakuSampai} onChange={(e) => setBerlakuSampai(e.target.value)} /></div>
+      <button type="submit" disabled={loading} className="btn btn-primary">{loading ? "Saving..." : "Add Rate Card"}</button>
       {error && <div className="alert alert-danger" style={{ margin: 0 }}>{error}</div>}
     </form>
   );

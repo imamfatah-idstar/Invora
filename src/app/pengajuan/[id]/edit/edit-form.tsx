@@ -46,7 +46,7 @@ export default function FormEditPengajuan({
         body: JSON.stringify({ poId, periode }),
       });
       setLoadingHitung(false);
-      if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Gagal memuat pratinjau."); return; }
+      if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Failed to load preview."); return; }
       const data = await res.json();
       if (data.jenis === "tahap") { setBarisTahap(data.baris); return; }
       setBaris(data.baris);
@@ -74,7 +74,7 @@ export default function FormEditPengajuan({
       ),
     });
     setLoadingSimpan(false);
-    if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Gagal menyimpan."); return; }
+    if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Failed to save."); return; }
     router.push(`/pengajuan/${pengajuanId}`);
     router.refresh();
   }
@@ -83,7 +83,7 @@ export default function FormEditPengajuan({
     .filter((b) => dipilih.has(b.personelId) && b.akanDitagihkan)
     .reduce((acc, b) => acc + Number(b.akanDitagihkan), 0);
 
-  if (loadingHitung) return <p className="subtitle">Memuat pratinjau perhitungan...</p>;
+  if (loadingHitung) return <p className="subtitle">Loading calculation preview...</p>;
   if (error && !baris && !barisTahap) return <div className="alert alert-danger">{error}</div>;
 
   if (modeTahap && barisTahap) {
@@ -103,10 +103,10 @@ export default function FormEditPengajuan({
             disabled={loadingSimpan || totalNilaiTahap(nilaiTahap) <= 0 || !keteranganTahap.trim()}
             className="btn btn-primary"
           >
-            {loadingSimpan ? "Menyimpan..." : "Simpan Revisi"}
+            {loadingSimpan ? "Saving..." : "Save Revisions"}
           </button>
           <p className="subtitle" style={{ marginTop: 8 }}>
-            Setelah disimpan, Anda masih perlu menekan <b>&quot;Konfirmasi Pengajuan Ini&quot;</b> di halaman detail supaya masuk lagi ke antrean Checker.
+            After saving, you still need to click <b>&quot;Confirm &amp; Submit to Checker&quot;</b> on the details page to return it to the Checker queue.
           </p>
         </div>
       </div>
@@ -118,9 +118,9 @@ export default function FormEditPengajuan({
       <div className="table-wrap">
         <table>
           <thead><tr>
-            <th></th><th>Personel</th>
-            <th>Rate</th><th>Hari Ditagihkan / Acuan</th>
-            <th>Nilai Penuh</th><th>Sudah di PO Lain</th><th>Akan Ditagihkan (PO ini)</th>
+            <th></th><th>Personnel</th>
+            <th>Rate</th><th>Billable / Reference Days</th>
+            <th>Full Amount</th><th>Allocated to Other PO</th><th>Billed to This PO</th>
           </tr></thead>
           <tbody>
             {(baris ?? []).map((b) => {
@@ -141,11 +141,11 @@ export default function FormEditPengajuan({
                     <td>{Number(b.sudahDialokasikanDiPoLain) > 0 ? formatRupiah(b.sudahDialokasikanDiPoLain) : "-"}</td>
                     <td>
                       {b.sudahLunasBulanIni ? (
-                        <span className="badge">Sudah lunas di PO lain</span>
+                        <span className="badge">Fully billed on other PO</span>
                       ) : b.akanDitagihkan && Number(b.akanDitagihkan) > 0 ? (
                         formatRupiah(b.akanDitagihkan)
                       ) : (
-                        <span style={{ color: "var(--color-danger)" }}>Saldo PO ini habis</span>
+                        <span style={{ color: "var(--color-danger)" }}>Remaining PO balance exhausted</span>
                       )}
                     </td>
                   </>
@@ -153,20 +153,20 @@ export default function FormEditPengajuan({
               </tr>
               );
             })}
-            {(baris ?? []).length === 0 && <tr><td colSpan={7} className="table-empty">Tidak ada personel terpetakan ke PO ini untuk periode tersebut.</td></tr>}
+            {(baris ?? []).length === 0 && <tr><td colSpan={7} className="table-empty">No personnel mapped to this PO for the selected period.</td></tr>}
           </tbody>
         </table>
       </div>
       <p className="card" style={{ display: "inline-block", padding: "10px 16px", fontSize: 15 }}>
-        Total dipilih: <b>{formatRupiah(String(total))}</b>
+        Selected Total: <b>{formatRupiah(String(total))}</b>
       </p>
       {error && <div className="alert alert-danger">{error}</div>}
       <div>
         <button onClick={simpan} disabled={loadingSimpan || dipilih.size === 0} className="btn btn-primary">
-          {loadingSimpan ? "Menyimpan..." : "Simpan Revisi"}
+          {loadingSimpan ? "Saving..." : "Save Revisions"}
         </button>
         <p className="subtitle" style={{ marginTop: 8 }}>
-          Setelah disimpan, Anda masih perlu menekan <b>&quot;Konfirmasi Pengajuan Ini&quot;</b> di halaman detail supaya masuk lagi ke antrean Checker.
+          After saving, you still need to click <b>&quot;Confirm &amp; Submit to Checker&quot;</b> on the details page to return it to the Checker queue.
         </p>
       </div>
     </div>

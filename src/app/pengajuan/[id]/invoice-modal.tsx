@@ -225,9 +225,9 @@ Website: https://idstar.co.id`;
           borderRadius: 6,
           cursor: "pointer",
         }}
-        title="Cetak atau kirim Invoice Resmi PDF"
+        title="Print or email Official PDF Invoice"
       >
-        <span>📄 Cetak &amp; Kirim Invoice</span>
+        <span>📄 Print &amp; Send Invoice</span>
         <span style={{ fontSize: 11, opacity: 0.7 }}>▾</span>
       </button>
 
@@ -280,11 +280,11 @@ Website: https://idstar.co.id`;
             >
               <div>
                 <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#0f172a" }}>
-                  Invoice Resmi &mdash; PT IDStar Cipta Teknologi
+                  Official Invoice &mdash; PT IDStar Cipta Teknologi
                 </h3>
                 <p style={{ margin: "4px 0 0", fontSize: 12, color: "#64748b" }}>
-                  No: <b style={{ color: "#0f172a" }}>{nomorInvoice}</b> &middot; PO:{" "}
-                  <b style={{ color: "#0f172a" }}>{nomorPo}</b> &middot; Klien: {klien}
+                  Invoice No: <b style={{ color: "#0f172a" }}>{nomorInvoice}</b> &middot; PO:{" "}
+                  <b style={{ color: "#0f172a" }}>{nomorPo}</b> &middot; Client: {klien}
                 </p>
               </div>
               <button
@@ -327,7 +327,7 @@ Website: https://idstar.co.id`;
                   cursor: "pointer",
                 }}
               >
-                📑 Format &amp; Unduh PDF
+                📑 PDF Layout &amp; Download
               </button>
               <button
                 type="button"
@@ -346,7 +346,7 @@ Website: https://idstar.co.id`;
                   gap: 6,
                 }}
               >
-                <span>✉️ Kirim ke Email Personal</span>
+                <span>✉️ Send via Personal Email</span>
                 <span
                   style={{
                     backgroundColor: "#ecfdf5",
@@ -392,7 +392,7 @@ Website: https://idstar.co.id`;
                 <>
                   <div>
                     <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#1e293b", marginBottom: 8 }}>
-                      1. Pilih Format Tata Letak (Layout Preset):
+                      1. Select Layout Preset:
                     </label>
                     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                       <label
@@ -417,10 +417,10 @@ Website: https://idstar.co.id`;
                         />
                         <div>
                           <div style={{ fontSize: 13, fontWeight: 600, color: "#0f172a" }}>
-                            📑 Format Standar Rinci (Per-Talenta &amp; Prorata)
+                            📑 Detailed Itemized Format (Per-Resource &amp; Prorata)
                           </div>
                           <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 2 }}>
-                            Menampilkan tabel rincian per masing-masing personel: nama talenta, nomor line PO, rasio hari kerja, dan rate bulanan lengkap. Cocok untuk kontrak Time &amp; Material.
+                            Detailed breakdown per personnel: talent name, PO line number, billable working days ratio, and monthly rate. Ideal for Time &amp; Material contracts.
                           </div>
                         </div>
                       </label>
@@ -447,10 +447,10 @@ Website: https://idstar.co.id`;
                         />
                         <div>
                           <div style={{ fontSize: 13, fontWeight: 600, color: "#0f172a" }}>
-                            📦 Format Ringkas / Konsolidasi (Lump Sum Proyek)
+                            📦 Consolidated / Summary Format (Project Lump Sum)
                           </div>
                           <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 2 }}>
-                            Menggabungkan seluruh talenta menjadi 1 baris paket jasa layanan per proyek tanpa rincian nama individu. Cocok untuk Finance/Procurement klien yang mensyaratkan invoice ringkas.
+                            Combines resources into a single service package line item per project without listing individual names. Suitable for lump sum / milestone billings.
                           </div>
                         </div>
                       </label>
@@ -477,10 +477,10 @@ Website: https://idstar.co.id`;
                         />
                         <div>
                           <div style={{ fontSize: 13, fontWeight: 600, color: "#0f172a" }}>
-                            🌐 Format Bilingual (ID / EN Dwibahasa)
+                            🌐 Bilingual Corporate Format (ID / EN Dual Language)
                           </div>
                           <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 2 }}>
-                            Judul, kolom rincian, dan klausul instruksi pembayaran disajikan dalam Bahasa Indonesia dan Bahasa Inggris. Standar baku untuk klien multinasional / regional.
+                            Headers, breakdown columns, and payment instruction clauses presented in both Indonesian and English. Standard for regional &amp; multinational clients.
                           </div>
                         </div>
                       </label>
@@ -489,7 +489,7 @@ Website: https://idstar.co.id`;
 
                   <div>
                     <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#1e293b", marginBottom: 8 }}>
-                      2. Rekening Pembayaran Resmi di Dokumen:
+                      2. Official Bank Payment Account on Document:
                     </label>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
                       <button
@@ -506,7 +506,7 @@ Website: https://idstar.co.id`;
                           cursor: "pointer",
                         }}
                       >
-                        BCA &amp; Mandiri (Semua)
+                        BCA &amp; Mandiri (Both)
                       </button>
                       <button
                         type="button"
@@ -522,7 +522,7 @@ Website: https://idstar.co.id`;
                           cursor: "pointer",
                         }}
                       >
-                        Khusus Bank BCA
+                        BCA Only
                       </button>
                       <button
                         type="button"
@@ -538,7 +538,7 @@ Website: https://idstar.co.id`;
                           cursor: "pointer",
                         }}
                       >
-                        Khusus Bank Mandiri
+                        Mandiri Only
                       </button>
                     </div>
                   </div>
@@ -573,13 +573,13 @@ Website: https://idstar.co.id`;
                 <>
                   <div>
                     <label style={{ display: "block", fontSize: 12.5, fontWeight: 600, color: "#1e293b", marginBottom: 6 }}>
-                      Alamat Email Personal / Tujuan:
+                      Recipient Email Address:
                     </label>
                     <input
                       type="email"
                       value={emailTujuan}
                       onChange={(e) => setEmailTujuan(e.target.value)}
-                      placeholder="contoh: nama@gmail.com atau user@idstar.group"
+                      placeholder="e.g. name@gmail.com or user@idstar.group"
                       style={{
                         width: "100%",
                         padding: "8px 12px",
@@ -591,7 +591,7 @@ Website: https://idstar.co.id`;
 
                     {/* Quick Email Selector Chips */}
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6, fontSize: 11 }}>
-                      <span style={{ color: "#64748b", alignSelf: "center" }}>Pintasan:</span>
+                      <span style={{ color: "#64748b", alignSelf: "center" }}>Shortcuts:</span>
                       <button
                         type="button"
                         onClick={() => setEmailTujuan(userEmail)}
@@ -604,7 +604,7 @@ Website: https://idstar.co.id`;
                           cursor: "pointer",
                         }}
                       >
-                        👤 Email Saya ({userEmail})
+                        👤 My Email ({userEmail})
                       </button>
                       <button
                         type="button"
@@ -641,13 +641,13 @@ Website: https://idstar.co.id`;
 
                   <div>
                     <label style={{ display: "block", fontSize: 12.5, fontWeight: 600, color: "#1e293b", marginBottom: 6 }}>
-                      Nama Penerima (Opsional):
+                      Recipient Name (Optional):
                     </label>
                     <input
                       type="text"
                       value={namaPenerima}
                       onChange={(e) => setNamaPenerima(e.target.value)}
-                      placeholder="Nama PIC atau Penerima"
+                      placeholder="PIC or Recipient Name"
                       style={{
                         width: "100%",
                         padding: "8px 12px",
@@ -660,7 +660,7 @@ Website: https://idstar.co.id`;
 
                   <div>
                     <label style={{ display: "block", fontSize: 12.5, fontWeight: 600, color: "#1e293b", marginBottom: 6 }}>
-                      Subjek Surel:
+                      Email Subject:
                     </label>
                     <input
                       type="text"
@@ -679,7 +679,7 @@ Website: https://idstar.co.id`;
                   <div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                       <label style={{ fontSize: 12.5, fontWeight: 600, color: "#1e293b" }}>
-                        Isi Pesan Surat Pengantar &amp; Tautan Unduh PDF:
+                        Cover Letter Body &amp; Direct PDF Download Link:
                       </label>
                       <button
                         type="button"
@@ -693,7 +693,7 @@ Website: https://idstar.co.id`;
                           fontWeight: 600,
                         }}
                       >
-                        {salinSukses ? "✓ Tersalin ke Clipboard!" : "📋 Salin Teks"}
+                        {salinSukses ? "✓ Copied to Clipboard!" : "📋 Copy Text"}
                       </button>
                     </div>
                     <textarea
@@ -713,7 +713,7 @@ Website: https://idstar.co.id`;
                       }}
                     />
                     <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>
-                      💡 Pesan sudah mencakup tautan langsung untuk mengunduh Invoice PDF resmi dengan format yang Anda pilih.
+                      💡 This message includes a direct URL for recipient to download the official PDF Invoice in your selected preset.
                     </div>
                   </div>
                 </>
@@ -737,7 +737,7 @@ Website: https://idstar.co.id`;
                 className="btn"
                 style={{ padding: "7px 14px", fontSize: 12 }}
               >
-                Tutup
+                Close
               </button>
 
               {tabAktif === "cetak" ? (
@@ -754,9 +754,9 @@ Website: https://idstar.co.id`;
                       fontWeight: 600,
                       padding: "8px 14px",
                     }}
-                    title="Buka pratinjau di tab baru untuk dicek atau dicetak via browser"
+                    title="Open preview in new browser tab"
                   >
-                    👁️ Buka di Tab Baru
+                    👁️ Preview in New Tab
                   </button>
                   <button
                     type="button"
@@ -773,9 +773,9 @@ Website: https://idstar.co.id`;
                       borderColor: "#ea242a",
                       color: "#ffffff",
                     }}
-                    title="Langsung unduh file PDF ke folder Downloads"
+                    title="Download PDF directly to Downloads folder"
                   >
-                    ⬇️ Unduh Langsung PDF
+                    ⬇️ Download PDF
                   </button>
                 </div>
               ) : (
@@ -790,9 +790,9 @@ Website: https://idstar.co.id`;
                       fontWeight: 600,
                       padding: "8px 12px",
                     }}
-                    title="Catat riwayat pengiriman manual ini ke audit log sistem"
+                    title="Record this delivery to system audit log"
                   >
-                    💾 {sedangKirim ? "Mencatat..." : "Catat ke Log"}
+                    💾 {sedangKirim ? "Logging..." : "Save Delivery Log"}
                   </button>
                   <button
                     type="button"
@@ -805,7 +805,7 @@ Website: https://idstar.co.id`;
                       color: salinSukses ? "#16a34a" : undefined,
                     }}
                   >
-                    {salinSukses ? "✓ Tersalin" : "📋 Salin Pesan"}
+                    {salinSukses ? "✓ Copied" : "📋 Copy Email Text"}
                   </button>
                   <button
                     type="button"
@@ -822,9 +822,9 @@ Website: https://idstar.co.id`;
                       borderColor: "#ea242a",
                       color: "#ffffff",
                     }}
-                    title="Buka aplikasi email lokal (Outlook, Gmail, Thunderbird) dengan pesan terisi otomatis"
+                    title="Launch native email client (Outlook, Thunderbird, Mail) with pre-filled content"
                   >
-                    ✉️ Buka di Email Client (Mailto)
+                    ✉️ Open in Email Client (Mailto)
                   </button>
                 </div>
               )}

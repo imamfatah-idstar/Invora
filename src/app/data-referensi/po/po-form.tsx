@@ -25,7 +25,7 @@ export default function FormTambahPo() {
     setLoading(false);
     if (!res.ok) {
       const d = await res.json().catch(() => ({}));
-      setError(d.error ?? "Gagal menambah.");
+      setError(d.error ?? "Failed to add PO.");
       return;
     }
     setNomorPo(""); setNamaProyek(""); setTahun(String(tahunSekarang)); setNilaiItem(""); setKlien(""); setJenisTagihan("bulanan");
@@ -34,19 +34,19 @@ export default function FormTambahPo() {
 
   return (
     <form onSubmit={handleSubmit} className="toolbar">
-      <div className="field"><label>Nomor PO</label><input value={nomorPo} onChange={(e) => setNomorPo(e.target.value)} required /></div>
-      <div className="field" style={{ minWidth: 220 }}><label>Nama proyek (sesuai COUPA)</label><input value={namaProyek} onChange={(e) => setNamaProyek(e.target.value)} required /></div>
-      <div className="field" style={{ width: 100 }}><label>Tahun</label><input type="number" value={tahun} onChange={(e) => setTahun(e.target.value)} required /></div>
-      <div className="field"><label>Nilai item</label><input placeholder="cth 100000000.00" value={nilaiItem} onChange={(e) => setNilaiItem(e.target.value)} required /></div>
-      <div className="field" style={{ minWidth: 220 }}><label>Klien (nama resmi, opsional)</label><input value={klien} onChange={(e) => setKlien(e.target.value)} placeholder="cth. PT Bank CIMB Niaga Tbk" /></div>
+      <div className="field"><label>PO Number</label><input value={nomorPo} onChange={(e) => setNomorPo(e.target.value)} required /></div>
+      <div className="field" style={{ minWidth: 220 }}><label>Project Name (as in PO/COUPA)</label><input value={namaProyek} onChange={(e) => setNamaProyek(e.target.value)} required /></div>
+      <div className="field" style={{ width: 100 }}><label>Year</label><input type="number" value={tahun} onChange={(e) => setTahun(e.target.value)} required /></div>
+      <div className="field"><label>PO Item Value</label><input placeholder="e.g. 100000000.00" value={nilaiItem} onChange={(e) => setNilaiItem(e.target.value)} required /></div>
+      <div className="field" style={{ minWidth: 220 }}><label>Client (Official name, optional)</label><input value={klien} onChange={(e) => setKlien(e.target.value)} placeholder="e.g. PT Bank CIMB Niaga Tbk" /></div>
       <div className="field">
-        <label>Jenis tagihan</label>
+        <label>Billing Type</label>
         <select value={jenisTagihan} onChange={(e) => setJenisTagihan(e.target.value)}>
-          <option value="bulanan">Bulanan (prorata)</option>
-          <option value="tahap">Tahap / milestone (manual)</option>
+          <option value="bulanan">Monthly (Prorated)</option>
+          <option value="tahap">Milestone / Stage (Manual)</option>
         </select>
       </div>
-      <button type="submit" disabled={loading} className="btn btn-primary">{loading ? "Menyimpan..." : "Tambah"}</button>
+      <button type="submit" disabled={loading} className="btn btn-primary">{loading ? "Saving..." : "Add PO"}</button>
       {error && <div className="alert alert-danger" style={{ margin: 0 }}>{error}</div>}
     </form>
   );

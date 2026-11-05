@@ -10,8 +10,8 @@ export default async function HalamanPersonel() {
 
   return (
     <div>
-      <h1>Personel</h1>
-      <p className="subtitle">Data contoh untuk pengembangan — bukan data nyata.</p>
+      <h1>Personnel</h1>
+      <p className="subtitle">Reference master data for project resources and billable personnel.</p>
       <FormImporIntegral />
       <FormTambahPersonel />
       <TabelPersonel daftar={daftar} />

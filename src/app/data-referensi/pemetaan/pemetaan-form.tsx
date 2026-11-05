@@ -29,19 +29,19 @@ export default function FormTambahPemetaan({
       body: JSON.stringify({ personelId, poId, poLineItemId: poLineItemId || null, berlakuDari, berlakuSampai }),
     });
     setLoading(false);
-    if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Gagal menambah."); return; }
+    if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Failed to add mapping."); return; }
     setBerlakuDari(""); setBerlakuSampai(""); setPoLineItemId("");
     router.refresh();
   }
 
   if (daftarPersonel.length === 0 || daftarPo.length === 0) {
-    return <div className="alert alert-danger">Perlu minimal 1 Personel dan 1 PO sebelum membuat pemetaan.</div>;
+    return <div className="alert alert-danger">At least 1 Personnel and 1 PO are required before creating a mapping.</div>;
   }
 
   return (
     <form onSubmit={handleSubmit} className="toolbar">
       <div className="field">
-        <label>Personel</label>
+        <label>Personnel</label>
         <ComboSelect
           value={personelId}
           onChange={(v) => setPersonelId(Number(v))}
@@ -54,19 +54,19 @@ export default function FormTambahPemetaan({
           value={poId}
           onChange={(v) => { setPoId(Number(v)); setPoLineItemId(""); }}
           opsi={daftarPo.map((p) => ({ value: p.id, label: p.label }))}
-          placeholderCari="Cari nomor PO..."
+          placeholderCari="Search PO number..."
         />
       </div>
       <div className="field">
-        <label>PO Line (opsional)</label>
+        <label>PO Line (optional)</label>
         <select value={poLineItemId} onChange={(e) => setPoLineItemId(e.target.value)}>
-          <option value="">- belum dipilih -</option>
+          <option value="">- not selected -</option>
           {lineUntukPo.map((l) => <option key={l.id} value={l.id}>{l.label}</option>)}
         </select>
       </div>
-      <div className="field"><label>Berlaku dari</label><input type="date" value={berlakuDari} onChange={(e) => setBerlakuDari(e.target.value)} required /></div>
-      <div className="field"><label>Berlaku sampai (opsional)</label><input type="date" value={berlakuSampai} onChange={(e) => setBerlakuSampai(e.target.value)} /></div>
-      <button type="submit" disabled={loading} className="btn btn-primary">{loading ? "Menyimpan..." : "Tambah"}</button>
+      <div className="field"><label>Effective from</label><input type="date" value={berlakuDari} onChange={(e) => setBerlakuDari(e.target.value)} required /></div>
+      <div className="field"><label>Effective until (optional)</label><input type="date" value={berlakuSampai} onChange={(e) => setBerlakuSampai(e.target.value)} /></div>
+      <button type="submit" disabled={loading} className="btn btn-primary">{loading ? "Saving..." : "Add Mapping"}</button>
       {error && <div className="alert alert-danger" style={{ margin: 0 }}>{error}</div>}
     </form>
   );

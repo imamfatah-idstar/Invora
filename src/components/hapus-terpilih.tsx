@@ -14,7 +14,7 @@ export default function HapusTerpilih({ urlUntuk, jumlah, disabled }: { urlUntuk
 
   async function hapusSemuaTerpilih() {
     if (jumlah === 0) return;
-    if (!window.confirm(`Hapus ${jumlah} data terpilih? Aksi ini tidak bisa dibatalkan.`)) return;
+    if (!window.confirm(`Delete ${jumlah} selected item(s)? This action cannot be undone.`)) return;
     setLoading(true);
     const urls = urlUntuk();
     let berhasil = 0;
@@ -25,15 +25,15 @@ export default function HapusTerpilih({ urlUntuk, jumlah, disabled }: { urlUntuk
         if (res.ok) berhasil++;
         else {
           const d = await res.json().catch(() => ({}));
-          gagal.push(d.error ?? `Gagal: ${url}`);
+          gagal.push(d.error ?? `Failed: ${url}`);
         }
       } catch {
-        gagal.push(`Gagal koneksi: ${url}`);
+        gagal.push(`Connection failed: ${url}`);
       }
     }
     setLoading(false);
     if (gagal.length > 0) {
-      alert(`${berhasil} berhasil dihapus, ${gagal.length} gagal:\n\n${gagal.slice(0, 10).join("\n")}`);
+      alert(`${berhasil} deleted successfully, ${gagal.length} failed:\n\n${gagal.slice(0, 10).join("\n")}`);
     }
     router.refresh();
   }
@@ -46,7 +46,7 @@ export default function HapusTerpilih({ urlUntuk, jumlah, disabled }: { urlUntuk
       className="btn-danger-text"
       style={{ border: "1px solid var(--color-danger, #c0392b)", borderRadius: 6, padding: "4px 10px" }}
     >
-      {loading ? "Menghapus..." : `Hapus Terpilih (${jumlah})`}
+      {loading ? "Deleting..." : `Delete Selected (${jumlah})`}
     </button>
   );
 }

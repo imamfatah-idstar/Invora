@@ -81,12 +81,12 @@ export default function TabelRateCard({ daftar }: { daftar: BarisRateCard[] }) {
               <th style={{ width: 28 }}>
                 <input type="checkbox" checked={terpilih.size === daftarUrut.length && daftarUrut.length > 0} onChange={toggleSemua} />
               </th>
-              <Th label="Personel" k="namaPersonel" />
-              <Th label="Klien" k="klien" />
-              <Th label="No PO" k="noPo" />
-              <Th label="Rate" k="nilaiRate" />
-              <Th label="Berlaku Dari" k="berlakuDari" />
-              <Th label="Berlaku Sampai" k="berlakuSampai" />
+              <Th label="Personnel" k="namaPersonel" />
+              <Th label="Client" k="klien" />
+              <Th label="PO No." k="noPo" />
+              <Th label="Monthly Rate" k="nilaiRate" />
+              <Th label="Valid From" k="berlakuDari" />
+              <Th label="Valid Until" k="berlakuSampai" />
               <th></th>
             </tr>
           </thead>
@@ -99,15 +99,15 @@ export default function TabelRateCard({ daftar }: { daftar: BarisRateCard[] }) {
                 <td>{r.noPo ?? <span style={{ color: "var(--color-muted, #999)" }}>-</span>}</td>
                 <td>{formatRupiah(r.nilaiRate)}</td>
                 <td>{r.berlakuDari}</td>
-                <td>{r.berlakuSampai ?? "masih berlaku"}</td>
+                <td>{r.berlakuSampai ?? "Ongoing"}</td>
                 <td style={{ display: "flex", gap: 8 }}>
                   <a href={`/data-referensi/rate-card/${r.id}/edit`} className="btn-text">Edit</a>
-                  <TombolHapus url={`/api/rate-card/${r.id}`} konfirmasi={`Hapus rate card ini?`} />
+                  <TombolHapus url={`/api/rate-card/${r.id}`} konfirmasi={`Delete this rate card?`} />
                 </td>
               </tr>
             ))}
             {daftarUrut.length === 0 && (
-              <tr><td colSpan={8} className="table-empty">Belum ada data.</td></tr>
+              <tr><td colSpan={8} className="table-empty">No records found.</td></tr>
             )}
           </tbody>
         </table>

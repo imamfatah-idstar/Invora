@@ -16,17 +16,17 @@ export default function FormTambahPersonel() {
       body: JSON.stringify({ nama }),
     });
     setLoading(false);
-    if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Gagal menambah personel."); return; }
+    if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Failed to add personnel."); return; }
     setNama(""); router.refresh();
   }
 
   return (
     <form onSubmit={handleSubmit} className="toolbar">
       <div className="field" style={{ minWidth: 260 }}>
-        <label>Nama personel baru</label>
+        <label>New Personnel Name</label>
         <input value={nama} onChange={(e) => setNama(e.target.value)} required />
       </div>
-      <button type="submit" disabled={loading} className="btn btn-primary">{loading ? "Menyimpan..." : "Tambah"}</button>
+      <button type="submit" disabled={loading} className="btn btn-primary">{loading ? "Saving..." : "Add Personnel"}</button>
       {error && <div className="alert alert-danger" style={{ margin: 0 }}>{error}</div>}
     </form>
   );

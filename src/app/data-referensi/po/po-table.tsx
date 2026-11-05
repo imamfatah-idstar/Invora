@@ -84,14 +84,14 @@ export default function TabelPo({ daftar }: { daftar: BarisPo[] }) {
             <th style={{ width: 28 }}>
               <input type="checkbox" checked={terpilih.size === daftarUrut.length && daftarUrut.length > 0} onChange={toggleSemua} />
             </th>
-            <Th label="Nomor PO" k="nomorPo" />
-            <Th label="Proyek" k="namaProyek" />
-            <Th label="Klien" k="klien" />
+            <Th label="PO Number" k="nomorPo" />
+            <Th label="Project" k="namaProyek" />
+            <Th label="Client" k="klien" />
             <Th label="Status" k="statusPo" />
-            <Th label="Tahun" k="tahun" />
-            <Th label="Nilai Item" k="nilaiItem" />
-            <Th label="Saldo Sebelum PPN" k="saldoSebelumPpn" />
-            <Th label="Realisasi GR" k="nilaiGr" />
+            <Th label="Year" k="tahun" />
+            <Th label="Item Value" k="nilaiItem" />
+            <Th label="Balance (Excl. VAT)" k="saldoSebelumPpn" />
+            <Th label="Realized GR" k="nilaiGr" />
             <th></th>
           </tr>
         </thead>
@@ -115,7 +115,7 @@ export default function TabelPo({ daftar }: { daftar: BarisPo[] }) {
                 </td>
                 <td>
                   <span className={`badge ${isSelesai ? "badge-success" : "badge-siap_diajukan"}`}>
-                    {isSelesai ? "Selesai (Closed)" : "Aktif"}
+                    {isSelesai ? "Closed" : "Active"}
                   </span>
                 </td>
                 <td>{p.tahun}</td>
@@ -124,13 +124,13 @@ export default function TabelPo({ daftar }: { daftar: BarisPo[] }) {
                 <td>{formatRupiah(p.nilaiGr)}</td>
                 <td style={{ display: "flex", gap: 8 }}>
                   <a href={`/data-referensi/po/${p.id}/edit`} className="btn-text">Edit</a>
-                  <TombolHapus url={`/api/po/${p.id}`} konfirmasi={`Hapus PO "${p.nomorPo}"?`} />
+                  <TombolHapus url={`/api/po/${p.id}`} konfirmasi={`Delete PO "${p.nomorPo}"?`} />
                 </td>
               </tr>
             );
           })}
           {daftarUrut.length === 0 && (
-            <tr><td colSpan={10} className="table-empty">Belum ada data.</td></tr>
+            <tr><td colSpan={10} className="table-empty">No records found.</td></tr>
           )}
         </tbody>
       </table>

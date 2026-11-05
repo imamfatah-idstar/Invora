@@ -149,16 +149,16 @@ export default function ReminderModal({
 
       const json = await res.json();
       if (!res.ok) {
-        throw new Error(json.error || "Gagal mencatat log reminder.");
+        throw new Error(json.error || "Failed to record reminder log.");
       }
 
       setPesanStatus({
         tipe: "sukses",
-        text: "Log pengingat jatuh tempo berhasil disimpan ke audit sistem!",
+        text: "Payment reminder log successfully recorded to system audit!",
       });
       muatRiwayat();
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Terjadi kesalahan";
+      const message = err instanceof Error ? err.message : "An error occurred";
       setPesanStatus({ tipe: "error", text: message });
     } finally {
       setSedangKirim(false);
@@ -184,7 +184,7 @@ export default function ReminderModal({
         }}
       >
         <span>✉️</span>
-        <span>Pengingat Jatuh Tempo</span>
+        <span>Payment Reminder</span>
       </button>
 
       {buka && (
@@ -220,11 +220,11 @@ export default function ReminderModal({
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ fontSize: 22 }}>✉️</span>
                   <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: "#0f172a" }}>
-                    Sistem Pengingat Jatuh Tempo (Automated Email Reminder)
+                    Payment Due Reminder (Email Notification)
                   </h2>
                 </div>
                 <p style={{ margin: "4px 0 0", fontSize: 13, color: "#64748b" }}>
-                  Invoice: <b>{nomorInvoice}</b> &middot; Klien: <b>{klien}</b> &middot; Jatuh Tempo: <b>{tanggalJatuhTempo}</b> ({hariTerlambat > 0 ? `Menunggak ${hariTerlambat} hari` : `Dalam ${Math.abs(hariTerlambat)} hari`})
+                  Invoice: <b>{nomorInvoice}</b> &middot; Client: <b>{klien}</b> &middot; Due Date: <b>{tanggalJatuhTempo}</b> ({hariTerlambat > 0 ? `Overdue by ${hariTerlambat} days` : `Due in ${Math.abs(hariTerlambat)} days`})
                 </p>
               </div>
               <button
@@ -264,15 +264,15 @@ export default function ReminderModal({
             {/* Pilihan Template Reminder */}
             <div style={{ marginBottom: 18 }}>
               <label style={{ display: "block", fontSize: 12.5, fontWeight: 700, color: "#334155", marginBottom: 8, textTransform: "uppercase" }}>
-                Pilih Tipe Surat / Tingkat Urgensi:
+                Select Reminder Urgency / Template:
               </label>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 8 }}>
                 {[
-                  { id: "h-7", label: "H-7 (Awal)", desc: "Ramah & Sopan", color: "#0284c7" },
-                  { id: "h-0", label: "Hari H (H-0)", desc: "Jatuh Tempo Hari Ini", color: "#16a34a" },
-                  { id: "h+7", label: "H+7 (Follow-Up)", desc: "Lewat 7 Hari", color: "#d97706" },
-                  { id: "h+14", label: "H+14 (Peringatan II)", desc: "Lewat 14 Hari", color: "#ea580c" },
-                  { id: "h+30", label: "H+30 (Tunggakan)", desc: "Surat Peringatan Resmi", color: "#dc2626" },
+                  { id: "h-7", label: "H-7 (Early Notice)", desc: "Friendly & Polite", color: "#0284c7" },
+                  { id: "h-0", label: "Due Date (H-0)", desc: "Due Today", color: "#16a34a" },
+                  { id: "h+7", label: "H+7 (Follow-Up)", desc: "7 Days Overdue", color: "#d97706" },
+                  { id: "h+14", label: "H+14 (Warning II)", desc: "14 Days Overdue", color: "#ea580c" },
+                  { id: "h+30", label: "H+30 (Overdue Notice)", desc: "Formal Demand Letter", color: "#dc2626" },
                 ].map((item) => (
                   <button
                     key={item.id}
@@ -303,25 +303,25 @@ export default function ReminderModal({
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
               <div>
                 <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>
-                  Nama PIC Penerima:
+                  Recipient PIC Name:
                 </label>
                 <input
                   type="text"
                   value={namaPenerima}
                   onChange={(e) => setNamaPenerima(e.target.value)}
-                  placeholder="Nama PIC Klien..."
+                  placeholder="Client PIC Name..."
                   style={{ width: "100%", padding: "7px 10px", fontSize: 13, borderRadius: 6, border: "1px solid #cbd5e1" }}
                 />
               </div>
               <div>
                 <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>
-                  Email PIC Klien:
+                  Client PIC Email:
                 </label>
                 <input
                   type="email"
                   value={emailPic}
                   onChange={(e) => setEmailPic(e.target.value)}
-                  placeholder="pic@perusahaan.com"
+                  placeholder="pic@company.com"
                   style={{ width: "100%", padding: "7px 10px", fontSize: 13, borderRadius: 6, border: "1px solid #cbd5e1" }}
                 />
               </div>
@@ -329,7 +329,7 @@ export default function ReminderModal({
 
             <div style={{ marginBottom: 14 }}>
               <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>
-                Subjek Email:
+                Email Subject:
               </label>
               <input
                 type="text"
@@ -343,7 +343,7 @@ export default function ReminderModal({
             <div style={{ marginBottom: 18 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
                 <label style={{ fontSize: 12, fontWeight: 600, color: "#475569" }}>
-                  Isi Surat / Draft Email (Dapat diedit sebelum dikirim):
+                  Letter Body / Email Draft (Editable before sending):
                 </label>
                 <button
                   type="button"
@@ -357,7 +357,7 @@ export default function ReminderModal({
                     cursor: "pointer",
                   }}
                 >
-                  {salinSukses ? "✓ Berhasil Disalin!" : "📋 Salin Seluruh Teks"}
+                  {salinSukses ? "✓ Copied to Clipboard!" : "📋 Copy Entire Text"}
                 </button>
               </div>
               <textarea
@@ -399,7 +399,7 @@ export default function ReminderModal({
                   }}
                 >
                   <span>✉️</span>
-                  <span>Buka di Email Client (Outlook/Gmail)</span>
+                  <span>Open in Email Client (Outlook/Gmail)</span>
                 </button>
 
                 <button
@@ -417,7 +417,7 @@ export default function ReminderModal({
                     cursor: "pointer",
                   }}
                 >
-                  {sedangKirim ? "Menyimpan..." : "💾 Catat Pengiriman ke Audit"}
+                  {sedangKirim ? "Saving..." : "💾 Log Dispatch to Audit"}
                 </button>
               </div>
 
@@ -427,20 +427,20 @@ export default function ReminderModal({
                 className="btn"
                 style={{ padding: "8px 14px", fontSize: 13 }}
               >
-                Tutup
+                Close
               </button>
             </div>
 
             {/* Riwayat Pengingat Sebelumnya */}
             <div style={{ marginTop: 24, borderTop: "1px solid #e2e8f0", paddingTop: 16 }}>
               <h4 style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", margin: "0 0 10px" }}>
-                📜 Riwayat Pengingat yang Pernah Dikirim ({riwayat.length})
+                📜 Reminder History ({riwayat.length})
               </h4>
               {loadingRiwayat ? (
-                <div style={{ fontSize: 12, color: "#64748b" }}>Memuat riwayat...</div>
+                <div style={{ fontSize: 12, color: "#64748b" }}>Loading history...</div>
               ) : riwayat.length === 0 ? (
                 <div style={{ fontSize: 12, color: "#64748b", fontStyle: "italic" }}>
-                  Belum ada catatan pengingat yang pernah dikirim untuk invoice ini.
+                  No reminder history recorded for this invoice yet.
                 </div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -462,9 +462,9 @@ export default function ReminderModal({
                         <span style={{ fontWeight: 700, color: "#0369a1", textTransform: "uppercase", marginRight: 8 }}>
                           [{r.tipeReminder}]
                         </span>
-                        <span>Kepada: <b>{r.emailPenerima}</b> ({r.namaPicPenerima || "-"})</span>
+                        <span>To: <b>{r.emailPenerima}</b> ({r.namaPicPenerima || "-"})</span>
                         <div style={{ color: "#64748b", fontSize: 11, marginTop: 2 }}>
-                          Subjek: {r.subjek}
+                          Subject: {r.subjek}
                         </div>
                       </div>
                       <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12 }}>

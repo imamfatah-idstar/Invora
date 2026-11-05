@@ -6,10 +6,10 @@ import Topbar from "@/components/topbar";
 
 const LABEL_STATUS: Record<string, string> = {
   draft: "Draft",
-  menunggu_checker: "Menunggu Checker",
-  perlu_revisi: "Perlu Revisi",
-  siap_diajukan: "Siap Diajukan",
-  diajukan: "Diajukan",
+  menunggu_checker: "Pending Review",
+  perlu_revisi: "Needs Revision",
+  siap_diajukan: "Ready to Submit",
+  diajukan: "Submitted",
 };
 
 export default async function DaftarPengajuan() {
@@ -42,33 +42,33 @@ export default async function DaftarPengajuan() {
       <main className="page">
         <a href="/dashboard" className="back-link">&larr; Dashboard</a>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
-          <h1>Daftar Pengajuan</h1>
+          <h1>Invoicing Submissions</h1>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <a href="/dashboard/outstanding" className="btn">💰 Outstanding &amp; Aging</a>
-            <a href="/api/rekon-invoice" className="btn">⬇ Download Rekon Invoice (.xlsx)</a>
+            <a href="/api/rekon-invoice" className="btn">⬇ Download Invoice Recon (.xlsx)</a>
             {userLogin.role === "petugas" && (
-              <a href="/pengajuan/baru" className="btn btn-primary">+ Buat Pengajuan</a>
+              <a href="/pengajuan/baru" className="btn btn-primary">+ New Submission</a>
             )}
           </div>
         </div>
 
         {userLogin.role === "checker" && jumlahMenungguChecker > 0 && (
           <div className="alert alert-warning">
-            🔔 Ada <b>{jumlahMenungguChecker}</b> pengajuan menunggu Anda periksa.
+            🔔 There are <b>{jumlahMenungguChecker}</b> submission(s) pending your review.
           </div>
         )}
 
         {pengajuanTanpaBast > 0 && (
           <div className="alert alert-warning">
-            ⚠️ Ada <b>{pengajuanTanpaBast}</b> pengajuan siap/sedang diajukan yang <b>dokumen BAST-nya belum dibuat</b> (lihat penanda BAST di bawah).
+            ⚠️ There are <b>{pengajuanTanpaBast}</b> submission(s) ready/submitted without a generated BAST document.
           </div>
         )}
 
         <div className="table-wrap">
           <table>
             <thead><tr>
-              <th>Periode</th><th>PO</th>
-              <th>User XL</th><th>Status</th><th></th>
+              <th>Period</th><th>PO No.</th>
+              <th>Client Approver</th><th>Status</th><th></th>
             </tr></thead>
             <tbody>
               {daftar.map((a) => {
@@ -83,21 +83,21 @@ export default async function DaftarPengajuan() {
                       <span className={`badge badge-${a.status}`}>{LABEL_STATUS[a.status] ?? a.status}</span>
                       {perluPerhatianChecker ? " ⏳" : ""}
                       {bastKurang && (
-                        <span className="badge badge-danger" style={{ marginLeft: 6, fontSize: 11 }} title="Dokumen BAST belum dibuat">
+                        <span className="badge badge-danger" style={{ marginLeft: 6, fontSize: 11 }} title="BAST document not yet created">
                           ⚠️ BAST
                         </span>
                       )}
                     </td>
                     <td>
                       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                        <a href={`/pengajuan/${a.id}`} className="btn-text">Lihat</a>
+                        <a href={`/pengajuan/${a.id}`} className="btn-text">View</a>
                         <span style={{ color: "var(--color-border)" }}>&middot;</span>
                         <a
                           href={`/api/pengajuan/${a.id}/invoice/pdf`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="btn-text"
-                          title="Cetak Invoice Resmi PDF"
+                          title="Print / Download PDF Invoice"
                           style={{ color: "#ea242a", fontWeight: 600 }}
                         >
                           📄 PDF
@@ -107,7 +107,7 @@ export default async function DaftarPengajuan() {
                   </tr>
                 );
               })}
-              {daftar.length === 0 && <tr><td colSpan={5} className="table-empty">Belum ada pengajuan.</td></tr>}
+              {daftar.length === 0 && <tr><td colSpan={5} className="table-empty">No submissions found.</td></tr>}
             </tbody>
           </table>
         </div>

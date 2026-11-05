@@ -30,11 +30,11 @@ export default async function HalamanKelolaData() {
       <Topbar nama={user.nama} role={user.role} />
       <main className="page">
         <a href="/dashboard" className="back-link">&larr; Dashboard</a>
-        <h1>Kelola Data</h1>
+        <h1>Data Management</h1>
         <p className="subtitle">
-          Reset massal data uji/salah unggah — untuk hapus satu-per-satu, gunakan tombol Hapus di halaman
-          Data Referensi masing-masing (Personel, PO, Rate Card, Pemetaan) atau centang beberapa baris lalu
-          &quot;Hapus Terpilih&quot;. Akun login, User XL, dan Kalender Kerja TIDAK pernah ikut terhapus dari sini.
+          Bulk reset staging/test data — to delete individually, use the Delete button in each
+          Reference Data page (Personnel, PO, Rate Cards, Mappings) or check multiple rows and click
+          &quot;Delete Selected&quot;. User accounts, Client Approvers, and Working Calendar are NEVER deleted from here.
         </p>
         <KelolaDataClient jumlahAwal={jumlah} />
       </main>

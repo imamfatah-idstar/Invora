@@ -54,7 +54,7 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
 
   async function hitungPratinjau() {
     setError(null);
-    if (!periode) { setError("Pilih periode dulu."); return; }
+    if (!periode) { setError("Please select a billing period first."); return; }
     setLoadingHitung(true);
     const res = await fetch("/api/pengajuan/preview", {
       method: "POST",
@@ -62,7 +62,7 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
       body: JSON.stringify({ poId, periode }),
     });
     setLoadingHitung(false);
-    if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Gagal menghitung."); return; }
+    if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Failed to calculate."); return; }
     const data = await res.json();
     setSelisihMenggantung(data.selisihMenggantung ?? null);
     if (data.jenis === "tahap") {
@@ -103,7 +103,7 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
       }),
     });
     setLoadingSimpan(false);
-    if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Gagal menyimpan."); return; }
+    if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Failed to save."); return; }
     const data = await res.json();
     router.push(`/pengajuan/${data.id}`);
   }
@@ -113,7 +113,7 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
     .reduce((acc, b) => acc + Number(b.akanDitagihkan), 0);
 
   if (daftarPo.length === 0 || daftarUserXl.length === 0) {
-    return <div className="alert alert-danger">Perlu minimal 1 PO dan 1 User XL (buat dulu di menu Data Referensi).</div>;
+    return <div className="alert alert-danger">At least 1 PO and 1 Client Approver are required (create them first in Reference Data).</div>;
   }
 
   return (
@@ -125,20 +125,20 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
             value={poId}
             onChange={(v) => { setPoId(Number(v)); setBaris(null); setBarisTahap(null); }}
             opsi={daftarPo.map((p) => ({ value: p.id, label: p.label }))}
-            placeholderCari="Cari nomor PO atau nama proyek..."
+            placeholderCari="Search PO number or project name..."
           />
         </div>
         <div className="field">
-          <label>User XL</label>
+          <label>Client Approver (User XL)</label>
           <select value={userXlId} onChange={(e) => setUserXlId(Number(e.target.value))}>
             {daftarUserXl.map((u) => <option key={u.id} value={u.id}>{u.label}</option>)}
           </select>
         </div>
         <div className="field">
-          <label>Periode</label>
+          <label>Billing Period</label>
           <input type="month" value={periode} onChange={(e) => { setPeriode(e.target.value); setBaris(null); setBarisTahap(null); }} />
         </div>
-        <button onClick={hitungPratinjau} disabled={loadingHitung} className="btn btn-primary">{loadingHitung ? "Menghitung..." : "Hitung Pratinjau"}</button>
+        <button onClick={hitungPratinjau} disabled={loadingHitung} className="btn btn-primary">{loadingHitung ? "Calculating..." : "Calculate Preview"}</button>
       </div>
 
       {error && <div className="alert alert-danger">{error}</div>}
@@ -158,7 +158,7 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
               disabled={loadingSimpan || totalNilaiTahap(nilaiTahap) <= 0 || !keteranganTahap.trim()}
               className="btn btn-primary"
             >
-              {loadingSimpan ? "Menyimpan..." : "Simpan sebagai Draft"}
+              {loadingSimpan ? "Saving..." : "Save as Draft"}
             </button>
           </div>
         </>
@@ -169,12 +169,12 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
           <div className="table-wrap">
             <table>
               <thead><tr>
-                <th></th><th>Personel</th>
-                <th>Rate</th><th>Hari Ditagihkan / Acuan</th>
-                <th>Sumber</th>
-                <th>Nilai Penuh</th>
-                <th>Sudah di PO Lain</th>
-                <th>Akan Ditagihkan (PO ini)</th>
+                <th></th><th>Personnel</th>
+                <th>Rate</th><th>Billable / Reference Days</th>
+                <th>Source</th>
+                <th>Full Amount</th>
+                <th>Allocated to Other PO</th>
+                <th>Billed to This PO</th>
                 <th>Timesheet</th>
               </tr></thead>
               <tbody>
@@ -190,7 +190,7 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
                     <td>{b.hariKerjaDapatDitagihkan ?? "-"} / {b.hariKerjaAcuanBulan ?? "-"}</td>
                     <td>
                       <span className={`badge ${b.sumberHitung === "timesheet" ? "badge-siap_diajukan" : ""}`}>
-                        {b.sumberHitung === "timesheet" ? "Timesheet" : "Kalender"}
+                        {b.sumberHitung === "timesheet" ? "Timesheet" : "Working Calendar"}
                       </span>
                     </td>
                     {b.error ? (
@@ -201,18 +201,18 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
                         <td>{Number(b.sudahDialokasikanDiPoLain) > 0 ? formatRupiah(b.sudahDialokasikanDiPoLain) : "-"}</td>
                         <td>
                           {b.sudahLunasBulanIni ? (
-                            <span className="badge">Sudah lunas di PO lain</span>
+                            <span className="badge">Fully billed on other PO</span>
                           ) : b.akanDitagihkan && Number(b.akanDitagihkan) > 0 ? (
                             <>
                               {formatRupiah(b.akanDitagihkan)}
                               {b.sisaPerluDitagih && Number(b.sisaPerluDitagih) > Number(b.akanDitagihkan) && (
                                 <div style={{ fontSize: 12, color: "var(--color-warning, #b45309)" }}>
-                                  Sisa {formatRupiah(String(Number(b.sisaPerluDitagih) - Number(b.akanDitagihkan)))} belum tertagih — perlu pengajuan tambahan di PO lain.
+                                  Remaining {formatRupiah(String(Number(b.sisaPerluDitagih) - Number(b.akanDitagihkan)))} unbilled — requires additional submission on another PO.
                                 </div>
                               )}
                             </>
                           ) : (
-                            <span style={{ color: "var(--color-danger)" }}>Saldo PO ini habis</span>
+                            <span style={{ color: "var(--color-danger)" }}>Remaining PO balance exhausted</span>
                           )}
                         </td>
                       </>
@@ -224,13 +224,13 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
                         onClick={() => setModalPersonel({ id: b.personelId, nama: b.namaPersonel, sudahAda: b.sumberHitung === "timesheet" })}
                         disabled={!periode}
                       >
-                        {b.sumberHitung === "timesheet" ? "Ganti Timesheet" : "Upload Timesheet"}
+                        {b.sumberHitung === "timesheet" ? "Change Timesheet" : "Upload Timesheet"}
                       </button>
                     </td>
                   </tr>
                   );
                 })}
-                {baris.length === 0 && <tr><td colSpan={9} className="table-empty">Tidak ada personel terpetakan ke PO ini untuk periode tersebut.</td></tr>}
+                {baris.length === 0 && <tr><td colSpan={9} className="table-empty">No personnel mapped to this PO for the selected period.</td></tr>}
               </tbody>
             </table>
           </div>
@@ -245,60 +245,60 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
               }}
             >
               <h4 style={{ margin: "0 0 4px 0", fontSize: 14 }}>
-                ⚠️ Deficiency GR Carry-Over Terdeteksi (One-Time Carry-Over)
+                ⚠️ Deficiency GR Carry-Over Detected (One-Time Carry-Over)
               </h4>
               <p style={{ margin: "0 0 8px 0", fontSize: 13, color: "var(--color-text-muted)" }}>
-                Ditemukan selisih GR dari pengajuan sebelumnya (Periode: <b>{selisihMenggantung.periode}</b>, {selisihMenggantung.nomorInvoice ? `No. Invoice: ${selisihMenggantung.nomorInvoice}` : `Ref: Pengajuan #${selisihMenggantung.sumberPengajuanId}`}).
-                Nilai ini akan otomatis diserap ke pengajuan ini sebagai penyesuaian tagihan.
+                A GR variance was found from previous submission (Period: <b>{selisihMenggantung.periode}</b>, {selisihMenggantung.nomorInvoice ? `Invoice No: ${selisihMenggantung.nomorInvoice}` : `Ref: Submission #${selisihMenggantung.sumberPengajuanId}`}).
+                This amount will be automatically absorbed into this submission as a billing adjustment.
               </p>
               <div style={{ display: "flex", gap: 16, fontSize: 13, flexWrap: "wrap" }}>
-                <span>Subtotal Personel: <b>{formatRupiah(String(total))}</b></span>
+                <span>Personnel Subtotal: <b>{formatRupiah(String(total))}</b></span>
                 <span>
-                  Penyesuaian Selisih GR:{" "}
+                  GR Variance Adjustment:{" "}
                   <b style={{ color: selisihMenggantung.isKekurangan ? "#b45309" : "#1d4ed8" }}>
-                    {selisihMenggantung.isKekurangan ? "+" : ""}{formatRupiah(selisihMenggantung.nominal)} ({selisihMenggantung.isKekurangan ? "Menambah Tagihan" : "Memotong Tagihan"})
+                    {selisihMenggantung.isKekurangan ? "+" : ""}{formatRupiah(selisihMenggantung.nominal)} ({selisihMenggantung.isKekurangan ? "Adds to Billing" : "Deducts from Billing"})
                   </b>
                 </span>
                 <span style={{ fontSize: 14, fontWeight: "bold" }}>
-                  Estimasi Tagihan Akhir: {formatRupiah(String(total + Number(selisihMenggantung.nominal)))}
+                  Estimated Final Amount: {formatRupiah(String(total + Number(selisihMenggantung.nominal)))}
                 </span>
               </div>
             </div>
           )}
 
           <p className="card" style={{ display: "inline-block", padding: "10px 16px", fontSize: 15, marginTop: 12 }}>
-            Total dipilih: <b>{formatRupiah(String(total))}</b>
+            Selected Total: <b>{formatRupiah(String(total))}</b>
             {selisihMenggantung && (
               <span style={{ fontSize: 13, color: "var(--color-text-muted)", marginLeft: 8 }}>
-                (sebelum penyesuaian selisih GR {selisihMenggantung.isKekurangan ? "+" : ""}{formatRupiah(selisihMenggantung.nominal)})
+                (before GR variance adjustment {selisihMenggantung.isKekurangan ? "+" : ""}{formatRupiah(selisihMenggantung.nominal)})
               </span>
             )}
           </p>
           {baris.some((b) => Number(b.sudahDialokasikanDiPoLain) > 0) && (
             <div className="card" style={{ padding: "12px 16px", marginTop: 8 }}>
               <p style={{ marginTop: 0, fontSize: 13, color: "var(--color-muted, #666)" }}>
-                Ada personel yang tagihannya dipecah lintas PO bulan ini. Approval User XL untuk pemecahan ini
-                terjadi di luar Invora (email/WhatsApp) — kolom di bawah opsional, hanya untuk catatan internal.
+                Some personnel billings are split across POs this month. Approval from Client Approver for this split
+                is arranged offline (email/WhatsApp) — fields below are optional for internal audit trail.
               </p>
               <div className="toolbar">
                 <div className="field">
-                  <label>Disetujui oleh (User XL)</label>
-                  <input value={approvalPemberi} onChange={(e) => setApprovalPemberi(e.target.value)} placeholder="Nama User XL" />
+                  <label>Approved by (Client Approver)</label>
+                  <input value={approvalPemberi} onChange={(e) => setApprovalPemberi(e.target.value)} placeholder="Approver Name" />
                 </div>
                 <div className="field">
-                  <label>Tanggal approval</label>
+                  <label>Approval Date</label>
                   <input type="date" value={approvalTanggal} onChange={(e) => setApprovalTanggal(e.target.value)} />
                 </div>
                 <div className="field">
-                  <label>Referensi (link/subjek email/WA)</label>
-                  <input value={approvalReferensi} onChange={(e) => setApprovalReferensi(e.target.value)} placeholder="cth. subjek email atau link chat" />
+                  <label>Reference (email subject / message link)</label>
+                  <input value={approvalReferensi} onChange={(e) => setApprovalReferensi(e.target.value)} placeholder="e.g. email subject or chat link" />
                 </div>
               </div>
             </div>
           )}
           <div>
             <button onClick={simpan} disabled={loadingSimpan || dipilih.size === 0} className="btn btn-primary">
-              {loadingSimpan ? "Menyimpan..." : "Simpan sebagai Draft"}
+              {loadingSimpan ? "Saving..." : "Save as Draft"}
             </button>
           </div>
         </>

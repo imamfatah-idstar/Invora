@@ -10,45 +10,45 @@ export default async function Dashboard() {
   const menu: MenuItem[] = [
     ...(user.role !== "admin" ? [{
       href: "/pengajuan",
-      label: "Pengajuan",
-      deskripsi: "Buat, konfirmasi & periksa pengajuan invoicing.",
+      label: "Invoicing Submissions",
+      deskripsi: "Create, confirm & review invoicing submissions.",
       icon: "📋"
     }] : []),
     ...(user.role !== "admin" ? [{
       href: "/summary-po",
-      label: "Summary PO",
-      deskripsi: "Ringkasan nilai PO, nilai GR, dan saldo per tahun.",
+      label: "PO Summary",
+      deskripsi: "Summary of PO value, GR value, and remaining balance per year.",
       icon: "📊"
     }] : []),
     ...(user.role !== "admin" ? [{
       href: "/dashboard/outstanding",
       label: "Outstanding & Aging",
-      deskripsi: "Monitoring piutang belum lunas, jadwal jatuh tempo, dan aging schedule.",
+      deskripsi: "Monitor outstanding receivables, due dates, and aging schedule.",
       icon: "💰"
     }] : []),
-    // Cash-in Forecasting dinonaktifkan sementara sesuai instruksi
+    // Cash-in Forecasting temporarily disabled
     ...(user.role === "petugas" ? [{
       href: "/data-referensi/personel",
-      label: "Data Referensi",
-      deskripsi: "Personel, Rate Card, PO, User XL, Pemetaan, Kalender Kerja.",
+      label: "Reference Data",
+      deskripsi: "Personnel, Rate Cards, POs, Client Approvers, Mappings, Working Calendar.",
       icon: "📁"
     }] : []),
     ...(user.role !== "admin" ? [{
       href: "/dashboard/analisa-durasi",
-      label: "Analisa Durasi Proses",
-      deskripsi: "Rata-rata hari submit CAC sampai invoice disetujui, per User XL.",
+      label: "Process Duration Analytics",
+      deskripsi: "Average turnaround time from CAC submission to invoice approval.",
       icon: "⏱️"
     }] : []),
     ...(user.role === "admin" ? [{
       href: "/admin/akun",
-      label: "Akun & Akses",
-      deskripsi: "Daftarkan email, atur peran (Input Data / Checker), aktifkan/nonaktifkan akun.",
+      label: "Accounts & Permissions",
+      deskripsi: "Register emails, assign roles (Data Entry / Checker), activate/deactivate accounts.",
       icon: "👥"
     }] : []),
     ...(user.role === "petugas" || user.role === "admin" ? [{
       href: "/kelola-data",
-      label: "Kelola Data",
-      deskripsi: "Reset massal data uji/salah unggah (Personel, PO, Rate Card, Pengajuan, dll).",
+      label: "Data Management",
+      deskripsi: "Bulk reset test/staging data (Personnel, POs, Rate Cards, Submissions, etc.).",
       icon: "⚙️"
     }] : []),
   ];

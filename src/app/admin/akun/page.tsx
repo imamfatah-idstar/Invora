@@ -1,7 +1,7 @@
 import { db } from "@/db";
 import { users } from "@/db/schema";
-import { desc } from "drizzle-orm";
 import { userSaatIni } from "@/lib/session-server";
+import { desc } from "drizzle-orm";
 import FormTambahAkun from "./akun-form";
 import BarisAksiAkun from "./akun-row-actions";
 
@@ -13,17 +13,16 @@ export default async function HalamanAkun() {
 
   return (
     <div>
-      <h1>Akun &amp; Akses</h1>
+      <h1>Accounts &amp; Permissions</h1>
       <p className="subtitle">
-        Daftarkan email yang boleh masuk aplikasi ini (wajib domain <b>@idstar.group</b>), tentukan siapa peran <b>Input Data</b>
-        (buat &amp; konfirmasi pengajuan, kelola data referensi) dan siapa peran <b>Checker</b> (approve/reject pengajuan).
-        Administrator tidak mengelola data finansial/operasional apa pun di sini — hanya akses, dan tidak melihat
-        halaman Pengajuan atau Summary PO.
+        Register authorized user emails (must use <b>@idstar.group</b> domain), assign <b>Data Entry</b> role
+        (create &amp; confirm submissions, manage reference data) or <b>Checker</b> role (review &amp; approve submissions).
+        Administrators manage user access only and do not handle operational financial entries.
       </p>
       <FormTambahAkun />
       <div className="table-wrap">
         <table>
-          <thead><tr><th>Nama</th><th>Email</th><th colSpan={2}>Peran &amp; Status</th></tr></thead>
+          <thead><tr><th>Full Name</th><th>Email</th><th colSpan={2}>Role &amp; Status</th></tr></thead>
           <tbody>
             {daftar.map((u) => (
               <tr key={u.id}>
@@ -39,15 +38,13 @@ export default async function HalamanAkun() {
                 </td>
               </tr>
             ))}
-            {daftar.length === 0 && <tr><td colSpan={4} className="table-empty">Belum ada akun.</td></tr>}
+            {daftar.length === 0 && <tr><td colSpan={4} className="table-empty">No user accounts found.</td></tr>}
           </tbody>
         </table>
       </div>
       <p className="subtitle" style={{ marginTop: 16 }}>
-        💡 Akun tidak bisa dihapus permanen (dipakai sebagai jejak di log audit, pengajuan, dan riwayat lain) — nonaktifkan
-        akun kalau seseorang tidak lagi berhak masuk. Akun nonaktif otomatis ditolak saat login, dan sesi yang sedang
-        berjalan tetap berakhir sesuai masa berlakunya. Peran ditampilkan sebagai &quot;Input Data&quot; di layar (nilai
-        di basis data tetap &quot;petugas&quot;, tidak diubah, supaya tidak perlu migrasi ulang catatan lama).
+        💡 User accounts cannot be permanently deleted (preserved for audit trail and submission history) — deactivate
+        an account if access is revoked. Inactive accounts are automatically blocked at sign-in.
       </p>
     </div>
   );

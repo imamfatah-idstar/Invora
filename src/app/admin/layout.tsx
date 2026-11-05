@@ -8,7 +8,7 @@ import Topbar from "@/components/topbar";
 // admin untuk akses, tidak ada hubungannya dengan finance" — lihat
 // PROJECT_INSTRUCTIONS.md bagian 20.
 const MENU = [
-  { href: "/admin/akun", label: "Akun & Akses" },
+  { href: "/admin/akun", label: "Accounts & Permissions" },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -20,7 +20,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <div className="admin-shell">
         <nav className="admin-sidebar">
           <a href="/dashboard" className="back-link">&larr; Dashboard</a>
-          <h3>Administrasi</h3>
+          <h3>Administration</h3>
           <ul className="admin-nav">
             {MENU.map((m) => (
               <li key={m.href}><a href={m.href}>{m.label}</a></li>

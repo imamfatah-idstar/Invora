@@ -86,10 +86,10 @@ export default function PembayaranPanel({
   // Status Lunas / Sebagian / Belum
   const statusPelunasan =
     sisaPiutang <= 0
-      ? "Lunas"
+      ? "Paid in Full"
       : totalTerbayar > 0
-      ? "Sebagian"
-      : "Belum Bayar";
+      ? "Partially Paid"
+      : "Unpaid";
 
   // Auto hitung PPh 23 (2% dari DPP)
   function hitungOtomatisPph23() {
@@ -129,10 +129,10 @@ export default function PembayaranPanel({
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || "Gagal mencatat pembayaran.");
+        throw new Error(data.error || "Failed to record payment.");
       }
 
-      setSuksesMsg("Pembayaran berhasil dicatat! Menunggu verifikasi Checker.");
+      setSuksesMsg("Payment successfully recorded! Awaiting Checker verification.");
       // Refresh list
       const resDaftar = await fetch(`/api/pengajuan/${pengajuanId}/pembayaran`);
       const dataDaftar = await resDaftar.json();
@@ -150,7 +150,7 @@ export default function PembayaranPanel({
       setFileBukti(null);
       router.refresh();
     } catch (err: any) {
-      setErrorMsg(err.message || "Terjadi kesalahan.");
+      setErrorMsg(err.message || "An error occurred.");
     } finally {
       setLoading(false);
     }
@@ -159,7 +159,7 @@ export default function PembayaranPanel({
   async function handleVerifikasi(pembayaranId: number, statusHasil: "diverifikasi" | "ditolak") {
     let catatanChecker = "";
     if (statusHasil === "ditolak") {
-      const inputCatatan = prompt("Masukkan alasan penolakan pembayaran ini:");
+      const inputCatatan = prompt("Enter reason for rejecting this payment:");
       if (!inputCatatan || !inputCatatan.trim()) return;
       catatanChecker = inputCatatan.trim();
     }
@@ -176,7 +176,7 @@ export default function PembayaranPanel({
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || "Gagal memproses verifikasi.");
+        throw new Error(data.error || "Failed to process verification.");
       }
 
       // Refresh data
@@ -187,7 +187,7 @@ export default function PembayaranPanel({
       }
       router.refresh();
     } catch (err: any) {
-      alert(`Peringatan: ${err.message}`);
+      alert(`Warning: ${err.message}`);
     } finally {
       setVerifikasiLoadingId(null);
     }
@@ -201,7 +201,7 @@ export default function PembayaranPanel({
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ fontSize: 20 }}>💰</span>
             <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700 }}>
-              Pelunasan Pembayaran &amp; Settlement (MVP 5)
+              Payment Settlement &amp; Reconciliation
             </h3>
             <span
               style={{
@@ -210,15 +210,15 @@ export default function PembayaranPanel({
                 padding: "3px 8px",
                 borderRadius: 6,
                 background:
-                  statusPelunasan === "Lunas"
+                  statusPelunasan === "Paid in Full"
                     ? "#d1fae5"
-                    : statusPelunasan === "Sebagian"
+                    : statusPelunasan === "Partially Paid"
                     ? "#fef08a"
                     : "#fee2e2",
                 color:
-                  statusPelunasan === "Lunas"
+                  statusPelunasan === "Paid in Full"
                     ? "#065f46"
-                    : statusPelunasan === "Sebagian"
+                    : statusPelunasan === "Partially Paid"
                     ? "#854d0e"
                     : "#991b1b",
               }}
@@ -227,7 +227,7 @@ export default function PembayaranPanel({
             </span>
           </div>
           <p className="subtitle" style={{ margin: "4px 0 0", fontSize: 13 }}>
-            Pencatatan mutasi transfer bank, potongan PPh 23, bukti potong, dan verifikasi Maker-Checker sebelum penutupan invoice.
+            Recording bank transfer mutations, withholding tax PPh 23, withholding tax slips, and Maker-Checker verification.
           </p>
         </div>
 
@@ -239,7 +239,7 @@ export default function PembayaranPanel({
             className="btn btn-primary"
             style={{ fontSize: 13, fontWeight: 600, padding: "7px 14px" }}
           >
-            + Catat Pembayaran Baru
+            + Record New Payment
           </button>
         )}
       </div>
@@ -258,15 +258,15 @@ export default function PembayaranPanel({
         }}
       >
         <div>
-          <span style={{ fontSize: 12, color: "var(--color-text-muted)", display: "block" }}>Total Tagihan Invoice (+PPN)</span>
+          <span style={{ fontSize: 12, color: "var(--color-text-muted)", display: "block" }}>Total Invoice Amount (+VAT)</span>
           <b style={{ fontSize: 16, color: "#111827" }}>{formatRupiah(totalInvoice)}</b>
         </div>
         <div>
-          <span style={{ fontSize: 12, color: "var(--color-text-muted)", display: "block" }}>Dana Terverifikasi Diterima</span>
+          <span style={{ fontSize: 12, color: "var(--color-text-muted)", display: "block" }}>Verified Funds Received</span>
           <b style={{ fontSize: 16, color: "#059669" }}>{formatRupiah(totalTerbayar)}</b>
         </div>
         <div>
-          <span style={{ fontSize: 12, color: "var(--color-text-muted)", display: "block" }}>Sisa Piutang (Outstanding)</span>
+          <span style={{ fontSize: 12, color: "var(--color-text-muted)", display: "block" }}>Outstanding Receivables</span>
           <b style={{ fontSize: 16, color: sisaPiutang > 0 ? "#dc2626" : "#059669" }}>
             {formatRupiah(sisaPiutang)}
           </b>
@@ -302,7 +302,7 @@ export default function PembayaranPanel({
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#1e293b" }}>
-              Formulir Input Pelunasan Dana Masuk (Petugas / Maker)
+              Incoming Payment Record Form (Maker / Data Entry)
             </h4>
             <button
               type="button"
@@ -310,7 +310,7 @@ export default function PembayaranPanel({
               className="btn"
               style={{ fontSize: 12, padding: "4px 8px" }}
             >
-              Batal
+              Cancel
             </button>
           </div>
 
@@ -318,7 +318,7 @@ export default function PembayaranPanel({
             {/* Tanggal Bayar */}
             <div>
               <label style={{ fontSize: 12.5, fontWeight: 600, display: "block", marginBottom: 4 }}>
-                Tanggal Mutasi / Bayar <span style={{ color: "red" }}>*</span>
+                Payment / Mutation Date <span style={{ color: "red" }}>*</span>
               </label>
               <input
                 type="date"
@@ -332,13 +332,13 @@ export default function PembayaranPanel({
             {/* Nominal Diterima Bersih */}
             <div>
               <label style={{ fontSize: 12.5, fontWeight: 600, display: "block", marginBottom: 4 }}>
-                Nominal Diterima di Rekening (Rp) <span style={{ color: "red" }}>*</span>
+                Net Received Amount (Rp) <span style={{ color: "red" }}>*</span>
               </label>
               <input
                 type="number"
                 step="any"
                 required
-                placeholder="cth: 81900000"
+                placeholder="e.g. 81900000"
                 value={nominalDiterima}
                 onChange={(e) => setNominalDiterima(e.target.value)}
                 style={{ width: "100%", padding: "7px 10px", borderRadius: 6, border: "1px solid var(--color-border)" }}
@@ -348,7 +348,7 @@ export default function PembayaranPanel({
             {/* Potongan PPh 23 */}
             <div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                <label style={{ fontSize: 12.5, fontWeight: 600 }}>Potongan PPh 23 (Rp)</label>
+                <label style={{ fontSize: 12.5, fontWeight: 600 }}>Withholding Tax PPh 23 (Rp)</label>
                 <button
                   type="button"
                   onClick={hitungOtomatisPph23}
@@ -362,13 +362,13 @@ export default function PembayaranPanel({
                     padding: 0,
                   }}
                 >
-                  Hitung 2% DPP
+                  Calculate 2% DPP
                 </button>
               </div>
               <input
                 type="number"
                 step="any"
-                placeholder="cth: 1650000"
+                placeholder="e.g. 1650000"
                 value={potonganPph23}
                 onChange={(e) => setPotonganPph23(e.target.value)}
                 style={{ width: "100%", padding: "7px 10px", borderRadius: 6, border: "1px solid var(--color-border)" }}
@@ -378,11 +378,11 @@ export default function PembayaranPanel({
             {/* Nomor Bukti Potong PPh 23 */}
             <div>
               <label style={{ fontSize: 12.5, fontWeight: 600, display: "block", marginBottom: 4 }}>
-                Nomor Bukti Potong (Bupot PPh 23)
+                Tax Withholding Slip No. (Bupot PPh 23)
               </label>
               <input
                 type="text"
-                placeholder="cth: BUPOT-2026-09-0012"
+                placeholder="e.g. BUPOT-2026-09-0012"
                 value={nomorBupotPph23}
                 onChange={(e) => setNomorBupotPph23(e.target.value)}
                 style={{ width: "100%", padding: "7px 10px", borderRadius: 6, border: "1px solid var(--color-border)" }}
@@ -392,12 +392,12 @@ export default function PembayaranPanel({
             {/* Biaya Admin Bank */}
             <div>
               <label style={{ fontSize: 12.5, fontWeight: 600, display: "block", marginBottom: 4 }}>
-                Biaya Admin / Kliring Bank (Rp)
+                Bank Admin / Clearing Fee (Rp)
               </label>
               <input
                 type="number"
                 step="any"
-                placeholder="cth: 6500"
+                placeholder="e.g. 6500"
                 value={biayaAdminBank}
                 onChange={(e) => setBiayaAdminBank(e.target.value)}
                 style={{ width: "100%", padding: "7px 10px", borderRadius: 6, border: "1px solid var(--color-border)" }}
@@ -407,7 +407,7 @@ export default function PembayaranPanel({
             {/* Rekening Bank Tujuan */}
             <div>
               <label style={{ fontSize: 12.5, fontWeight: 600, display: "block", marginBottom: 4 }}>
-                Rekening Bank Penampung <span style={{ color: "red" }}>*</span>
+                Receiving Bank Account <span style={{ color: "red" }}>*</span>
               </label>
               <select
                 value={bankTujuan}
@@ -425,11 +425,11 @@ export default function PembayaranPanel({
             {/* No Referensi Bank */}
             <div>
               <label style={{ fontSize: 12.5, fontWeight: 600, display: "block", marginBottom: 4 }}>
-                Nomor Referensi Transaksi
+                Transaction Reference Number
               </label>
               <input
                 type="text"
-                placeholder="cth: TRF-BCA-98102941"
+                placeholder="e.g. TRF-BCA-98102941"
                 value={nomorReferensiBank}
                 onChange={(e) => setNomorReferensiBank(e.target.value)}
                 style={{ width: "100%", padding: "7px 10px", borderRadius: 6, border: "1px solid var(--color-border)" }}
@@ -439,7 +439,7 @@ export default function PembayaranPanel({
             {/* File Bukti Transfer */}
             <div>
               <label style={{ fontSize: 12.5, fontWeight: 600, display: "block", marginBottom: 4 }}>
-                Unggah Bukti Transfer / Rekening Koran
+                Upload Transfer Receipt / Bank Statement
               </label>
               <input
                 type="file"
@@ -453,11 +453,11 @@ export default function PembayaranPanel({
           {/* Catatan */}
           <div>
             <label style={{ fontSize: 12.5, fontWeight: 600, display: "block", marginBottom: 4 }}>
-              Catatan Pembayaran
+              Payment Notes
             </label>
             <input
               type="text"
-              placeholder="Catatan pelunasan termin / catatan khusus..."
+              placeholder="Installment notes / special remarks..."
               value={catatan}
               onChange={(e) => setCatatan(e.target.value)}
               style={{ width: "100%", padding: "7px 10px", borderRadius: 6, border: "1px solid var(--color-border)" }}
@@ -471,7 +471,7 @@ export default function PembayaranPanel({
               className="btn"
               style={{ fontSize: 13 }}
             >
-              Batal
+              Cancel
             </button>
             <button
               type="submit"
@@ -479,7 +479,7 @@ export default function PembayaranPanel({
               className="btn btn-primary"
               style={{ fontSize: 13, fontWeight: 600 }}
             >
-              {loading ? "Menyimpan..." : "Simpan Data Pembayaran"}
+              {loading ? "Saving..." : "Save Payment Record"}
             </button>
           </div>
         </form>
@@ -490,22 +490,22 @@ export default function PembayaranPanel({
         <table>
           <thead>
             <tr>
-              <th>Tgl Bayar</th>
-              <th style={{ textAlign: "right" }}>Nominal Diterima</th>
+              <th>Payment Date</th>
+              <th style={{ textAlign: "right" }}>Net Received</th>
               <th style={{ textAlign: "right" }}>PPh 23</th>
-              <th style={{ textAlign: "right" }}>Total Pelunasan</th>
+              <th style={{ textAlign: "right" }}>Total Settlement</th>
               <th>Bank &amp; Ref</th>
-              <th>Bukti Bayar</th>
+              <th>Payment Receipt</th>
               <th>Status</th>
-              <th>Penginput</th>
-              <th>Aksi Checker</th>
+              <th>Recorded By</th>
+              <th>Checker Action</th>
             </tr>
           </thead>
           <tbody>
             {daftar.length === 0 ? (
               <tr>
                 <td colSpan={9} style={{ textAlign: "center", padding: "24px 16px", color: "var(--color-text-muted)" }}>
-                  Belum ada data pelunasan yang dicatat untuk invoice ini.
+                  No payment settlement recorded for this invoice yet.
                 </td>
               </tr>
             ) : (
@@ -553,7 +553,7 @@ export default function PembayaranPanel({
                           📄 {p.namaFileBukti}
                         </span>
                       ) : (
-                        <span style={{ fontSize: 11.5, color: "#9ca3af" }}>Tidak ada file</span>
+                        <span style={{ fontSize: 11.5, color: "#9ca3af" }}>No file</span>
                       )}
                     </td>
                     <td>
@@ -568,11 +568,11 @@ export default function PembayaranPanel({
                           color: isDiverifikasi ? "#065f46" : isDitolak ? "#991b1b" : "#854d0e",
                         }}
                       >
-                        {isDiverifikasi ? "Diverifikasi ✓" : isDitolak ? "Ditolak ✗" : "Menunggu Checker"}
+                        {isDiverifikasi ? "Verified ✓" : isDitolak ? "Rejected ✗" : "Pending Checker"}
                       </span>
                       {p.catatanChecker && (
                         <div style={{ fontSize: 11, color: "#991b1b", marginTop: 2 }}>
-                          Ket: {p.catatanChecker}
+                          Reason: {p.catatanChecker}
                         </div>
                       )}
                     </td>
@@ -584,7 +584,7 @@ export default function PembayaranPanel({
                       {canCheck ? (
                         isSayaPembuat ? (
                           <span style={{ fontSize: 11, color: "#9ca3af", fontStyle: "italic" }} title="Segregation of Duties">
-                            Pembuat dilarang verifikasi
+                            Creator restricted from verifying
                           </span>
                         ) : (
                           <div style={{ display: "flex", gap: 6 }}>
@@ -602,7 +602,7 @@ export default function PembayaranPanel({
                                 border: "none",
                               }}
                             >
-                              Setujui
+                              Approve
                             </button>
                             <button
                               type="button"
@@ -618,13 +618,13 @@ export default function PembayaranPanel({
                                 border: "none",
                               }}
                             >
-                              Tolak
+                              Reject
                             </button>
                           </div>
                         )
                       ) : (
                         <span style={{ fontSize: 11.5, color: "var(--color-text-muted)" }}>
-                          {isDiverifikasi ? `Diverifikasi (${p.diverifikasiPada || "-"})` : "-"}
+                          {isDiverifikasi ? `Verified (${p.diverifikasiPada || "-"})` : "-"}
                         </span>
                       )}
                     </td>

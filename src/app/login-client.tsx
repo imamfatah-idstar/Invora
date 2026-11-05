@@ -60,7 +60,7 @@ export default function LoginClient() {
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      setError(data.error ?? "Gagal login.");
+      setError(data.error ?? "Failed to sign in.");
       return false;
     }
 
@@ -99,7 +99,7 @@ export default function LoginClient() {
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      setError(data.error ?? "Gagal login dengan akun Google.");
+      setError(data.error ?? "Failed to sign in with Google account.");
       return;
     }
 
@@ -158,17 +158,17 @@ export default function LoginClient() {
           {/* Form Login Manual */}
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div className="field">
-              <label style={{ fontSize: 13, fontWeight: 600 }}>Email</label>
+              <label style={{ fontSize: 13, fontWeight: 600 }}>Email Address</label>
               <input
                 type="email"
-                placeholder="nama@perusahaan.com"
+                placeholder="name@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
             <div className="field">
-              <label style={{ fontSize: 13, fontWeight: 600 }}>Kata Sandi</label>
+              <label style={{ fontSize: 13, fontWeight: 600 }}>Password</label>
               <input
                 type="password"
                 placeholder="••••••••"
@@ -186,7 +186,7 @@ export default function LoginClient() {
               className="btn btn-primary"
               style={{ justifyContent: "center", padding: 11, fontSize: 14, fontWeight: 700 }}
             >
-              {loading ? "Memproses..." : "Masuk"}
+              {loading ? "Processing..." : "Sign In"}
             </button>
 
             {/* Tombol Masuk dengan Akun Google */}
@@ -194,7 +194,7 @@ export default function LoginClient() {
               <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "6px 0 2px" }}>
                 <div style={{ flex: 1, height: 1, background: "var(--color-border)" }} />
                 <span style={{ fontSize: 11.5, fontWeight: 600, color: "var(--color-text-muted)" }}>
-                  ATAU
+                  OR
                 </span>
                 <div style={{ flex: 1, height: 1, background: "var(--color-border)" }} />
               </div>
@@ -225,20 +225,20 @@ export default function LoginClient() {
                   <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
                 </svg>
-                <span>Masuk dengan Google</span>
+                <span>Sign in with Google</span>
                 <span style={{ fontSize: 11, background: "rgba(34, 197, 94, 0.12)", color: "#166534", padding: "2px 6px", borderRadius: 4, fontWeight: 700 }}>
                   @idstar.group
                 </span>
               </a>
 
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11.5, color: "var(--color-text-muted)" }}>
-                <span>🔒 Domain terkunci: <b>.idstar.group</b></span>
+                <span>🔒 Domain locked: <b>.idstar.group</b></span>
                 <button
                   type="button"
                   onClick={() => setGoogleDemoModal(true)}
                   style={{ background: "none", border: "none", color: "var(--color-primary, #ea242a)", textDecoration: "underline", cursor: "pointer", fontSize: 11.5, padding: 0 }}
                 >
-                  ⚡ Coba Akun Google IDStar
+                  ⚡ Try IDStar Google Account
                 </button>
               </div>
             </div>
@@ -281,7 +281,7 @@ export default function LoginClient() {
                 e.currentTarget.style.borderColor = "var(--color-border)";
               }}
             >
-              <span>{demoLoading ? `Masuk sebagai ${demoLoading}...` : "Pilih Akun Demo"}</span>
+              <span>{demoLoading ? `Signing in as ${demoLoading}...` : "Select Demo Account"}</span>
               <svg
                 width="16"
                 height="16"
@@ -357,7 +357,7 @@ export default function LoginClient() {
                     >
                       <span>{item.label}</span>
                       {isItemLoading && (
-                        <span style={{ fontSize: 11, color: "var(--color-text-muted)" }}>Masuk...</span>
+                        <span style={{ fontSize: 11, color: "var(--color-text-muted)" }}>Signing in...</span>
                       )}
                     </button>
                   );
@@ -367,7 +367,7 @@ export default function LoginClient() {
           </div>
 
           <div style={{ textAlign: "center", marginTop: 16, fontSize: 11, color: "var(--color-text-muted)" }}>
-            Kata sandi demo otomatis: <code>contoh123</code>
+            Automatic demo password: <code>contoh123</code>
           </div>
         </div>
       </div>
@@ -402,46 +402,46 @@ export default function LoginClient() {
               <div style={{ fontSize: 24 }}>🛡️</div>
               <div>
                 <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#0f172a" }}>
-                  Verifikasi Akun Google IDStar
+                  IDStar Google Account Verification
                 </h3>
                 <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
-                  Domain Resmi: <b>@idstar.group</b>
+                  Official Domain: <b>@idstar.group</b>
                 </div>
               </div>
             </div>
 
             <p style={{ fontSize: 13, color: "var(--color-text-muted)", lineHeight: 1.5, marginBottom: 16 }}>
-              INVORA menerapkan aturan keamanan terpusat: <b>Hanya email berakhiran @idstar.group</b> yang diizinkan masuk ke sistem. Akun publik seperti @gmail.com akan otomatis ditolak.
+              INVORA applies centralized domain security: <b>Only emails ending with @idstar.group</b> are authorized to access the system. Public domains such as @gmail.com will be rejected automatically.
             </p>
 
             <form onSubmit={handleGoogleDemoSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <div className="field">
-                <label style={{ fontSize: 12.5, fontWeight: 600 }}>Alamat Email Google</label>
+                <label style={{ fontSize: 12.5, fontWeight: 600 }}>Google Email Address</label>
                 <input
                   type="email"
                   value={customGoogleEmail}
                   onChange={(e) => setCustomGoogleEmail(e.target.value)}
-                  placeholder="nama@idstar.group"
+                  placeholder="name@idstar.group"
                   required
                   style={{ width: "100%", padding: "9px 12px" }}
                 />
               </div>
 
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", fontSize: 11.5 }}>
-                <span style={{ color: "var(--color-text-muted)" }}>Pintasan Uji:</span>
+                <span style={{ color: "var(--color-text-muted)" }}>Test Shortcuts:</span>
                 <button
                   type="button"
                   onClick={() => setCustomGoogleEmail("imam.fatah2@idstar.group")}
                   style={{ background: "#ecfdf5", border: "1px solid #a7f3d0", color: "#065f46", padding: "2px 8px", borderRadius: 4, cursor: "pointer", fontSize: 11 }}
                 >
-                  ✓ imam.fatah2@idstar.group (Lolos)
+                  ✓ imam.fatah2@idstar.group (Pass)
                 </button>
                 <button
                   type="button"
                   onClick={() => setCustomGoogleEmail("pengguna.luar@gmail.com")}
                   style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b", padding: "2px 8px", borderRadius: 4, cursor: "pointer", fontSize: 11 }}
                 >
-                  ✕ pengguna.luar@gmail.com (Uji Tolak)
+                  ✕ external.user@gmail.com (Test Reject)
                 </button>
               </div>
 
@@ -452,7 +452,7 @@ export default function LoginClient() {
                   className="btn"
                   style={{ padding: "8px 14px" }}
                 >
-                  Batal
+                  Cancel
                 </button>
                 <button
                   type="submit"
@@ -460,7 +460,7 @@ export default function LoginClient() {
                   className="btn btn-primary"
                   style={{ padding: "8px 16px" }}
                 >
-                  {googleLoading ? "Memverifikasi..." : "Lanjutkan Masuk"}
+                  {googleLoading ? "Verifying..." : "Proceed to Sign In"}
                 </button>
               </div>
             </form>

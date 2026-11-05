@@ -13,32 +13,32 @@ const KATEGORI: {
 }[] = [
   {
     key: "pengajuan",
-    label: "Pengajuan (+ dokumen CAC/BAST, GR Request, konfirmasi, checker)",
-    deskripsi: "Aman berdiri sendiri — tidak menyentuh Personel, PO, Rate Card, Pemetaan, atau Timesheet.",
+    label: "Submissions (+ CAC/BAST documents, GR Request, confirmation, review)",
+    deskripsi: "Safe standalone deletion — does not touch Personnel, PO, Rate Cards, Mappings, or Timesheets.",
     tabelTerkait: ["pengajuan", "pengajuanDetail", "dokumen", "lampiranPengajuan", "grRequest", "grRequestRiwayat", "konfirmasi", "checkerReview"],
   },
   {
     key: "timesheet",
-    label: "Timesheet",
-    deskripsi: "Hapus semua file timesheet yang pernah diunggah. Aman berdiri sendiri.",
+    label: "Timesheets",
+    deskripsi: "Delete all uploaded timesheet files. Safe standalone deletion.",
     tabelTerkait: ["timesheet"],
   },
   {
     key: "personel",
-    label: "Personel, Rate Card & Pemetaan Personel-PO",
-    deskripsi: "⚠️ Turut mengosongkan rincian pengajuan (pengajuan_detail) — header pengajuan tetap ada tapi jadi kosong/Rp0. Timesheet juga ikut terhapus.",
+    label: "Personnel, Rate Cards & Resource Mapping",
+    deskripsi: "⚠️ Also clears submission detail line items (pengajuan_detail). Submission headers remain at Rp0. Timesheet records are also removed.",
     tabelTerkait: ["personel", "rateCard", "pemetaanPersonelPo", "pengajuanDetail", "timesheet"],
   },
   {
     key: "po",
-    label: "PO / Item, PO Line & Pemetaan Personel-PO",
-    deskripsi: "Akan GAGAL (dan tidak menghapus apa pun) kalau masih ada Pengajuan yang memakai PO ini — hapus kategori \"Pengajuan\" dulu.",
+    label: "PO / Line Items & Resource Mapping",
+    deskripsi: "Will FAIL if any existing Submissions still reference these POs — delete the \"Submissions\" category first.",
     tabelTerkait: ["po", "poLineItem", "pemetaanPersonelPo", "timesheet"],
   },
   {
     key: "semua",
-    label: "RESET TOTAL — semua data di atas sekaligus",
-    deskripsi: "Personel, Rate Card, PO, Pemetaan, Pengajuan, dan semua turunannya. Akun login, User XL, Kalender Kerja TETAP ADA.",
+    label: "TOTAL RESET — all data above simultaneously",
+    deskripsi: "Personnel, Rate Cards, POs, Mappings, Submissions, and all related records. User accounts, Client Approvers, and Working Calendar are PRESERVED.",
     tabelTerkait: ["personel", "rateCard", "po", "poLineItem", "pemetaanPersonelPo", "pengajuan", "pengajuanDetail", "timesheet", "dokumen", "lampiranPengajuan", "grRequest", "grRequestRiwayat", "konfirmasi", "checkerReview"],
     butuhKetik: true,
   },
@@ -56,12 +56,12 @@ export default function KelolaDataClient({ jumlahAwal }: { jumlahAwal: Jumlah })
 
   async function hapus(kategoriItem: (typeof KATEGORI)[number]) {
     const total = totalUntuk(kategoriItem.tabelTerkait);
-    if (total === 0) { alert("Tidak ada data di kategori ini."); return; }
-    if (kategoriItem.butuhKetik && ketikan[kategoriItem.key] !== "HAPUS") {
-      alert('Ketik "HAPUS" (huruf besar semua) dulu di kotak konfirmasi untuk kategori ini.');
+    if (total === 0) { alert("No data found in this category."); return; }
+    if (kategoriItem.butuhKetik && ketikan[kategoriItem.key] !== "DELETE") {
+      alert('Type "DELETE" (all uppercase) in the confirmation box for this category first.');
       return;
     }
-    if (!window.confirm(`Yakin hapus semua data kategori "${kategoriItem.label}"? Total sekitar ${total} baris akan dihapus. Aksi ini TIDAK BISA DIBATALKAN.`)) return;
+    if (!window.confirm(`Are you sure you want to delete all data in category "${kategoriItem.label}"? Approximately ${total} rows will be deleted. This action CANNOT BE UNDONE.`)) return;
 
     setLoading(kategoriItem.key);
     const res = await fetch("/api/kelola-data", {
@@ -71,7 +71,7 @@ export default function KelolaDataClient({ jumlahAwal }: { jumlahAwal: Jumlah })
     });
     const d = await res.json().catch(() => ({}));
     setLoading(null);
-    if (!res.ok) { alert(d.error ?? "Gagal menghapus."); return; }
+    if (!res.ok) { alert(d.error ?? "Failed to delete."); return; }
     setJumlah(d.sisa ?? jumlah);
     setKetikan((k) => ({ ...k, [kategoriItem.key]: "" }));
     router.refresh();
@@ -87,12 +87,12 @@ export default function KelolaDataClient({ jumlahAwal }: { jumlahAwal: Jumlah })
               <div style={{ flex: 1, minWidth: 240 }}>
                 <h3 style={{ margin: "0 0 4px" }}>{k.label}</h3>
                 <p className="subtitle" style={{ margin: 0, fontSize: 13 }}>{k.deskripsi}</p>
-                <p style={{ margin: "6px 0 0", fontSize: 13 }}>Total baris saat ini: <b>{total}</b></p>
+                <p style={{ margin: "6px 0 0", fontSize: 13 }}>Current total rows: <b>{total}</b></p>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end" }}>
                 {k.butuhKetik && (
                   <input
-                    placeholder='Ketik "HAPUS"'
+                    placeholder='Type "DELETE"'
                     value={ketikan[k.key] ?? ""}
                     onChange={(e) => setKetikan((s) => ({ ...s, [k.key]: e.target.value }))}
                     style={{ width: 160 }}
@@ -104,7 +104,7 @@ export default function KelolaDataClient({ jumlahAwal }: { jumlahAwal: Jumlah })
                   className="btn"
                   style={{ background: "var(--color-danger, #c0392b)", color: "#fff", border: "none" }}
                 >
-                  {loading === k.key ? "Menghapus..." : "Hapus Semua"}
+                  {loading === k.key ? "Deleting..." : "Delete All"}
                 </button>
               </div>
             </div>

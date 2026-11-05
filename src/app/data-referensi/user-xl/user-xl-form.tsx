@@ -17,15 +17,15 @@ export default function FormTambahUserXl() {
       body: JSON.stringify({ nama, kontak }),
     });
     setLoading(false);
-    if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Gagal menambah."); return; }
+    if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Failed to add Client PIC."); return; }
     setNama(""); setKontak(""); router.refresh();
   }
 
   return (
     <form onSubmit={handleSubmit} className="toolbar">
-      <div className="field"><label>Nama User XL</label><input value={nama} onChange={(e) => setNama(e.target.value)} required /></div>
-      <div className="field"><label>Kontak (opsional)</label><input value={kontak} onChange={(e) => setKontak(e.target.value)} /></div>
-      <button type="submit" disabled={loading} className="btn btn-primary">{loading ? "Menyimpan..." : "Tambah"}</button>
+      <div className="field"><label>Client PIC / Approver Name</label><input value={nama} onChange={(e) => setNama(e.target.value)} required /></div>
+      <div className="field"><label>Contact (optional)</label><input value={kontak} onChange={(e) => setKontak(e.target.value)} /></div>
+      <button type="submit" disabled={loading} className="btn btn-primary">{loading ? "Saving..." : "Add Client PIC"}</button>
       {error && <div className="alert alert-danger" style={{ margin: 0 }}>{error}</div>}
     </form>
   );

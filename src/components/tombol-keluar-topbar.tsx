@@ -10,7 +10,7 @@ export default function TombolKeluarTopbar() {
   }
   return (
     <button onClick={keluar} className="btn" style={{ padding: "5px 12px", fontSize: 13, background: "rgba(255,255,255,0.1)", borderColor: "rgba(255,255,255,0.25)", color: "white" }}>
-      Keluar
+      Sign Out
     </button>
   );
 }

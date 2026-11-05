@@ -9,8 +9,8 @@ export default async function HalamanPo() {
   const daftar = await db.select().from(po).orderBy(desc(po.id));
   return (
     <div>
-      <h1>PO / Item</h1>
-      <p className="subtitle">PO bersifat bundling — tidak mencantumkan personel. Saldo awal = nilai item saat dibuat. Tahun dan nilai GR dipakai di halaman Summary PO.</p>
+      <h1>PO / Line Items</h1>
+      <p className="subtitle">Bundled purchase orders without named personnel. Initial balance equals item value upon creation. Year and GR values feed into PO Summary.</p>
       <FormImporPo />
       <FormTambahPo />
       <TabelPo daftar={daftar} />

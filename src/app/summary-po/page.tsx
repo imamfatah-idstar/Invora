@@ -36,11 +36,11 @@ export default async function HalamanSummaryPo({ searchParams }: { searchParams:
       <Topbar nama={user.nama} role={user.role} />
       <main className="page">
         <a href="/dashboard" className="back-link">&larr; Dashboard</a>
-        <h1>Summary PO</h1>
+        <h1>PO Summary</h1>
         <p className="subtitle">
-          Ringkasan nilai PO, nilai yang sudah di-GR (Good Receipt), dan saldo per PO. Halaman lihat saja —
-          nilai GR diisi manual oleh Petugas Pengajuan dan Konfirmasi di menu Data Referensi &middot; PO / Item, setelah GR
-          disetujui di Get Approve CAC/COUPA (integrasi otomatis belum ada di MVP ini).
+          Overview of PO values, approved GR (Goods Receipt) values, and remaining balance per PO. Read-only view —
+          GR values are updated by Data Entry &amp; Confirmation Officers under Reference Data &middot; PO / Line Items, after GR
+          approval in Get Approve CAC/COUPA.
         </p>
 
         <FilterTahun daftarTahun={daftarTahun} tahunDipilih={tahunDipilih} />

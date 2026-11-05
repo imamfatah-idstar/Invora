@@ -49,11 +49,11 @@ export default function DashboardView({ user, menu }: Props) {
           borderBottom: "1px solid var(--color-border)",
           marginBottom: 10
         }}>
-          <h3 style={{ margin: 0, padding: 0, fontSize: 12, fontWeight: 700 }}>Daftar Isi</h3>
+          <h3 style={{ margin: 0, padding: 0, fontSize: 12, fontWeight: 700 }}>Navigation</h3>
           <button
             type="button"
             onClick={toggleSidebar}
-            title="Tutup sidebar"
+            title="Collapse sidebar"
             style={{
               background: "transparent",
               border: "1px solid var(--color-border)",
@@ -68,7 +68,7 @@ export default function DashboardView({ user, menu }: Props) {
             }}
           >
             <span>◀</span>
-            <span>Tutup</span>
+            <span>Collapse</span>
           </button>
         </div>
 
@@ -105,19 +105,19 @@ export default function DashboardView({ user, menu }: Props) {
               boxShadow: "var(--shadow-sm)",
               cursor: "pointer",
             }}
-            title={buka ? "Sembunyikan Sidebar" : "Buka Sidebar"}
+            title={buka ? "Collapse Sidebar" : "Expand Sidebar"}
           >
             <span style={{ fontSize: 15 }}>☰</span>
-            <span>{buka ? "Sembunyikan Menu" : "Buka Menu"}</span>
+            <span>{buka ? "Hide Menu" : "Show Menu"}</span>
           </button>
         </div>
 
         <div style={{ marginBottom: 24 }}>
           <h1 style={{ fontSize: 24, fontWeight: 800, margin: "0 0 6px 0", color: "#111827" }}>
-            Halo, {user.nama}
+            Hello, {user.nama}
           </h1>
           <p className="subtitle" style={{ margin: 0 }}>
-            Selamat datang di <b>INVORA</b> (Invoice Operations &amp; Revenue Assurance) &middot; IDStar Group.
+            Welcome to <b>INVORA</b> (Invoice Operations &amp; Revenue Assurance) &middot; IDStar Group.
           </p>
         </div>
 
@@ -171,7 +171,7 @@ export default function DashboardView({ user, menu }: Props) {
                 alignItems: "center",
                 gap: 4
               }}>
-                Buka Modul <span>&rarr;</span>
+                Open Module <span>&rarr;</span>
               </div>
             </a>
           ))}

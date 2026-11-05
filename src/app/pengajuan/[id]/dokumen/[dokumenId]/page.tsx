@@ -103,26 +103,25 @@ export default async function HalamanDokumen({ params }: { params: Promise<{ id:
   return (
     <div className="doc-page">
       <div className="doc-toolbar no-print">
-        <Link href={`/pengajuan/${pengajuanId}`} className="back-link">&larr; Detail Pengajuan</Link>
+        <Link href={`/pengajuan/${pengajuanId}`} className="back-link">&larr; Submission Details</Link>
         <TombolCetak />
         <a href={`/api/pengajuan/${pengajuanId}/dokumen/${dok.id}/pdf`} target="_blank" className="btn btn-primary">
-          Unduh PDF Gabungan{kelengkapanPdfLengkap ? " (3 hal.)" : ""}
+          Download Merged PDF{kelengkapanPdfLengkap ? " (3 pages)" : ""}
         </a>
       </div>
       {!kelengkapanPdfLengkap && (
         <div className="alert alert-warning no-print">
-          PDF gabungan akan tetap dibuat, tapi baru berisi halaman sertifikat saja —
-          {!lampiranBalance && " belum ada lampiran berlabel \"" + LABEL_LAMPIRAN_BALANCE + "\" untuk halaman 2,"}
-          {!poRow?.pathFilePoAsli && " belum ada Dokumen PO Asli untuk halaman 3."}
-          {" "}Lengkapi dulu di kartu &quot;Kelengkapan Dokumen&quot; / Data Referensi · PO.
+          Merged PDF will still be generated, but only contains the certificate page —
+          {!lampiranBalance && " missing attachment labeled \"" + LABEL_LAMPIRAN_BALANCE + "\" for page 2,"}
+          {!poRow?.pathFilePoAsli && " missing Original PO Document for page 3."}
+          {" "}Please attach them first in &quot;Document Completeness&quot; / Reference Data · PO.
         </div>
       )}
 
       <div className="alert alert-warning no-print">
-        <b>Draf internal.</b> Dokumen ini dibuat otomatis dari data pengajuan, mengikuti template resmi
-        CAC/BAST yang sudah dikonfirmasi (lihat PROJECT_INSTRUCTIONS.md bagian 25). Statusnya tetap draf
-        karena pengajuan RESMI ke XL masih lewat Get Approve CAC / COUPA secara manual (otomasi ke sana
-        belum dibangun) — dokumen ini hanya bantuan pratinjau/cetak internal.
+        <b>Internal Draft.</b> This document is automatically generated from submission data, following the confirmed
+        official CAC/BAST template. The status remains draft because official submission to the client portal is performed manually —
+        this document serves as internal preview/print assistance.
       </div>
 
       <div className="doc-sheet">
