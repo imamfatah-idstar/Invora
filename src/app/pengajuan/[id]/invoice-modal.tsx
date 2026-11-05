@@ -2,6 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { extractEmailFromKontak } from "@/lib/reminder";
+import {
+  generateIdstarEmailTemplate,
+  formatPeriodeShort,
+  formatInvoiceDateEnglish,
+  formatDueDateShort,
+  formatDueMonthYear,
+  formatAmountNumber,
+  determineDueStatus,
+} from "@/lib/idstar-mail-template";
 
 interface InvoiceModalProps {
   pengajuanId: number;
@@ -40,18 +49,17 @@ export default function InvoiceModal({
 }: InvoiceModalProps) {
   const [buka, setBuka] = useState(false);
   const [tabAktif, setTabAktif] = useState<"cetak" | "email">("cetak");
-  const [format, setFormat] = useState<"detail" | "ringkas" | "bilingual">("detail");
+  const [format, setFormat] = useState<"detail" | "ringkas">("detail");
   const [bank, setBank] = useState<"all" | "bca" | "mandiri">("all");
+  const [emailViewMode, setEmailViewMode] = useState<"preview" | "text">("preview");
 
-  // State untuk Kirim Email Personal
+  // State untuk Kirim Email
   const emailPicDefault = extractEmailFromKontak(kontakPic);
   const [emailTujuan, setEmailTujuan] = useState<string>(userEmail || "imam.fatah2@idstar.group");
   const [namaPenerima, setNamaPenerima] = useState<string>(namaPic || "");
-  const [subjekEmail, setSubjekEmail] = useState<string>(
-    `[Invoice Resmi] ${nomorInvoice} - ${namaProyek} - PT IDStar Cipta Teknologi`
-  );
+  const [subjekEmail, setSubjekEmail] = useState<string>("");
   const [pesanEmail, setPesanEmail] = useState<string>("");
-  const [salinSukses, setSalinSukses] = useState(false);
+  const [salinSukses, setSalinSukses] = useState<string | null>(null);
   const [sedangKirim, setSedangKirim] = useState(false);
   const [statusPesan, setStatusPesan] = useState<{ tipe: "sukses" | "error"; text: string } | null>(null);
 
@@ -61,93 +69,39 @@ export default function InvoiceModal({
     return `/api/pengajuan/${pengajuanId}/invoice/pdf?format=${format}&bank=${bank}${download ? "&download=true" : ""}`;
   };
 
-  // Generate draf email pengantar invoice
-  const generateDrafEmail = (tujuanNama: string, formatPilihan: string, bankPilihan: string) => {
-    const greeting = tujuanNama ? `Bapak/Ibu ${tujuanNama}` : "Bapak/Ibu";
-    const origin = typeof window !== "undefined" ? window.location.origin : "https://invora-iota.vercel.app";
-    const downloadPdfUrl = `${origin}/api/pengajuan/${pengajuanId}/invoice/pdf?format=${formatPilihan}&bank=${bankPilihan}&download=true`;
+  // Pre-calculate formatted values for email
+  const dueMonthYear = formatDueMonthYear(tanggalJatuhTempo);
+  const periodeShort = formatPeriodeShort(periode);
+  const invoiceDateEnglish = formatInvoiceDateEnglish(tanggalInvoice);
+  const dueDateShort = formatDueDateShort(tanggalJatuhTempo);
+  const statusDue = determineDueStatus(tanggalJatuhTempo);
+  const amountStr = formatAmountNumber(totalTagihan);
 
-    let infoBank = `1. Bank Central Asia (BCA)
-   Cabang        : KCU Mega Kuningan Jakarta
-   Nomor Rekening: 541-098-7711
-   Atas Nama     : PT IDSTAR CIPTA TEKNOLOGI
+  // Generate IDStar standard email template
+  const generatedEmail = generateIdstarEmailTemplate({
+    klien,
+    periode,
+    nomorInvoice,
+    tanggalInvoice,
+    tanggalJatuhTempo,
+    netAmount: totalTagihan,
+    monthYear: dueMonthYear,
+    dueStatus: statusDue,
+    baseUrl: typeof window !== "undefined" ? window.location.origin : undefined,
+  });
 
-2. Bank Mandiri
-   Cabang        : KC Jakarta Bellagio Mansion
-   Nomor Rekening: 124-00-1122334-9
-   Atas Nama     : PT IDSTAR CIPTA TEKNOLOGI`;
-
-    if (bankPilihan === "bca") {
-      infoBank = `Bank Central Asia (BCA)
-Nomor Rekening: 541-098-7711
-Kantor Cabang : KCU Mega Kuningan Jakarta
-Atas Nama     : PT IDSTAR CIPTA TEKNOLOGI`;
-    } else if (bankPilihan === "mandiri") {
-      infoBank = `Bank Mandiri
-Nomor Rekening: 124-00-1122334-9
-Kantor Cabang : KC Jakarta Bellagio Mansion
-Atas Nama     : PT IDSTAR CIPTA TEKNOLOGI`;
-    }
-
-    const fpText = nomorFakturPajak ? `\n• Nomor Faktur Pajak: ${nomorFakturPajak}` : "";
-
-    return `Kepada Yth. ${greeting},
-${klien}
-
-Dengan hormat,
-
-Bersama surel ini, kami dari Tim Finance & Invoicing PT IDStar Cipta Teknologi menyampaikan berkas penagihan Invoice Resmi atas penyelesaian pekerjaan layanan profesional IT untuk proyek "${namaProyek}".
-
-Berikut adalah rincian penagihan invoice:
-============================================================
-RINCIAN DOKUMEN INVOICE
-============================================================
-• Nomor Invoice      : ${nomorInvoice}${fpText}
-• Nomor PO           : ${nomorPo}
-• Nama Proyek        : ${namaProyek}
-• Periode Layanan    : ${periode}
-• Tanggal Terbit     : ${tanggalInvoice}
-• Tanggal Jatuh Tempo: ${tanggalJatuhTempo}
-------------------------------------------------------------
-• Dasar Pengenaan (DPP): ${formatRp(dpp)}
-• PPN (${tarifPpn}%)             : ${formatRp((dpp * tarifPpn) / 100)}
-• TOTAL TAGIHAN      : ${formatRp(totalTagihan)}
-============================================================
-
-Tautan Unduh Dokumen Invoice Resmi (PDF):
-👉 ${downloadPdfUrl}
-
-Pembayaran dapat ditransfer ke rekening resmi kami:
-${infoBank}
-
-* Catatan: Mohon cantumkan Nomor Invoice pada berita transfer dan kirimkan bukti transfer pembayaran ke finance@idstar.group.
-
-Apabila Bapak/Ibu membutuhkan informasi atau dokumen pendukung tambahan (Timesheet/BAST/Faktur Pajak), kami siap membantu dengan senang hati.
-
-Atas kerja sama yang baik dan kemitraan yang berkelanjutan, kami ucapkan terima kasih.
-
-Hormat kami,
-Finance & Invoicing Department
-PT IDStar Cipta Teknologi
-The Bellagio Mansion, Ground Floor, Mega Kuningan
-Jakarta Selatan, DKI Jakarta 12950
-Email : finance@idstar.group | invoicing@idstar.group
-Telepon: +62 21 576-0888
-Website: https://idstar.co.id`;
-  };
-
-  // Sinkronisasi pesan draf saat modal dibuka atau parameter berubah
+  // Sinkronisasi saat modal dibuka
   useEffect(() => {
-    setPesanEmail(generateDrafEmail(namaPenerima, format, bank));
-    setSubjekEmail(`[Invoice Resmi] ${nomorInvoice} - ${namaProyek} - PT IDStar Cipta Teknologi`);
-  }, [buka, namaPenerima, format, bank, dpp, totalTagihan, nomorInvoice]);
+    setSubjekEmail(generatedEmail.subject);
+    setPesanEmail(generatedEmail.plainText);
+  }, [buka, klien, nomorInvoice, totalTagihan, tanggalJatuhTempo]);
 
-  // Handler Pratinjau
+  // Handler Pratinjau PDF
   const handlePratinjau = () => {
     window.open(buildUrl(false), "_blank");
   };
 
-  // Handler Unduh File
+  // Handler Unduh PDF
   const handleUnduh = () => {
     const link = document.createElement("a");
     link.href = buildUrl(true);
@@ -157,25 +111,46 @@ Website: https://idstar.co.id`;
     document.body.removeChild(link);
   };
 
-  // Handler Salin Pesan
-  const handleSalin = () => {
-    navigator.clipboard.writeText(pesanEmail);
-    setSalinSukses(true);
-    setTimeout(() => setSalinSukses(false), 2500);
+  // Handler Salin Rich HTML Email (IDStar template formatting)
+  const handleSalinHtml = async () => {
+    try {
+      const blobHtml = new Blob([generatedEmail.html], { type: "text/html" });
+      const blobText = new Blob([pesanEmail || generatedEmail.plainText], { type: "text/plain" });
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          "text/html": blobHtml,
+          "text/plain": blobText,
+        }),
+      ]);
+      setSalinSukses("html");
+      setTimeout(() => setSalinSukses(null), 2500);
+    } catch {
+      // Fallback: Copy plain text
+      await navigator.clipboard.writeText(pesanEmail || generatedEmail.plainText);
+      setSalinSukses("text");
+      setTimeout(() => setSalinSukses(null), 2500);
+    }
+  };
+
+  // Handler Salin Plain Text
+  const handleSalinText = () => {
+    navigator.clipboard.writeText(pesanEmail || generatedEmail.plainText);
+    setSalinSukses("text");
+    setTimeout(() => setSalinSukses(null), 2500);
   };
 
   // Handler Buka Mailto
   const handleBukaMailto = async () => {
     if (!emailTujuan.trim()) {
-      alert("Silakan masukkan email tujuan terlebih dahulu.");
+      alert("Please enter a valid recipient email address.");
       return;
     }
     const mailtoUrl = `mailto:${encodeURIComponent(emailTujuan.trim())}?subject=${encodeURIComponent(
       subjekEmail
-    )}&body=${encodeURIComponent(pesanEmail)}`;
+    )}&body=${encodeURIComponent(pesanEmail || generatedEmail.plainText)}`;
     window.open(mailtoUrl, "_blank");
 
-    // Otomatis catat ke log riwayat
+    // Otomatis catat ke audit log sistem
     await handleCatatLog("mailto");
   };
 
@@ -192,18 +167,18 @@ Website: https://idstar.co.id`;
           emailPenerima: emailTujuan.trim(),
           namaPicPenerima: namaPenerima.trim() || null,
           subjek: subjekEmail.trim(),
-          pesanTeks: pesanEmail,
+          pesanTeks: pesanEmail || generatedEmail.plainText,
           metode,
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Gagal mencatat log");
+      if (!res.ok) throw new Error(data.error || "Failed to log invoice dispatch.");
       setStatusPesan({
         tipe: "sukses",
-        text: `Log pengiriman invoice ke "${emailTujuan.trim()}" berhasil disimpan ke sistem!`,
+        text: `Invoice delivery log to "${emailTujuan.trim()}" successfully recorded!`,
       });
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Terjadi kesalahan";
+      const msg = err instanceof Error ? err.message : "An error occurred";
       setStatusPesan({ tipe: "error", text: msg });
     } finally {
       setSedangKirim(false);
@@ -258,7 +233,7 @@ Website: https://idstar.co.id`;
               backgroundColor: "#ffffff",
               borderRadius: 12,
               width: "100%",
-              maxWidth: 620,
+              maxWidth: 780,
               maxHeight: "92vh",
               display: "flex",
               flexDirection: "column",
@@ -284,7 +259,7 @@ Website: https://idstar.co.id`;
                 </h3>
                 <p style={{ margin: "4px 0 0", fontSize: 12, color: "#64748b" }}>
                   Invoice No: <b style={{ color: "#0f172a" }}>{nomorInvoice}</b> &middot; PO:{" "}
-                  <b style={{ color: "#0f172a" }}>{nomorPo}</b> &middot; Client: {klien}
+                  <b style={{ color: "#0f172a" }}>{nomorPo}</b> &middot; Client: <b>{klien}</b>
                 </p>
               </div>
               <button
@@ -346,18 +321,19 @@ Website: https://idstar.co.id`;
                   gap: 6,
                 }}
               >
-                <span>✉️ Send via Personal Email</span>
+                <span>✉️ Official Email Template (IDStar Standard)</span>
                 <span
                   style={{
-                    backgroundColor: "#ecfdf5",
-                    color: "#059669",
+                    backgroundColor: "#fef2f2",
+                    color: "#dc2626",
                     fontSize: 10,
+                    fontWeight: 700,
                     padding: "2px 6px",
                     borderRadius: 4,
-                    border: "1px solid #a7f3d0",
+                    border: "1px solid #fecaca",
                   }}
                 >
-                  Manual
+                  Template
                 </span>
               </button>
             </div>
@@ -392,7 +368,7 @@ Website: https://idstar.co.id`;
                 <>
                   <div>
                     <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#1e293b", marginBottom: 8 }}>
-                      1. Select Layout Preset:
+                      1. Select Layout Preset (Single Language):
                     </label>
                     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                       <label
@@ -451,36 +427,6 @@ Website: https://idstar.co.id`;
                           </div>
                           <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 2 }}>
                             Combines resources into a single service package line item per project without listing individual names. Suitable for lump sum / milestone billings.
-                          </div>
-                        </div>
-                      </label>
-
-                      <label
-                        style={{
-                          display: "flex",
-                          alignItems: "flex-start",
-                          gap: 12,
-                          padding: "10px 14px",
-                          borderRadius: 8,
-                          border: `1.5px solid ${format === "bilingual" ? "#ea242a" : "#e2e8f0"}`,
-                          backgroundColor: format === "bilingual" ? "#fff5f5" : "#ffffff",
-                          cursor: "pointer",
-                        }}
-                      >
-                        <input
-                          type="radio"
-                          name="formatInvoice"
-                          value="bilingual"
-                          checked={format === "bilingual"}
-                          onChange={() => setFormat("bilingual")}
-                          style={{ marginTop: 3, accentColor: "#ea242a" }}
-                        />
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: "#0f172a" }}>
-                            🌐 Bilingual Corporate Format (ID / EN Dual Language)
-                          </div>
-                          <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 2 }}>
-                            Headers, breakdown columns, and payment instruction clauses presented in both Indonesian and English. Standard for regional &amp; multinational clients.
                           </div>
                         </div>
                       </label>
@@ -568,99 +514,100 @@ Website: https://idstar.co.id`;
                 </>
               )}
 
-              {/* TAB 2: KIRIM KE EMAIL PERSONAL */}
+              {/* TAB 2: TEMPLATE EMAIL IDSTAR (IDstar-Group-Mail.png) */}
               {tabAktif === "email" && (
                 <>
-                  <div>
-                    <label style={{ display: "block", fontSize: 12.5, fontWeight: 600, color: "#1e293b", marginBottom: 6 }}>
-                      Recipient Email Address:
-                    </label>
-                    <input
-                      type="email"
-                      value={emailTujuan}
-                      onChange={(e) => setEmailTujuan(e.target.value)}
-                      placeholder="e.g. name@gmail.com or user@idstar.group"
-                      style={{
-                        width: "100%",
-                        padding: "8px 12px",
-                        fontSize: 13,
-                        borderRadius: 6,
-                        border: "1px solid #cbd5e1",
-                      }}
-                    />
-
-                    {/* Quick Email Selector Chips */}
-                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6, fontSize: 11 }}>
-                      <span style={{ color: "#64748b", alignSelf: "center" }}>Shortcuts:</span>
-                      <button
-                        type="button"
-                        onClick={() => setEmailTujuan(userEmail)}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#1e293b", marginBottom: 4 }}>
+                        Recipient Email:
+                      </label>
+                      <input
+                        type="email"
+                        value={emailTujuan}
+                        onChange={(e) => setEmailTujuan(e.target.value)}
+                        placeholder="e.g. client@company.com"
                         style={{
-                          background: "#eff6ff",
-                          border: "1px solid #bfdbfe",
-                          color: "#1d4ed8",
-                          padding: "2px 8px",
-                          borderRadius: 4,
-                          cursor: "pointer",
-                        }}
-                      >
-                        👤 My Email ({userEmail})
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setEmailTujuan("finance@idstar.group")}
-                        style={{
-                          background: "#f1f5f9",
+                          width: "100%",
+                          padding: "7px 10px",
+                          fontSize: 12.5,
+                          borderRadius: 6,
                           border: "1px solid #cbd5e1",
-                          color: "#334155",
-                          padding: "2px 8px",
-                          borderRadius: 4,
-                          cursor: "pointer",
                         }}
-                      >
-                        🏢 finance@idstar.group
-                      </button>
-                      {emailPicDefault && (
-                        <button
-                          type="button"
-                          onClick={() => setEmailTujuan(emailPicDefault)}
-                          style={{
-                            background: "#f0fdf4",
-                            border: "1px solid #bbf7d0",
-                            color: "#15803d",
-                            padding: "2px 8px",
-                            borderRadius: 4,
-                            cursor: "pointer",
-                          }}
-                        >
-                          👥 PIC: {emailPicDefault}
-                        </button>
-                      )}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#1e293b", marginBottom: 4 }}>
+                        Recipient PIC / Attention:
+                      </label>
+                      <input
+                        type="text"
+                        value={namaPenerima}
+                        onChange={(e) => setNamaPenerima(e.target.value)}
+                        placeholder="PIC Name (optional)"
+                        style={{
+                          width: "100%",
+                          padding: "7px 10px",
+                          fontSize: 12.5,
+                          borderRadius: 6,
+                          border: "1px solid #cbd5e1",
+                        }}
+                      />
                     </div>
                   </div>
 
-                  <div>
-                    <label style={{ display: "block", fontSize: 12.5, fontWeight: 600, color: "#1e293b", marginBottom: 6 }}>
-                      Recipient Name (Optional):
-                    </label>
-                    <input
-                      type="text"
-                      value={namaPenerima}
-                      onChange={(e) => setNamaPenerima(e.target.value)}
-                      placeholder="PIC or Recipient Name"
+                  {/* Quick Shortcuts */}
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", fontSize: 11, alignItems: "center" }}>
+                    <span style={{ color: "#64748b" }}>Quick Fill:</span>
+                    <button
+                      type="button"
+                      onClick={() => setEmailTujuan(userEmail)}
                       style={{
-                        width: "100%",
-                        padding: "8px 12px",
-                        fontSize: 13,
-                        borderRadius: 6,
-                        border: "1px solid #cbd5e1",
+                        background: "#eff6ff",
+                        border: "1px solid #bfdbfe",
+                        color: "#1d4ed8",
+                        padding: "2px 8px",
+                        borderRadius: 4,
+                        cursor: "pointer",
                       }}
-                    />
+                    >
+                      👤 My Email ({userEmail})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEmailTujuan("finance@idstar.group")}
+                      style={{
+                        background: "#f1f5f9",
+                        border: "1px solid #cbd5e1",
+                        color: "#334155",
+                        padding: "2px 8px",
+                        borderRadius: 4,
+                        cursor: "pointer",
+                      }}
+                    >
+                      🏢 finance@idstar.group
+                    </button>
+                    {emailPicDefault && (
+                      <button
+                        type="button"
+                        onClick={() => setEmailTujuan(emailPicDefault)}
+                        style={{
+                          background: "#f0fdf4",
+                          border: "1px solid #bbf7d0",
+                          color: "#15803d",
+                          padding: "2px 8px",
+                          borderRadius: 4,
+                          cursor: "pointer",
+                        }}
+                      >
+                        👥 PIC: {emailPicDefault}
+                      </button>
+                    )}
                   </div>
 
                   <div>
-                    <label style={{ display: "block", fontSize: 12.5, fontWeight: 600, color: "#1e293b", marginBottom: 6 }}>
-                      Email Subject:
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#1e293b", marginBottom: 4 }}>
+                      Subject:
                     </label>
                     <input
                       type="text"
@@ -668,34 +615,262 @@ Website: https://idstar.co.id`;
                       onChange={(e) => setSubjekEmail(e.target.value)}
                       style={{
                         width: "100%",
-                        padding: "8px 12px",
-                        fontSize: 13,
+                        padding: "7px 10px",
+                        fontSize: 12.5,
                         borderRadius: 6,
                         border: "1px solid #cbd5e1",
                       }}
                     />
                   </div>
 
-                  <div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                      <label style={{ fontSize: 12.5, fontWeight: 600, color: "#1e293b" }}>
-                        Cover Letter Body &amp; Direct PDF Download Link:
-                      </label>
+                  {/* View Mode Toggle */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ display: "flex", gap: 4, backgroundColor: "#f1f5f9", padding: 3, borderRadius: 6 }}>
                       <button
                         type="button"
-                        onClick={handleSalin}
+                        onClick={() => setEmailViewMode("preview")}
                         style={{
-                          background: "none",
                           border: "none",
-                          color: salinSukses ? "#16a34a" : "#2563eb",
+                          padding: "4px 10px",
+                          borderRadius: 4,
                           fontSize: 11.5,
-                          cursor: "pointer",
                           fontWeight: 600,
+                          cursor: "pointer",
+                          backgroundColor: emailViewMode === "preview" ? "#ffffff" : "transparent",
+                          color: emailViewMode === "preview" ? "#0f172a" : "#64748b",
+                          boxShadow: emailViewMode === "preview" ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
                         }}
                       >
-                        {salinSukses ? "✓ Copied to Clipboard!" : "📋 Copy Text"}
+                        👁️ Live Template Preview
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEmailViewMode("text")}
+                        style={{
+                          border: "none",
+                          padding: "4px 10px",
+                          borderRadius: 4,
+                          fontSize: 11.5,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          backgroundColor: emailViewMode === "text" ? "#ffffff" : "transparent",
+                          color: emailViewMode === "text" ? "#0f172a" : "#64748b",
+                          boxShadow: emailViewMode === "text" ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+                        }}
+                      >
+                        📝 Raw Text Body
                       </button>
                     </div>
+
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button
+                        type="button"
+                        onClick={handleSalinHtml}
+                        className="btn btn-secondary"
+                        style={{
+                          fontSize: 11,
+                          padding: "4px 10px",
+                          fontWeight: 600,
+                          color: salinSukses === "html" ? "#16a34a" : "#dc2626",
+                          borderColor: salinSukses === "html" ? "#86efac" : "#fca5a5",
+                          backgroundColor: salinSukses === "html" ? "#f0fdf4" : "#fff5f5",
+                        }}
+                        title="Copy Rich HTML with tables, colors, and styling ready to paste directly into Gmail/Outlook"
+                      >
+                        {salinSukses === "html" ? "✓ Copied Rich HTML!" : "📋 Copy Rich HTML (Gmail/Outlook)"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSalinText}
+                        className="btn btn-secondary"
+                        style={{
+                          fontSize: 11,
+                          padding: "4px 10px",
+                          fontWeight: 600,
+                          color: salinSukses === "text" ? "#16a34a" : "#2563eb",
+                        }}
+                      >
+                        {salinSukses === "text" ? "✓ Copied Text!" : "📄 Copy Text"}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Mode 1: Exact Live Visual Replica of IDstar-Group-Mail.png */}
+                  {emailViewMode === "preview" ? (
+                    <div
+                      style={{
+                        backgroundColor: "#f9fafb",
+                        border: "1px solid #e5e7eb",
+                        borderRadius: 8,
+                        padding: 16,
+                        maxHeight: 380,
+                        overflowY: "auto",
+                      }}
+                    >
+                      <div
+                        style={{
+                          backgroundColor: "#ffffff",
+                          border: "1px solid #d1d5db",
+                          borderRadius: 4,
+                          maxWidth: 620,
+                          margin: "0 auto",
+                          overflow: "hidden",
+                          fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+                          color: "#1f2937",
+                        }}
+                      >
+                        {/* Header Logo */}
+                        <div style={{ padding: "20px 20px 14px", textAlign: "center" }}>
+                          <img
+                            src="/idstar-logo-color.png"
+                            alt="IDstar - service with quality"
+                            style={{ height: 42, width: "auto", display: "inline-block" }}
+                          />
+                          <div style={{ marginTop: 14, borderBottom: "1px solid #e5e7eb" }}></div>
+                        </div>
+
+                        {/* Red Main Title */}
+                        <div style={{ textAlign: "center", padding: "4px 20px 16px" }}>
+                          <h2
+                            style={{
+                              margin: 0,
+                              color: "#b91c1c",
+                              fontFamily: "Georgia, 'Times New Roman', serif",
+                              fontSize: 22,
+                              fontWeight: 700,
+                            }}
+                          >
+                            You have 1 invoice due
+                          </h2>
+                        </div>
+
+                        {/* Content Card Box */}
+                        <div
+                          style={{
+                            margin: "0 18px 18px",
+                            border: "1px solid #d1d5db",
+                            borderRadius: 4,
+                            padding: "18px 20px",
+                            backgroundColor: "#ffffff",
+                          }}
+                        >
+                          <div style={{ fontSize: 13, fontWeight: 700, color: "#111827", marginBottom: 10 }}>
+                            Dear {klien}
+                          </div>
+                          <div style={{ fontSize: 12.5, color: "#374151", marginBottom: 10 }}>
+                            Thank you for choosing us for your business partner.
+                          </div>
+                          <div style={{ fontSize: 12.5, color: "#374151", marginBottom: 16, lineHeight: 1.5 }}>
+                            We would like to confirm that you have <b>1</b> invoice due in <b>{dueMonthYear}</b> for a total of{" "}
+                            <b>IDR {amountStr}</b>.
+                          </div>
+
+                          {/* Invoice Summary Table */}
+                          <div style={{ overflowX: "auto" }}>
+                            <table
+                              style={{
+                                width: "100%",
+                                borderCollapse: "collapse",
+                                fontSize: 10.5,
+                                margin: "10px 0 16px",
+                                color: "#111827",
+                                border: "1px solid #6b7280",
+                              }}
+                            >
+                              <thead>
+                                <tr style={{ backgroundColor: "#e5e7eb" }}>
+                                  <th style={{ border: "1px solid #6b7280", padding: "6px 4px", textAlign: "center", fontWeight: 700 }}>No</th>
+                                  <th style={{ border: "1px solid #6b7280", padding: "6px 4px", textAlign: "center", fontWeight: 700 }}>Invoice Periode</th>
+                                  <th style={{ border: "1px solid #6b7280", padding: "6px 4px", textAlign: "center", fontWeight: 700 }}>Invoice Due Status</th>
+                                  <th style={{ border: "1px solid #6b7280", padding: "6px 4px", textAlign: "center", fontWeight: 700 }}>Invoice Number</th>
+                                  <th style={{ border: "1px solid #6b7280", padding: "6px 4px", textAlign: "center", fontWeight: 700 }}>Invoice Date</th>
+                                  <th style={{ border: "1px solid #6b7280", padding: "6px 4px", textAlign: "center", fontWeight: 700 }}>Net Amount<br />(IDR)</th>
+                                  <th style={{ border: "1px solid #6b7280", padding: "6px 4px", textAlign: "center", fontWeight: 700 }}>Payment Due Date</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr>
+                                  <td style={{ border: "1px solid #6b7280", padding: "8px 4px", textAlign: "center" }}>1</td>
+                                  <td style={{ border: "1px solid #6b7280", padding: "8px 4px", textAlign: "center" }}>{periodeShort}</td>
+                                  <td
+                                    style={{
+                                      border: "1px solid #6b7280",
+                                      padding: "8px 4px",
+                                      textAlign: "center",
+                                      fontWeight: 600,
+                                      color: statusDue === "Overdue" ? "#b91c1c" : "#111827",
+                                    }}
+                                  >
+                                    {statusDue}
+                                  </td>
+                                  <td style={{ border: "1px solid #6b7280", padding: "8px 4px", textAlign: "center", fontWeight: 600 }}>{nomorInvoice}</td>
+                                  <td style={{ border: "1px solid #6b7280", padding: "8px 4px", textAlign: "center" }}>{invoiceDateEnglish}</td>
+                                  <td style={{ border: "1px solid #6b7280", padding: "8px 4px", textAlign: "right", fontWeight: 600, fontFamily: "monospace" }}>
+                                    {amountStr}
+                                  </td>
+                                  <td style={{ border: "1px solid #6b7280", padding: "8px 4px", textAlign: "center" }}>{dueDateShort}</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+
+                          {/* Instructions */}
+                          <div style={{ textAlign: "center", fontSize: 11.5, color: "#1f2937", lineHeight: 1.6 }}>
+                            <div style={{ marginBottom: 4 }}>Please check to make sure everything looks all right.</div>
+                            <div style={{ marginBottom: 4 }}>
+                              If you have made a payment, please send proof of payment to{" "}
+                              <a href="mailto:finance@idstar.group" style={{ color: "#2563eb", textDecoration: "underline" }}>
+                                finance@idstar.group
+                              </a>
+                            </div>
+                            <div style={{ marginBottom: 12 }}>
+                              If you are not the right person to receive this reminder, please contact us at{" "}
+                              <a href="mailto:finance@idstar.group" style={{ color: "#2563eb", textDecoration: "underline" }}>
+                                finance@idstar.group
+                              </a>
+                            </div>
+                            <div style={{ borderTop: "1px solid #e5e7eb", margin: "12px auto", width: "85%" }}></div>
+                            <div style={{ fontStyle: "italic", fontSize: 10.5, color: "#4b5563" }}>
+                              This is an automated email from IDStar
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Red Banner Footer */}
+                        <div
+                          style={{
+                            backgroundColor: "#b91c1c",
+                            color: "#ffffff",
+                            textAlign: "center",
+                            padding: "14px 18px",
+                            fontSize: 11,
+                            lineHeight: 1.45,
+                          }}
+                        >
+                          <div style={{ fontWeight: 700, marginBottom: 2 }}>The Bellagio Mansion</div>
+                          <div>Jl. Mega Kuningan Timur</div>
+                          <div>Kota Jakarta Selatan</div>
+                          <div style={{ marginTop: 4, fontSize: 10, opacity: 0.95 }}>&copy; PT IDStar Cipta Teknologi</div>
+                        </div>
+                      </div>
+
+                      {/* Disclaimer */}
+                      <div
+                        style={{
+                          maxWidth: 620,
+                          margin: "10px auto 0",
+                          fontSize: 9.5,
+                          color: "#6b7280",
+                          lineHeight: 1.4,
+                          fontStyle: "italic",
+                          padding: "0 6px",
+                        }}
+                      >
+                        This email and any attachments are confidential and intended solely for the use of the individual or entity to whom they are addressed. If you have received this email in error, please notify the sender immediately and delete it from your system. Any unauthorized use, disclosure, or distribution of this email and its attachments is strictly prohibited.
+                      </div>
+                    </div>
+                  ) : (
+                    /* Mode 2: Raw Text Editor */
                     <textarea
                       rows={9}
                       value={pesanEmail}
@@ -712,10 +887,7 @@ Website: https://idstar.co.id`;
                         backgroundColor: "#f8fafc",
                       }}
                     />
-                    <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>
-                      💡 This message includes a direct URL for recipient to download the official PDF Invoice in your selected preset.
-                    </div>
-                  </div>
+                  )}
                 </>
               )}
             </div>
@@ -796,16 +968,16 @@ Website: https://idstar.co.id`;
                   </button>
                   <button
                     type="button"
-                    onClick={handleSalin}
+                    onClick={handleSalinHtml}
                     className="btn btn-secondary"
                     style={{
                       fontSize: 12,
                       fontWeight: 600,
                       padding: "8px 12px",
-                      color: salinSukses ? "#16a34a" : undefined,
+                      color: salinSukses === "html" ? "#16a34a" : "#dc2626",
                     }}
                   >
-                    {salinSukses ? "✓ Copied" : "📋 Copy Email Text"}
+                    {salinSukses === "html" ? "✓ Copied Rich HTML" : "📋 Copy Rich HTML"}
                   </button>
                   <button
                     type="button"

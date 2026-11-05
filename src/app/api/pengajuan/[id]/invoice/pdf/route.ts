@@ -171,9 +171,7 @@ export async function GET(
   });
 
   curY -= 13;
-  const companyTagline = format === "bilingual"
-    ? "IT Professional Services & Managed Talent Solutions"
-    : "Layanan Penempatan Tenaga Ahli IT & Solusi Teknologi";
+  const companyTagline = "IT Professional Services & Managed Talent Solutions";
   page.drawText(companyTagline, {
     x: margin,
     y: curY,
@@ -211,11 +209,9 @@ export async function GET(
     color: cDark,
   });
 
-  const subJudul = format === "bilingual"
-    ? "COMMERCIAL INVOICE & TAX BILL"
-    : format === "ringkas"
-    ? "FAKTUR KONSOLIDASI PROYEK"
-    : "FAKTUR PENAGIHAN RESMI";
+  const subJudul = format === "ringkas"
+    ? "CONSOLIDATED PROJECT INVOICE"
+    : "OFFICIAL COMMERCIAL INVOICE";
   const wSubJudul = fontBold.widthOfTextAtSize(subJudul, 8);
   page.drawText(subJudul, {
     x: pw - margin - wSubJudul,
@@ -253,7 +249,7 @@ export async function GET(
     borderWidth: 0.8,
   });
 
-  const billToTitle = format === "bilingual" ? "BILL TO / DITUJUKAN KEPADA:" : "DITUJUKAN KEPADA (BILL TO):";
+  const billToTitle = "BILL TO:";
   page.drawText(billToTitle, {
     x: colLeftX + 10,
     y: boxTopY - 14,
@@ -279,7 +275,7 @@ export async function GET(
     color: cDark,
   });
 
-  const projLabel = format === "bilingual" ? "Project      :" : "Proyek        :";
+  const projLabel = "Project      :";
   page.drawText(`${projLabel} ${header.namaProyek}`, {
     x: colLeftX + 10,
     y: boxTopY - 55,
@@ -288,7 +284,7 @@ export async function GET(
     color: cDark,
   });
 
-  const periodLabel = format === "bilingual" ? "Period       :" : "Periode      :";
+  const periodLabel = "Period       :";
   page.drawText(`${periodLabel} ${header.periode}${header.keteranganTahap ? ` (${header.keteranganTahap})` : ""}`, {
     x: colLeftX + 10,
     y: boxTopY - 68,
@@ -308,7 +304,7 @@ export async function GET(
     borderWidth: 0.8,
   });
 
-  const infoTitle = format === "bilingual" ? "INVOICE DETAILS / INFORMASI PENAGIHAN:" : "INFORMASI PENAGIHAN:";
+  const infoTitle = "INVOICE DETAILS:";
   page.drawText(infoTitle, {
     x: colRightX + 10,
     y: boxTopY - 14,
@@ -328,10 +324,10 @@ export async function GET(
     });
   };
 
-  const lblInv = format === "bilingual" ? "Invoice No." : "No. Invoice";
-  const lblTgl = format === "bilingual" ? "Invoice Date" : "Tgl Invoice";
-  const lblDue = format === "bilingual" ? "Due Date" : "Jatuh Tempo";
-  const lblPo = format === "bilingual" ? "PO Number" : "No. PO";
+  const lblInv = "Invoice No.";
+  const lblTgl = "Invoice Date";
+  const lblDue = "Due Date";
+  const lblPo = "PO Number";
 
   renderInfoRow(lblInv, nomorInv, boxTopY - 28, true);
   renderInfoRow(lblTgl, tanggalInvoiceFormatted, boxTopY - 40);
@@ -339,7 +335,7 @@ export async function GET(
   renderInfoRow(lblPo, header.nomorPo, boxTopY - 64, true);
 
   if (header.nomorFakturPajak) {
-    const lblFp = format === "bilingual" ? "Tax Invoice" : "Faktur Pajak";
+    const lblFp = "Tax Invoice";
     renderInfoRow(lblFp, header.nomorFakturPajak, boxTopY - 74);
   } else if (header.nomorGrSlip) {
     renderInfoRow("GR Slip", header.nomorGrSlip, boxTopY - 74);
@@ -354,10 +350,10 @@ export async function GET(
     // --- FORMAT RINGKAS (LUMP SUM PROYEK) ---
     const colDefRingkas = [
       { label: "NO", w: 28, align: "center" as const },
-      { label: "DESKRIPSI PEKERJAAN / JASA", w: 260, align: "left" as const },
-      { label: "NO. PO / REKAP", w: 75, align: "center" as const },
-      { label: "VOL / DURASI", w: 65, align: "center" as const },
-      { label: "JUMLAH TOTAL (RP)", w: 95, align: "right" as const },
+      { label: "DESCRIPTION OF SERVICES", w: 260, align: "left" as const },
+      { label: "PO / RECAP NO.", w: 75, align: "center" as const },
+      { label: "QTY / DURATION", w: 65, align: "center" as const },
+      { label: "TOTAL AMOUNT (IDR)", w: 95, align: "right" as const },
     ];
 
     page.drawRectangle({
@@ -501,14 +497,14 @@ export async function GET(
       curY -= 22;
     }
   } else {
-    // --- FORMAT RINCI (DETAIL) & BILINGUAL ---
+    // --- FORMAT RINCI (DETAIL) ---
     const colDef = [
       { label: "NO", w: 24, align: "center" as const },
-      { label: format === "bilingual" ? "DESCRIPTION / TALENT NAME" : "DESKRIPSI PEKERJAAN / TALENTA", w: 195, align: "left" as const },
-      { label: format === "bilingual" ? "LINE" : "LINE PO", w: 55, align: "center" as const },
-      { label: format === "bilingual" ? "WORK DAYS" : "HARI KERJA", w: 65, align: "center" as const },
-      { label: format === "bilingual" ? "RATE (IDR)" : "RATE BULANAN", w: 85, align: "right" as const },
-      { label: format === "bilingual" ? "AMOUNT (IDR)" : "JUMLAH (RP)", w: 99, align: "right" as const },
+      { label: "DESCRIPTION OF SERVICES / TALENT NAME", w: 195, align: "left" as const },
+      { label: "LINE", w: 55, align: "center" as const },
+      { label: "WORK DAYS", w: 65, align: "center" as const },
+      { label: "RATE (IDR)", w: 85, align: "right" as const },
+      { label: "AMOUNT (IDR)", w: 99, align: "right" as const },
     ];
 
     page.drawRectangle({
@@ -691,9 +687,7 @@ export async function GET(
     borderWidth: 0.8,
   });
 
-  const terbilangTitle = format === "bilingual"
-    ? "AMOUNT IN WORDS / TERBILANG:"
-    : "TERBILANG / AMOUNT IN WORDS:";
+  const terbilangTitle = "AMOUNT IN WORDS (TERBILANG):";
   page.drawText(terbilangTitle, {
     x: margin + 8,
     y: curY - 12,
@@ -759,9 +753,9 @@ export async function GET(
     });
   };
 
-  const lblDpp = format === "bilingual" ? "Subtotal DPP / Tax Base" : "Subtotal DPP";
-  const lblVat = format === "bilingual" ? `VAT / PPN (${tarifPpn}%)` : `PPN (${tarifPpn}%)`;
-  const lblTotal = format === "bilingual" ? "TOTAL AMOUNT / TAGIHAN" : "TOTAL TAGIHAN";
+  const lblDpp = "Subtotal (DPP)";
+  const lblVat = `VAT (${tarifPpn}%)`;
+  const lblTotal = "TOTAL AMOUNT DUE";
 
   drawSummaryRow(lblDpp, formatRp(dpp), curY - 12);
   drawSummaryRow(lblVat, formatRp(nilaiPpn), curY - 26);
@@ -794,9 +788,7 @@ export async function GET(
     borderWidth: 0.8,
   });
 
-  const rekTitle = format === "bilingual"
-    ? "OFFICIAL BANK ACCOUNT FOR PAYMENT / REKENING RESMI:"
-    : "INFORMASI REKENING PEMBAYARAN RESMI:";
+  const rekTitle = "OFFICIAL BANK ACCOUNTS FOR PAYMENT:";
   page.drawText(rekTitle, {
     x: margin + 10,
     y: curY - 14,
@@ -826,7 +818,7 @@ export async function GET(
     page.drawText("Atas Nama: PT IDSTAR CIPTA TEKNOLOGI", { x: margin + 10, y: curY - 76, size: 8, font: fontBold, color: cDark });
   }
 
-  page.drawText("* Cantumkan No. Invoice pada berita transfer & kirim bukti transfer ke finance@idstar.group", {
+  page.drawText("* Please note Invoice Number on transfer remark & send proof of payment to finance@idstar.group", {
     x: margin + 10,
     y: curY - 86,
     size: 6.8,
