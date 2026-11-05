@@ -10,6 +10,7 @@ import {
 } from "@/lib/google-auth";
 import { buatSesi, hashKataSandi } from "@/lib/auth";
 import { catatAudit } from "@/lib/audit";
+import { getAuthorizedProfile } from "@/lib/user-roles";
 import { randomBytes } from "crypto";
 
 export async function GET(request: NextRequest) {
@@ -57,6 +58,16 @@ export async function GET(request: NextRequest) {
       return response;
     }
 
+    const authProfile = getAuthorizedProfile(email);
+    if (!authProfile) {
+      const pesanTolak = encodeURIComponent(
+        `Akses ditolak: Akun ${email} tidak terdaftar dalam daftar hak akses Checker, Input, atau Admin di INVORA.`
+      );
+      const response = NextResponse.redirect(`${origin}/?error=${pesanTolak}`);
+      response.cookies.delete("google_oauth_state");
+      return response;
+    }
+
     // 4. Cari atau Daftarkan User di Database (Just-In-Time Provisioning)
     let [user] = await db.select().from(users).where(eq(users.email, email));
 
@@ -68,10 +79,10 @@ export async function GET(request: NextRequest) {
       const [newUser] = await db
         .insert(users)
         .values({
-          nama: profile.name || email.split("@")[0],
+          nama: authProfile.nama,
           email: email,
           passwordHash: passwordHash,
-          role: "petugas", // Role default karyawan IDStar
+          role: authProfile.primaryRole,
           aktif: true,
         })
         .returning();
@@ -82,8 +93,17 @@ export async function GET(request: NextRequest) {
         entitas: "users",
         entitasId: user.id,
         userId: user.id,
-        perubahan: `Pendaftaran otomatis akun baru via Google SSO: ${email} (role: petugas)`,
+        perubahan: `Pendaftaran otomatis akun baru via Google SSO: ${email} (role: ${user.role})`,
       });
+    } else {
+      if (user.nama !== authProfile.nama || user.role !== authProfile.primaryRole) {
+        await db
+          .update(users)
+          .set({ nama: authProfile.nama, role: authProfile.primaryRole })
+          .where(eq(users.id, user.id));
+        user.nama = authProfile.nama;
+        user.role = authProfile.primaryRole;
+      }
     }
 
     // Cek apakah akun aktif

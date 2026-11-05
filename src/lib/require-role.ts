@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { userSaatIni } from "@/lib/session-server";
 import type { Role } from "@/lib/auth";
+import { isAuthorizedForRole } from "@/lib/user-roles";
 
 // Dipakai di awal setiap halaman/layout yang dibatasi role tertentu.
 // Menolak DI SERVER sebelum konten dikirim ke browser.
@@ -9,7 +10,8 @@ export async function wajibRole(rolesDiizinkan: Role[]) {
   if (!user) {
     redirect("/");
   }
-  if (!rolesDiizinkan.includes(user.role as Role)) {
+  const allowed = rolesDiizinkan.some((r) => isAuthorizedForRole(user.email, r) || user.role === r);
+  if (!allowed) {
     redirect("/dashboard");
   }
   return user;

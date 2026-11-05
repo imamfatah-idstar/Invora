@@ -15,7 +15,7 @@ export default async function HalamanBuatPengajuan() {
 
   return (
     <>
-      <Topbar nama={userLogin.nama} role={userLogin.role} />
+      <Topbar nama={userLogin.nama} role={userLogin.role} email={userLogin.email} />
       <main className="page">
         <a href="/pengajuan" className="back-link">&larr; Submissions</a>
         <h1>Create Submission</h1>

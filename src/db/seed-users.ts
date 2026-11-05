@@ -1,34 +1,48 @@
 import { db } from "./index";
 import { users } from "./schema";
 import { hashKataSandi } from "@/lib/auth";
+import { AUTHORIZED_USERS } from "@/lib/user-roles";
+import { eq } from "drizzle-orm";
 
-// Akun CONTOH untuk uji coba login — bukan akun produksi.
-// Kata sandi contoh: "contoh123" untuk ketiganya.
 async function main() {
-  const kataSandiHash = await hashKataSandi("contoh123");
+  const passwordHashIdstar = await hashKataSandi("idstar123");
+  const passwordHashDemo = await hashKataSandi("contoh123");
 
-  const daftarAkunContoh = [
-    { nama: "Imam Fatah", email: "imam.fatah2@idstar.group", role: "admin" as const },
-    { nama: "Admin Contoh", email: "admin@contoh.local", role: "admin" as const },
-    { nama: "Petugas Contoh", email: "petugas@contoh.local", role: "petugas" as const },
-    { nama: "Checker Contoh", email: "checker@contoh.local", role: "checker" as const },
-  ];
+  for (const [email, profile] of Object.entries(AUTHORIZED_USERS)) {
+    const isDemo = email.endsWith("@contoh.local");
+    const passwordHash = isDemo ? passwordHashDemo : passwordHashIdstar;
 
-  for (const akun of daftarAkunContoh) {
-    await db.insert(users).values({
-      nama: akun.nama,
-      email: akun.email,
-      passwordHash: kataSandiHash,
-      role: akun.role,
-    });
-    console.log(`Dibuat: ${akun.email} (role: ${akun.role})`);
+    const [existing] = await db.select().from(users).where(eq(users.email, email));
+    if (existing) {
+      await db
+        .update(users)
+        .set({
+          nama: profile.nama,
+          role: profile.primaryRole,
+          passwordHash: passwordHash,
+          aktif: true,
+        })
+        .where(eq(users.id, existing.id));
+      console.log(`Updated: ${email} (${profile.primaryRole})`);
+    } else {
+      await db.insert(users).values({
+        nama: profile.nama,
+        email: profile.email,
+        passwordHash: passwordHash,
+        role: profile.primaryRole,
+        aktif: true,
+      });
+      console.log(`Created: ${email} (${profile.primaryRole})`);
+    }
   }
 }
 
-main().then(() => {
-  console.log("\nSelesai. Kata sandi untuk semua akun contoh: contoh123");
-  process.exit(0);
-}).catch((err) => {
-  console.error("GAGAL:", err.message);
-  process.exit(1);
-});
+main()
+  .then(() => {
+    console.log("\nFinished seeding users.");
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error("FAILED:", err.message);
+    process.exit(1);
+  });

@@ -41,7 +41,7 @@ export default async function HalamanEditPengajuan({ params }: { params: Promise
 
   return (
     <>
-      <Topbar nama={userLogin.nama} role={userLogin.role} />
+      <Topbar nama={userLogin.nama} role={userLogin.role} email={userLogin.email} />
       <main className="page">
         <a href={`/pengajuan/${pengajuanId}`} className="back-link">&larr; Submission Details</a>
         <h1>Edit Submission — {header.periode}</h1>

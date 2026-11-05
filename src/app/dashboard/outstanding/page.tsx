@@ -127,7 +127,7 @@ export default async function HalamanOutstanding() {
 
   return (
     <>
-      <Topbar nama={user.nama} role={user.role} />
+      <Topbar nama={user.nama} role={user.role} email={user.email} />
       <main className="page" style={{ maxWidth: 1300, margin: "0 auto", padding: "24px 20px" }}>
         <a href="/dashboard" className="back-link">
           &larr; Dashboard

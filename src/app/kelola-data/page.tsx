@@ -27,7 +27,7 @@ export default async function HalamanKelolaData() {
 
   return (
     <>
-      <Topbar nama={user.nama} role={user.role} />
+      <Topbar nama={user.nama} role={user.role} email={user.email} />
       <main className="page">
         <a href="/dashboard" className="back-link">&larr; Dashboard</a>
         <h1>Data Management</h1>

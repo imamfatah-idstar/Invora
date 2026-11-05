@@ -33,7 +33,7 @@ export default async function HalamanSummaryPo({ searchParams }: { searchParams:
 
   return (
     <>
-      <Topbar nama={user.nama} role={user.role} />
+      <Topbar nama={user.nama} role={user.role} email={user.email} />
       <main className="page">
         <a href="/dashboard" className="back-link">&larr; Dashboard</a>
         <h1>PO Summary</h1>

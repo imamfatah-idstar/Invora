@@ -5,12 +5,11 @@ import { eq } from "drizzle-orm";
 import { apakahEmailIdstarGroup, DOMAIN_DIIZINKAN } from "@/lib/google-auth";
 import { buatSesi, hashKataSandi } from "@/lib/auth";
 import { catatAudit } from "@/lib/audit";
-import { randomBytes } from "crypto";
+import { getAuthorizedProfile, getCleanDisplayName } from "@/lib/user-roles";
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
   const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
-  const nama = typeof body?.nama === "string" ? body.nama.trim() : "";
 
   if (!email) {
     return NextResponse.json({ error: "Email akun Google wajib diisi." }, { status: 400 });
@@ -26,19 +25,28 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const authProfile = getAuthorizedProfile(email);
+  if (!authProfile) {
+    return NextResponse.json(
+      {
+        error: `Akses ditolak: Akun "${email}" tidak terdaftar dalam daftar hak akses Checker, Input, atau Admin INVORA.`,
+      },
+      { status: 403 }
+    );
+  }
+
   let [user] = await db.select().from(users).where(eq(users.email, email));
 
   if (!user) {
-    const randomPassword = randomBytes(16).toString("hex");
-    const passwordHash = await hashKataSandi(randomPassword);
+    const passwordHash = await hashKataSandi("idstar123");
 
     const [newUser] = await db
       .insert(users)
       .values({
-        nama: nama || email.split("@")[0].replace(".", " ").toUpperCase(),
+        nama: authProfile.nama,
         email: email,
         passwordHash: passwordHash,
-        role: "petugas",
+        role: authProfile.primaryRole,
         aktif: true,
       })
       .returning();
@@ -49,8 +57,18 @@ export async function POST(request: NextRequest) {
       entitas: "users",
       entitasId: user.id,
       userId: user.id,
-      perubahan: `Pendaftaran otomatis akun IDStar baru: ${email} (role: petugas)`,
+      perubahan: `Pendaftaran otomatis akun IDStar baru: ${email} (role: ${user.role})`,
     });
+  } else {
+    // Pastikan nama & role sinkron dengan profil resmi
+    if (user.nama !== authProfile.nama || user.role !== authProfile.primaryRole) {
+      await db
+        .update(users)
+        .set({ nama: authProfile.nama, role: authProfile.primaryRole })
+        .where(eq(users.id, user.id));
+      user.nama = authProfile.nama;
+      user.role = authProfile.primaryRole;
+    }
   }
 
   if (!user.aktif) {
@@ -58,10 +76,11 @@ export async function POST(request: NextRequest) {
   }
 
   const { token, kedaluwarsa } = await buatSesi(user.id);
+  const cleanName = getCleanDisplayName(user.email, user.nama);
 
   const response = NextResponse.json({
     ok: true,
-    nama: user.nama,
+    nama: cleanName,
     role: user.role,
     email: user.email,
   });

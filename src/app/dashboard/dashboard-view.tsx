@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getGreetingName } from "@/lib/user-roles";
 
 export type MenuItem = {
   href: string;
@@ -10,7 +11,7 @@ export type MenuItem = {
 };
 
 type Props = {
-  user: { nama: string; role: string };
+  user: { nama: string; role: string; email?: string };
   menu: MenuItem[];
 };
 
@@ -114,7 +115,7 @@ export default function DashboardView({ user, menu }: Props) {
 
         <div style={{ marginBottom: 24 }}>
           <h1 style={{ fontSize: 24, fontWeight: 800, margin: "0 0 6px 0", color: "#111827" }}>
-            Hello, {user.nama}
+            Hai {getGreetingName(user.email, user.nama)}
           </h1>
           <p className="subtitle" style={{ margin: 0 }}>
             Welcome to <b>INVORA</b> (Invoice Operations &amp; Revenue Assurance) &middot; IDStar Group.

@@ -21,7 +21,7 @@ export default async function DataReferensiLayout({ children }: { children: Reac
 
   return (
     <>
-      <Topbar nama={user.nama} role={user.role} />
+      <Topbar nama={user.nama} role={user.role} email={user.email} />
       <div className="admin-shell">
         <nav className="admin-sidebar">
           <a href="/dashboard" className="back-link">&larr; Dashboard</a>

@@ -427,21 +427,49 @@ export default function LoginClient() {
                 />
               </div>
 
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", fontSize: 11.5 }}>
-                <span style={{ color: "var(--color-text-muted)" }}>Test Shortcuts:</span>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", fontSize: 11.5 }}>
+                <span style={{ color: "var(--color-text-muted)", width: "100%", marginBottom: 2 }}>Quick Select Account:</span>
                 <button
                   type="button"
-                  onClick={() => setCustomGoogleEmail("imam.fatah2@idstar.group")}
-                  style={{ background: "#ecfdf5", border: "1px solid #a7f3d0", color: "#065f46", padding: "2px 8px", borderRadius: 4, cursor: "pointer", fontSize: 11 }}
+                  onClick={() => setCustomGoogleEmail("dewi.ani@idstar.group")}
+                  style={{ background: "#eff6ff", border: "1px solid #bfdbfe", color: "#1e40af", padding: "3px 8px", borderRadius: 4, cursor: "pointer", fontSize: 11 }}
                 >
-                  ✓ imam.fatah2@idstar.group (Pass)
+                  dewi.ani@idstar.group (Checker & Admin)
                 </button>
                 <button
                   type="button"
-                  onClick={() => setCustomGoogleEmail("pengguna.luar@gmail.com")}
-                  style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b", padding: "2px 8px", borderRadius: 4, cursor: "pointer", fontSize: 11 }}
+                  onClick={() => setCustomGoogleEmail("muhammad.miqdam@idstar.group")}
+                  style={{ background: "#eff6ff", border: "1px solid #bfdbfe", color: "#1e40af", padding: "3px 8px", borderRadius: 4, cursor: "pointer", fontSize: 11 }}
                 >
-                  ✕ external.user@gmail.com (Test Reject)
+                  muhammad.miqdam@idstar.group (Checker)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCustomGoogleEmail("imam.fatah@idstar.group")}
+                  style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b", padding: "3px 8px", borderRadius: 4, cursor: "pointer", fontSize: 11 }}
+                >
+                  imam.fatah@idstar.group (Input & Admin)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCustomGoogleEmail("nitia.cahyaningrum@idstar.group")}
+                  style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b", padding: "3px 8px", borderRadius: 4, cursor: "pointer", fontSize: 11 }}
+                >
+                  nitia.cahyaningrum@idstar.group (Input)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCustomGoogleEmail("rihhadatul.syam@idstar.group")}
+                  style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b", padding: "3px 8px", borderRadius: 4, cursor: "pointer", fontSize: 11 }}
+                >
+                  rihhadatul.syam@idstar.group (Input)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCustomGoogleEmail("external.user@gmail.com")}
+                  style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#4b5563", padding: "3px 8px", borderRadius: 4, cursor: "pointer", fontSize: 11 }}
+                >
+                  ✕ user@gmail.com (Test Reject)
                 </button>
               </div>
 

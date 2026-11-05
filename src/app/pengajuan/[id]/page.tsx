@@ -18,6 +18,7 @@ import PembayaranPanel from "./pembayaran-panel";
 import ReminderModal from "./reminder-modal";
 import InvoiceModal from "./invoice-modal";
 import { tambahHari, selisihHari } from "@/lib/aging";
+import { isAuthorizedForRole } from "@/lib/user-roles";
 
 const LABEL_STATUS: Record<string, string> = {
   draft: "Draft",
@@ -163,18 +164,18 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
 
   const total = rincian.reduce((acc, r) => acc + Number(r.hasilHitung), 0);
 
-  const bisaKonfirmasi = (header.status === "draft" || header.status === "perlu_revisi") &&
-    userLogin.role === "petugas";
-  const bisaEdit = header.status === "perlu_revisi" && userLogin.role === "petugas";
-  const bisaDicek = header.status === "menunggu_checker" &&
-    userLogin.role === "checker";
-  const bisaBuatDokumen = (header.status === "siap_diajukan" || header.status === "diajukan") &&
-    userLogin.role === "petugas";
+  const isPetugas = isAuthorizedForRole(userLogin.email, "petugas") || userLogin.role === "petugas";
+  const isChecker = isAuthorizedForRole(userLogin.email, "checker") || userLogin.role === "checker";
+
+  const bisaKonfirmasi = (header.status === "draft" || header.status === "perlu_revisi") && isPetugas;
+  const bisaEdit = header.status === "perlu_revisi" && isPetugas;
+  const bisaDicek = header.status === "menunggu_checker" && isChecker;
+  const bisaBuatDokumen = (header.status === "siap_diajukan" || header.status === "diajukan") && isPetugas;
   // Kelengkapan dokumen (CAC, BAST, lampiran tambahan) — disiapkan Input Data
   // ATAU Checker, sebagai prasyarat sebelum otomasi ke Get Approve/COUPA bisa
   // dijalankan (belum dibangun). Lihat PROJECT_INSTRUCTIONS.md bagian 22-23.
   const bisaKelengkapan = (header.status === "siap_diajukan" || header.status === "diajukan") &&
-    (userLogin.role === "petugas" || userLogin.role === "checker");
+    (isPetugas || isChecker);
   const cacAda = daftarDokumen.some((d) => d.jenis === "CAC");
   const bastAda = daftarDokumen.some((d) => d.jenis === "BAST");
   const lampiranBalanceAda = daftarLampiran.some((l) => l.label === LABEL_LAMPIRAN_BALANCE);
@@ -201,7 +202,7 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
 
   return (
     <>
-      <Topbar nama={userLogin.nama} role={userLogin.role} />
+      <Topbar nama={userLogin.nama} role={userLogin.role} email={userLogin.email} />
       <main className="page">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: 12 }}>
           <a href="/pengajuan" className="back-link" style={{ margin: 0 }}>&larr; Submissions</a>
@@ -449,7 +450,7 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
         {/* Bagian 45: GR Request cuma berlaku untuk klien XL (proses CAC/COUPA) —
             klien Non-XL skip total, tidak ditampilkan sama sekali. */}
         {bisaKelengkapan && isKlienXl && (
-          <GrRequestPanel pengajuanId={header.id} data={dataGrRequest} role={userLogin.role} riwayat={riwayatGrRequest} />
+          <GrRequestPanel pengajuanId={header.id} data={dataGrRequest} role={isChecker ? "checker" : "petugas"} riwayat={riwayatGrRequest} />
         )}
 
         {/* MVP 5: Modul Pencatatan Pelunasan Pembayaran (Payment Settlement) */}

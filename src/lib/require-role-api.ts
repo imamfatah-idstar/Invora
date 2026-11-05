@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { userSaatIni } from "@/lib/session-server";
 import type { Role } from "@/lib/auth";
+import { isAuthorizedForRole } from "@/lib/user-roles";
 
 // Versi untuk API route: mengembalikan NextResponse error kalau tidak lolos,
 // atau null kalau boleh lanjut. Dipakai di awal setiap handler API yang
@@ -10,7 +11,8 @@ export async function wajibRoleApi(rolesDiizinkan: Role[]): Promise<NextResponse
   if (!user) {
     return NextResponse.json({ error: "Belum login." }, { status: 401 });
   }
-  if (!rolesDiizinkan.includes(user.role as Role)) {
+  const allowed = rolesDiizinkan.some((r) => isAuthorizedForRole(user.email, r) || user.role === r);
+  if (!allowed) {
     return NextResponse.json({ error: "Tidak berwenang untuk aksi ini." }, { status: 403 });
   }
   return null;

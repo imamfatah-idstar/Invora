@@ -47,7 +47,7 @@ export default async function AnalisaDurasi() {
 
   return (
     <>
-      <Topbar nama={userLogin.nama} role={userLogin.role} />
+      <Topbar nama={userLogin.nama} role={userLogin.role} email={userLogin.email} />
       <main className="page">
         <a href="/dashboard" className="back-link">&larr; Dashboard</a>
         <h1>Process Duration Analytics: CAC &rarr; Invoice</h1>
