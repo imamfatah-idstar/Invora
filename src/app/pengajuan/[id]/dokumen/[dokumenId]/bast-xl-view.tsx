@@ -56,18 +56,6 @@ export default function BastXlView({
     ? `${periodeFormatted} (${keteranganTahap})`
     : periodeFormatted;
 
-  // Sync to PDF download URL query params
-  const queryPdf = new URLSearchParams({
-    pihak1Nama: userXlNama,
-    pihak1Jabatan: userXlJabatan,
-    pihak2Nama: financeNama,
-    pihak2Jabatan: financeJabatan,
-    pekerjaan,
-    tgl: tanggalDokumen,
-  }).toString();
-
-  const urlPdf = `/api/pengajuan/${pengajuanId}/dokumen/${dokumenId}/pdf?${queryPdf}`;
-
   return (
     <div className="doc-page">
       {/* Top Toolbar */}
@@ -84,14 +72,11 @@ export default function BastXlView({
             {showConfig ? "Hide Settings" : "⚙️ Edit Signatories & Info"}
           </button>
           <TombolCetak />
-          <a href={urlPdf} target="_blank" className="btn btn-primary">
-            ⬇ Download BAST XL PDF
-          </a>
           <a
             href="https://www.getapprove.xlsmart.co.id/auth/login?nexturl=%252Fapproval-document%2523id%253Dcc5582a1-9e20-4926-865d-9e7d9c65b73c"
             target="_blank"
             rel="noopener noreferrer"
-            className="btn"
+            className="btn btn-primary"
             style={{
               display: "inline-flex",
               alignItems: "center",
