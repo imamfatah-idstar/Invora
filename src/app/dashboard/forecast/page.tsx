@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { wajibRole } from "@/lib/require-role";
 import { db } from "@/db";
 import { pengajuan, po, userXl, pengajuanDetail, pembayaran } from "@/db/schema";
@@ -12,7 +13,9 @@ export const metadata = {
 };
 
 export default async function HalamanCashInForecast() {
-  const user = await wajibRole(["petugas", "checker", "admin"]);
+  await wajibRole(["petugas", "checker", "admin"]);
+  // Sementara dinonaktifkan atas permintaan user
+  redirect("/dashboard");
 
   // Ambil semua pengajuan aktif (mulai dari draf, diajukan, sampai terbit invoice)
   const daftarPengajuan = await db

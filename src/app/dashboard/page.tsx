@@ -26,12 +26,7 @@ export default async function Dashboard() {
       deskripsi: "Monitoring piutang belum lunas, jadwal jatuh tempo, dan aging schedule.",
       icon: "💰"
     }] : []),
-    ...(user.role !== "admin" ? [{
-      href: "/dashboard/forecast",
-      label: "Cash-in Forecasting",
-      deskripsi: "Estimasi jadwal cair otomatis, simulasi arus kas masuk, dan skenario TOP.",
-      icon: "📈"
-    }] : []),
+    // Cash-in Forecasting dinonaktifkan sementara sesuai instruksi
     ...(user.role === "petugas" ? [{
       href: "/data-referensi/personel",
       label: "Data Referensi",
