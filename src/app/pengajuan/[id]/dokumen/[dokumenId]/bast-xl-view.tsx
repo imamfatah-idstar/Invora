@@ -87,6 +87,26 @@ export default function BastXlView({
           <a href={urlPdf} target="_blank" className="btn btn-primary">
             ⬇ Download BAST XL PDF
           </a>
+          <a
+            href="https://www.getapprove.xlsmart.co.id/auth/login?nexturl=%252Fapproval-document%2523id%253Dcc5582a1-9e20-4926-865d-9e7d9c65b73c"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              backgroundColor: "#002d72",
+              borderColor: "#002d72",
+              color: "#ffffff",
+              fontWeight: 600,
+              textDecoration: "none",
+            }}
+            title="Redirect to official XL Get Approve Portal"
+          >
+            <span>🚀 Get Approve XL</span>
+            <span style={{ fontSize: 12 }}>↗</span>
+          </a>
         </div>
       </div>
 

@@ -343,7 +343,7 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
           </div>
         )}
 
-        {bisaBuatDokumen && (
+        {(bisaBuatDokumen || daftarDokumen.length > 0) && (
           <div className="card" style={{ marginTop: 20 }}>
             <h3 style={{ marginTop: 0 }}>Documents: {isKlienXl ? "CAC / BAST" : "BAST"}</h3>
             <p className="subtitle">
@@ -353,9 +353,31 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
                 <>Non-XL client — formal BAST document with timesheets as billing support documentation.</>
               )}
             </p>
-            <div style={{ display: "flex", gap: 10 }}>
-              {isKlienXl && <TombolBuatDokumen pengajuanId={header.id} jenis="CAC" />}
-              <TombolBuatDokumen pengajuanId={header.id} jenis="BAST" />
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+              {bisaBuatDokumen && isKlienXl && <TombolBuatDokumen pengajuanId={header.id} jenis="CAC" />}
+              {bisaBuatDokumen && <TombolBuatDokumen pengajuanId={header.id} jenis="BAST" />}
+              {isKlienXl && (
+                <a
+                  href="https://www.getapprove.xlsmart.co.id/auth/login?nexturl=%252Fapproval-document%2523id%253Dcc5582a1-9e20-4926-865d-9e7d9c65b73c"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    backgroundColor: "#002d72",
+                    borderColor: "#002d72",
+                    color: "#ffffff",
+                    fontWeight: 600,
+                    textDecoration: "none",
+                  }}
+                  title="Redirect to official XL Get Approve Portal"
+                >
+                  <span>🚀 Get Approve XL</span>
+                  <span style={{ fontSize: 12 }}>↗</span>
+                </a>
+              )}
             </div>
 
             {daftarDokumen.length > 0 && (
