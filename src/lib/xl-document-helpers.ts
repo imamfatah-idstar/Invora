@@ -93,3 +93,21 @@ export function formatRupiahKoma(nilai: string | number): string {
   return "Rp " + Math.round(num).toLocaleString("en-US");
 }
 
+export function formatHariTanggalIndo(d: Date = new Date()): string {
+  const hari = NAMA_HARI[d.getDay()];
+  const tgl = d.getDate();
+  const bulan = NAMA_BULAN_INDO[d.getMonth()];
+  const tahun = d.getFullYear();
+  return `${hari} ${tgl} ${bulan} ${tahun}`;
+}
+
+export function formatTanggalSelesaiIndo(periode: string): string {
+  if (!periode || !periode.includes("-")) return "-";
+  const [thnStr, blnStr] = periode.split("-");
+  const thn = parseInt(thnStr, 10);
+  const blnIndex = parseInt(blnStr, 10) - 1;
+  const lastDay = new Date(thn, blnIndex + 1, 0).getDate();
+  const namaBulan = NAMA_BULAN_INDO[blnIndex] || blnStr;
+  return `${lastDay}-${namaBulan}-${thn}`;
+}
+

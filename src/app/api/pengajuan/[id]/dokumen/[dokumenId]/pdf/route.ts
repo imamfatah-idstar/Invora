@@ -16,6 +16,8 @@ import {
   formatTanggalDokumen,
   formatPeriodeBulan,
   formatRupiahKoma,
+  formatHariTanggalIndo,
+  formatTanggalSelesaiIndo,
 } from "@/lib/xl-document-helpers";
 
 const LABEL_JENIS: Record<string, string> = {
@@ -131,153 +133,347 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   const total = rincian.reduce((acc, r) => acc + Number(r.hasilHitung), 0);
 
-  // ---- BAST Khusus Non-XL (Format resmi 1 halaman, 2 pihak) ----
+  // ---- BAST Khusus Non-XL (Format resmi mengikuti BAST_NonXL.pdf) ----
   if (!isKlienXl && dok.jenis === "BAST") {
     const bastPdf = await PDFDocument.create();
     const font = await bastPdf.embedFont(StandardFonts.Helvetica);
     const fontBold = await bastPdf.embedFont(StandardFonts.HelveticaBold);
+    const fontOblique = await bastPdf.embedFont(StandardFonts.HelveticaOblique);
     const halaman = bastPdf.addPage(PageSizes.A4);
     const { width: pw, height: ph } = halaman.getSize();
-    const margin = 42;
-    let y = ph - margin;
+    const margin = 48;
+    const contentWidth = pw - margin * 2;
+    let y = ph - 42;
 
-    function teksNonXl(isi: string, opsi: { x?: number; size?: number; bold?: boolean; warna?: [number, number, number] } = {}) {
-      halaman.drawText(isi, {
-        x: opsi.x ?? margin, y, size: opsi.size ?? 9.5,
-        font: opsi.bold ? fontBold : font,
-        color: opsi.warna ? rgb(...opsi.warna) : rgb(0.1, 0.1, 0.1),
+    const isCimb = header.klien?.toUpperCase().includes("CIMB") || header.klien?.toUpperCase().includes("NIAGA");
+    const pihak1NamaNonXl = searchParams.get("pihak1Nama") || (isCimb ? "Budi Oktaviyan Suryanto" : header.namaUserXl || "Budi Oktaviyan Suryanto");
+    const pihak1JabatanNonXl = searchParams.get("pihak1Jabatan") || (isCimb ? "Application Development Head - Digital Onboarding & Experience" : header.kontakUserXl || "Application Development Head - Digital Onboarding & Experience");
+    const pihak1PerusahaanNonXl = searchParams.get("pihak1Perusahaan") || (isCimb ? "PT. Bank CIMB Niaga Tbk" : (header.klien?.startsWith("PT") ? header.klien : `PT. ${header.klien || "Bank CIMB Niaga Tbk"}`));
+    const pihak2NamaNonXl = searchParams.get("pihak2Nama") || "Indah Ananti Affandi";
+    const pihak2JabatanNonXl = searchParams.get("pihak2Jabatan") || "Professional Services General Manager";
+    const namaKodeProyekNonXl = searchParams.get("namaKodeProyek") || (header.namaProyek || "8116003125 - Rate Bodyshop - Perpanjangan lanjutan untuk project Octo Connect untuk Project Zolos");
+    const pekerjaanTahapNonXl = searchParams.get("pekerjaanTahap") || (header.keteranganTahap ? `Tahap ${header.keteranganTahap}` : "Tahap III (5%)");
+    const defaultTglSelesai = formatTanggalSelesaiIndo(header.periode) !== "-" ? formatTanggalSelesaiIndo(header.periode) : "30-September-2026";
+    const tanggalSelesaiNonXl = searchParams.get("tanggalSelesai") || defaultTglSelesai;
+    const tglDokumenNonXl = searchParams.get("tgl") || formatHariTanggalIndo();
+    const tanggalTtdNonXl = searchParams.get("tanggalTtd") || "3 Nov 2026";
+
+    // Load Logos & Signatures
+    const cimbLogoPath = path.join(process.cwd(), "public", "cimb-niaga-logo.png");
+    const idstarLogoPath = path.join(process.cwd(), "public", "idstar-logo-color.png");
+    const ttdIndahPath = path.join(process.cwd(), "public", "ttd-indah.png");
+
+    const [cimbBytes, idstarBytes, ttdIndahBytes] = await Promise.all([
+      readFile(cimbLogoPath).catch(() => null),
+      readFile(idstarLogoPath).catch(() => null),
+      readFile(ttdIndahPath).catch(() => null),
+    ]);
+
+    // 1. Header Logos
+    if (cimbBytes && isCimb) {
+      const cimbImg = await bastPdf.embedJpg(cimbBytes).catch(async () => await bastPdf.embedPng(cimbBytes));
+      halaman.drawImage(cimbImg, {
+        x: margin,
+        y: y - 26,
+        width: 175,
+        height: 27,
+      });
+    } else {
+      halaman.drawText(pihak1PerusahaanNonXl.toUpperCase(), {
+        x: margin,
+        y: y - 18,
+        size: 13,
+        font: fontBold,
+        color: rgb(0.1, 0.1, 0.1),
       });
     }
-    function barisNonXl(tinggi = 14) { y -= tinggi; }
 
-    const namaKlienResmi = header.klien || "KLIEN MITRA";
-
-    // Header Klien & IDStar
-    teksNonXl(namaKlienResmi.toUpperCase(), { size: 12, bold: true });
-    const idstarW = fontBold.widthOfTextAtSize("PT IDSTAR CIPTA TEKNOLOGI", 11);
-    teksNonXl("PT IDSTAR CIPTA TEKNOLOGI", { x: pw - margin - idstarW, size: 11, bold: true, warna: [0.8, 0.1, 0.1] });
-    barisNonXl(16);
-    halaman.drawLine({ start: { x: margin, y }, end: { x: pw - margin, y }, thickness: 1.5, color: rgb(0.15, 0.15, 0.15) });
-    barisNonXl(18);
-
-    // Judul Dokumen
-    const judul = "BERITA ACARA SERAH TERIMA PEKERJAAN";
-    const judulW = fontBold.widthOfTextAtSize(judul, 13);
-    teksNonXl(judul, { x: (pw - judulW) / 2, size: 13, bold: true });
-    barisNonXl(14);
-    const noBast = `Nomor: BAST/${header.nomorPo}/${header.periode}/${dok.id}`;
-    const noBastW = font.widthOfTextAtSize(noBast, 9.5);
-    teksNonXl(noBast, { x: (pw - noBastW) / 2, size: 9.5, bold: true, warna: [0.3, 0.3, 0.3] });
-    barisNonXl(13);
-    const poSub = `Purchase Order (PO): ${header.nomorPo} · Proyek: ${header.namaProyek}`;
-    const poSubW = font.widthOfTextAtSize(poSub, 9);
-    teksNonXl(poSub, { x: (pw - poSubW) / 2, size: 9, warna: [0.4, 0.4, 0.4] });
-    barisNonXl(18);
-
-    // Paragraf Pembuka
-    teksNonXl(`Pada hari ini, tanggal ${tglDokumen}, yang bertanda tangan di bawah ini:`, { size: 9.5 });
-    barisNonXl(14);
-
-    // Identitas 2 Pihak
-    const identitas: [string, string, string][] = [
-      ["1.", "Nama", pihak1Nama],
-      ["", "Jabatan", pihak1Jabatan],
-      ["", "Perusahaan", `${namaKlienResmi} (selanjutnya disebut sebagai "PIHAK PERTAMA")`],
-      ["", "", ""],
-      ["2.", "Nama", pihak2Nama],
-      ["", "Jabatan", pihak2Jabatan],
-      ["", "Perusahaan", `PT IDstar Cipta Teknologi (selanjutnya disebut sebagai "PIHAK KEDUA")`],
-    ];
-
-    for (const [no, label, val] of identitas) {
-      if (!label) { barisNonXl(6); continue; }
-      if (no) teksNonXl(no, { x: margin, size: 9, bold: true });
-      teksNonXl(label, { x: margin + 18, size: 9, warna: [0.4, 0.4, 0.4] });
-      teksNonXl(":", { x: margin + 95, size: 9 });
-      teksNonXl(val, { x: margin + 105, size: 9, bold: label === "Perusahaan" });
-      barisNonXl(13);
+    if (idstarBytes) {
+      const idstarImg = await bastPdf.embedPng(idstarBytes);
+      halaman.drawImage(idstarImg, {
+        x: pw - margin - 100,
+        y: y - 34,
+        width: 100,
+        height: 42,
+      });
     }
-    barisNonXl(8);
 
-    // Klausul Penyerahan
-    const teksPekerjaan = header.keteranganTahap
-      ? `tahap ${header.keteranganTahap}`
-      : `periode layanan ${header.periode}`;
-    const narasi = `PIHAK PERTAMA dan PIHAK KEDUA secara bersama-sama menerangkan bahwa PIHAK KEDUA telah menyelesaikan pekerjaan penyediaan jasa keahlian / konsultan untuk proyek ${header.namaProyek} pada ${teksPekerjaan} berdasarkan Purchase Order No. ${header.nomorPo}, dengan rincian serah terima sebagai berikut:`;
+    y -= 54;
 
-    const maxLebar = pw - margin * 2;
-    const kata = narasi.split(" ");
-    let baru = "";
-    const lines: string[] = [];
-    for (const k of kata) {
-      const coba = baru ? `${baru} ${k}` : k;
-      if (font.widthOfTextAtSize(coba, 9) > maxLebar) { lines.push(baru); baru = k; } else { baru = coba; }
-    }
-    if (baru) lines.push(baru);
-    for (const l of lines) { teksNonXl(l, { size: 9 }); barisNonXl(12); }
-    barisNonXl(8);
-
-    // Tabel Penugasan
-    const colX = [margin, margin + 22, margin + 180, margin + 340, pw - margin - 95];
-    teksNonXl("No", { x: colX[0], size: 8.5, bold: true });
-    teksNonXl("Nama Personel", { x: colX[1], size: 8.5, bold: true });
-    teksNonXl("Posisi / PO Line", { x: colX[2], size: 8.5, bold: true });
-    teksNonXl("Hari/Acuan", { x: colX[3], size: 8.5, bold: true });
-    teksNonXl("Nilai Serah Terima", { x: colX[4], size: 8.5, bold: true });
-    barisNonXl(4);
-    halaman.drawLine({ start: { x: margin, y }, end: { x: pw - margin, y }, thickness: 1, color: rgb(0.2, 0.2, 0.2) });
-    barisNonXl(12);
-
-    rincian.forEach((r, idx) => {
-      teksNonXl(String(idx + 1), { x: colX[0], size: 8.5 });
-      teksNonXl(r.namaPersonel, { x: colX[1], size: 8.5, bold: true });
-      const pos = r.nomorLine ? `Line ${r.nomorLine} ${r.deskripsiLine ? `(${r.deskripsiLine})` : ""}` : (header.namaProyek || "-");
-      teksNonXl(pos.slice(0, 32), { x: colX[2], size: 8.5 });
-      teksNonXl(r.hariKerjaAcuanBulan === 0 ? "-" : `${r.hariKerjaDapatDitagihkan}/${r.hariKerjaAcuanBulan}`, { x: colX[3], size: 8.5 });
-      const valStr = formatRupiah(r.hasilHitung);
-      const valW = fontBold.widthOfTextAtSize(valStr, 8.5);
-      teksNonXl(valStr, { x: pw - margin - valW, size: 8.5, bold: true });
-      barisNonXl(12);
+    // 2. Title & PO (Centered & Underlined)
+    const judul = "BERITA ACARA SERAH TERIMA";
+    const judulW = fontBold.widthOfTextAtSize(judul, 14);
+    const judulX = (pw - judulW) / 2;
+    halaman.drawText(judul, {
+      x: judulX,
+      y,
+      size: 14,
+      font: fontBold,
+      color: rgb(0.08, 0.08, 0.08),
     });
-    barisNonXl(4);
-    halaman.drawLine({ start: { x: margin, y }, end: { x: pw - margin, y }, thickness: 0.75, color: rgb(0.6, 0.6, 0.6) });
-    barisNonXl(12);
-    teksNonXl("Total Nilai Pekerjaan (Sebelum PPN):", { x: colX[1], size: 9, bold: true });
-    const totStr = formatRupiah(String(total));
-    const totW = fontBold.widthOfTextAtSize(totStr, 9.5);
-    teksNonXl(totStr, { x: pw - margin - totW, size: 9.5, bold: true, warna: [0.8, 0.1, 0.1] });
-    barisNonXl(16);
+    halaman.drawLine({
+      start: { x: judulX, y: y - 2 },
+      end: { x: judulX + judulW, y: y - 2 },
+      thickness: 1.2,
+      color: rgb(0.08, 0.08, 0.08),
+    });
 
-    // Klausul Penutup
-    const penutup = `Pekerjaan tersebut telah diserahterimakan oleh PIHAK KEDUA dan diterima dengan baik serta lengkap oleh PIHAK PERTAMA. Berita Acara Serah Terima ini dibuat dalam rangkap yang cukup dan memiliki kekuatan hukum yang sah sebagai kelengkapan dokumen penagihan dan dasar pembayaran bagi PIHAK KEDUA.`;
-    const kPenutup = penutup.split(" ");
-    let bPenutup = "";
-    const lPenutup: string[] = [];
-    for (const kp of kPenutup) {
-      const coba = bPenutup ? `${bPenutup} ${kp}` : kp;
-      if (font.widthOfTextAtSize(coba, 9) > maxLebar) { lPenutup.push(bPenutup); bPenutup = kp; } else { bPenutup = coba; }
+    y -= 18;
+    const poStr = header.nomorPo;
+    const poW = fontBold.widthOfTextAtSize(poStr, 11);
+    const poX = (pw - poW) / 2;
+    halaman.drawText(poStr, {
+      x: poX,
+      y,
+      size: 11,
+      font: fontBold,
+      color: rgb(0.08, 0.08, 0.08),
+    });
+    halaman.drawLine({
+      start: { x: poX, y: y - 2 },
+      end: { x: poX + poW, y: y - 2 },
+      thickness: 1,
+      color: rgb(0.08, 0.08, 0.08),
+    });
+
+    y -= 30;
+
+    // 3. Preamble
+    const pembuka = `Pada hari ini, ${tglDokumenNonXl} yang bertanda tangan dibawah ini :`;
+    halaman.drawText(pembuka, {
+      x: margin,
+      y,
+      size: 9.5,
+      font,
+      color: rgb(0.1, 0.1, 0.1),
+    });
+
+    y -= 18;
+
+    // 4. Pihak Pertama
+    halaman.drawText("Nama", { x: margin, y, size: 9.5, font, color: rgb(0.1, 0.1, 0.1) });
+    halaman.drawText(":", { x: margin + 65, y, size: 9.5, font, color: rgb(0.1, 0.1, 0.1) });
+    halaman.drawText(pihak1NamaNonXl, { x: margin + 75, y, size: 9.5, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
+
+    y -= 14;
+    halaman.drawText("Jabatan", { x: margin, y, size: 9.5, font, color: rgb(0.1, 0.1, 0.1) });
+    halaman.drawText(":", { x: margin + 65, y, size: 9.5, font, color: rgb(0.1, 0.1, 0.1) });
+    halaman.drawText(pihak1JabatanNonXl, { x: margin + 75, y, size: 9.5, font, color: rgb(0.1, 0.1, 0.1) });
+
+    y -= 16;
+    halaman.drawText(`Dalam hal ini bertindak untuk dan atas nama ${pihak1PerusahaanNonXl}, dan`, {
+      x: margin, y, size: 9.5, font, color: rgb(0.1, 0.1, 0.1),
+    });
+    y -= 13;
+    halaman.drawText("untuk selanjutnya disebut sebagai pihak ", {
+      x: margin, y, size: 9.5, font, color: rgb(0.1, 0.1, 0.1),
+    });
+    halaman.drawText("PERTAMA", {
+      x: margin + font.widthOfTextAtSize("untuk selanjutnya disebut sebagai pihak ", 9.5),
+      y, size: 9.5, font: fontBold, color: rgb(0.1, 0.1, 0.1),
+    });
+
+    y -= 22;
+
+    // 5. Pihak Kedua
+    halaman.drawText("Nama", { x: margin, y, size: 9.5, font, color: rgb(0.1, 0.1, 0.1) });
+    halaman.drawText(":", { x: margin + 65, y, size: 9.5, font, color: rgb(0.1, 0.1, 0.1) });
+    halaman.drawText(pihak2NamaNonXl, { x: margin + 75, y, size: 9.5, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
+
+    y -= 14;
+    halaman.drawText("Jabatan", { x: margin, y, size: 9.5, font, color: rgb(0.1, 0.1, 0.1) });
+    halaman.drawText(":", { x: margin + 65, y, size: 9.5, font, color: rgb(0.1, 0.1, 0.1) });
+    halaman.drawText(pihak2JabatanNonXl, { x: margin + 75, y, size: 9.5, font, color: rgb(0.1, 0.1, 0.1) });
+
+    y -= 16;
+    halaman.drawText("Dalam hal ini bertindak untuk dan atas nama PT. IDstar Cipta Teknologi, dan untuk", {
+      x: margin, y, size: 9.5, font, color: rgb(0.1, 0.1, 0.1),
+    });
+    y -= 13;
+    halaman.drawText("selanjutnya disebut sebagai pihak ", {
+      x: margin, y, size: 9.5, font, color: rgb(0.1, 0.1, 0.1),
+    });
+    halaman.drawText("KEDUA", {
+      x: margin + font.widthOfTextAtSize("selanjutnya disebut sebagai pihak ", 9.5),
+      y, size: 9.5, font: fontBold, color: rgb(0.1, 0.1, 0.1),
+    });
+
+    y -= 24;
+
+    // 6. Point 1 with Table
+    halaman.drawText("1.  Berdasarkan dokumen-dokumen berikut :", {
+      x: margin + 12, y, size: 9.5, font, color: rgb(0.1, 0.1, 0.1),
+    });
+
+    y -= 14;
+
+    // Table coordinates
+    const tblLeft = margin + 28;
+    const tblW = contentWidth - 28;
+    const col0W = 26;
+    const col1W = 150;
+    const col2W = tblW - col0W - col1W;
+
+    const thH = 18;
+    const rowH = 46;
+
+    // Header border & text
+    halaman.drawRectangle({
+      x: tblLeft,
+      y: y - thH,
+      width: tblW,
+      height: thH,
+      borderColor: rgb(0.1, 0.1, 0.1),
+      borderWidth: 0.8,
+    });
+    halaman.drawLine({ start: { x: tblLeft + col0W, y }, end: { x: tblLeft + col0W, y: y - thH }, thickness: 0.8, color: rgb(0.1, 0.1, 0.1) });
+    halaman.drawLine({ start: { x: tblLeft + col0W + col1W, y }, end: { x: tblLeft + col0W + col1W, y: y - thH }, thickness: 0.8, color: rgb(0.1, 0.1, 0.1) });
+
+    halaman.drawText("No", { x: tblLeft + 7, y: y - 12.5, size: 9, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
+    halaman.drawText("No PO", { x: tblLeft + col0W + 8, y: y - 12.5, size: 9, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
+    halaman.drawText("Nama / Kode Proyek", { x: tblLeft + col0W + col1W + 8, y: y - 12.5, size: 9, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
+
+    y -= thH;
+
+    // Data Row
+    halaman.drawRectangle({
+      x: tblLeft,
+      y: y - rowH,
+      width: tblW,
+      height: rowH,
+      borderColor: rgb(0.1, 0.1, 0.1),
+      borderWidth: 0.8,
+    });
+    halaman.drawLine({ start: { x: tblLeft + col0W, y }, end: { x: tblLeft + col0W, y: y - rowH }, thickness: 0.8, color: rgb(0.1, 0.1, 0.1) });
+    halaman.drawLine({ start: { x: tblLeft + col0W + col1W, y }, end: { x: tblLeft + col0W + col1W, y: y - rowH }, thickness: 0.8, color: rgb(0.1, 0.1, 0.1) });
+
+    halaman.drawText("1", { x: tblLeft + 10, y: y - 14, size: 9, font, color: rgb(0.1, 0.1, 0.1) });
+    halaman.drawText(header.nomorPo, { x: tblLeft + col0W + 8, y: y - 14, size: 8.8, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
+
+    // Multi-line wrap for project name
+    const maxProjectW = col2W - 16;
+    const kataProyek = namaKodeProyekNonXl.split(" ");
+    let barisProyek1 = "";
+    let barisProyek2 = "";
+    let barisProyek3 = "";
+    for (const w of kataProyek) {
+      if (!barisProyek2 && font.widthOfTextAtSize(`${barisProyek1} ${w}`.trim(), 8.8) <= maxProjectW) {
+        barisProyek1 = `${barisProyek1} ${w}`.trim();
+      } else if (!barisProyek3 && font.widthOfTextAtSize(`${barisProyek2} ${w}`.trim(), 8.8) <= maxProjectW) {
+        barisProyek2 = `${barisProyek2} ${w}`.trim();
+      } else {
+        barisProyek3 = `${barisProyek3} ${w}`.trim();
+      }
     }
-    if (bPenutup) lPenutup.push(bPenutup);
-    for (const lp of lPenutup) { teksNonXl(lp, { size: 9 }); barisNonXl(12); }
-    barisNonXl(18);
 
-    // Tanda Tangan 2 Pihak
-    const ttdCol1 = margin + 30;
-    const ttdCol2 = margin + 300;
-    teksNonXl("PIHAK PERTAMA,", { x: ttdCol1, size: 9, warna: [0.4, 0.4, 0.4] });
-    teksNonXl("PIHAK KEDUA,", { x: ttdCol2, size: 9, warna: [0.4, 0.4, 0.4] });
-    barisNonXl(14);
-    teksNonXl(namaKlienResmi, { x: ttdCol1, size: 9.5, bold: true });
-    teksNonXl("PT IDstar Cipta Teknologi", { x: ttdCol2, size: 9.5, bold: true });
-    barisNonXl(48);
-    teksNonXl(pihak1Nama, { x: ttdCol1, size: 9.5, bold: true });
-    teksNonXl(pihak2Nama, { x: ttdCol2, size: 9.5, bold: true });
-    barisNonXl(12);
-    teksNonXl(pihak1Jabatan, { x: ttdCol1, size: 8.5, warna: [0.4, 0.4, 0.4] });
-    teksNonXl(pihak2Jabatan, { x: ttdCol2, size: 8.5, warna: [0.4, 0.4, 0.4] });
-    barisNonXl(18);
+    halaman.drawText(barisProyek1, { x: tblLeft + col0W + col1W + 8, y: y - 14, size: 8.8, font, color: rgb(0.1, 0.1, 0.1) });
+    if (barisProyek2) {
+      halaman.drawText(barisProyek2, { x: tblLeft + col0W + col1W + 8, y: y - 26, size: 8.8, font, color: rgb(0.1, 0.1, 0.1) });
+    }
+    if (barisProyek3) {
+      halaman.drawText(barisProyek3, { x: tblLeft + col0W + col1W + 8, y: y - 38, size: 8.8, font, color: rgb(0.1, 0.1, 0.1) });
+    }
 
-    teksNonXl(`Dokumen resmi INVORA · IDStar Group — ${dok.dibuatPada} · dokumen #${dok.id}`, { size: 7.5, warna: [0.6, 0.6, 0.6] });
+    y -= rowH + 18;
+
+    // 7. Point 2
+    halaman.drawText(`2.  Pihak Pertama telah menyelesaikan pekerjaan ${pekerjaanTahapNonXl} sampai tanggal`, {
+      x: margin + 12, y, size: 9.5, font, color: rgb(0.1, 0.1, 0.1),
+    });
+    y -= 13;
+    const tglSelesaiW = font.widthOfTextAtSize(tanggalSelesaiNonXl, 9.5);
+    const indent2 = margin + 28;
+    halaman.drawText(tanggalSelesaiNonXl, {
+      x: indent2, y, size: 9.5, font, color: rgb(0.1, 0.1, 0.1),
+    });
+    halaman.drawLine({
+      start: { x: indent2, y: y - 1.5 },
+      end: { x: indent2 + tglSelesaiW, y: y - 1.5 },
+      thickness: 0.8,
+      color: rgb(0.1, 0.1, 0.1),
+    });
+    halaman.drawText(" sudah selesai dilakukan.", {
+      x: indent2 + tglSelesaiW, y, size: 9.5, font, color: rgb(0.1, 0.1, 0.1),
+    });
+
+    y -= 18;
+
+    // 8. Point 3
+    halaman.drawText("3.  Dokumen BAST ini merupakan dokumen kelengkapan dan syarat pembayaran", {
+      x: margin + 12, y, size: 9.5, font, color: rgb(0.1, 0.1, 0.1),
+    });
+    y -= 13;
+    halaman.drawText("untuk pihak KEDUA.", {
+      x: margin + 28, y, size: 9.5, font, color: rgb(0.1, 0.1, 0.1),
+    });
+
+    y -= 22;
+
+    // 9. Closing Statement
+    halaman.drawText("Demikian Berita Acara ini dibuat dan ditandatangani oleh para pihak untuk", {
+      x: margin, y, size: 9.5, font, color: rgb(0.1, 0.1, 0.1),
+    });
+    y -= 13;
+    halaman.drawText("dipergunakan sebagaimana mestinya.", {
+      x: margin, y, size: 9.5, font, color: rgb(0.1, 0.1, 0.1),
+    });
+
+    y -= 36;
+
+    // 10. Signatures: 2 Columns
+    const ttdCol1X = margin + 60;
+    const ttdCol2X = pw - margin - 190;
+
+    halaman.drawText("Pihak Pertama", { x: ttdCol1X + 18, y, size: 9.5, font, color: rgb(0.1, 0.1, 0.1) });
+    halaman.drawText("Pihak Kedua", { x: ttdCol2X + 28, y, size: 9.5, font, color: rgb(0.1, 0.1, 0.1) });
+
+    y -= 14;
+    const p1CorpW = fontBold.widthOfTextAtSize(pihak1PerusahaanNonXl, 9.5);
+    halaman.drawText(pihak1PerusahaanNonXl, { x: ttdCol1X + (100 - p1CorpW) / 2, y, size: 9.5, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
+    halaman.drawText("PT. IDstar Cipta Teknologi", { x: ttdCol2X, y, size: 9.5, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
+
+    // Signature marks space
+    y -= 48;
+    if (ttdIndahBytes) {
+      const ttdImg = await bastPdf.embedPng(ttdIndahBytes);
+      halaman.drawImage(ttdImg, {
+        x: ttdCol2X + 15,
+        y: y - 5,
+        width: 80,
+        height: 48,
+      });
+    }
+
+    // Date on Pihak Pertama signature
+    halaman.drawText(tanggalTtdNonXl, {
+      x: ttdCol1X + 25,
+      y: y + 10,
+      size: 9.5,
+      font: fontOblique,
+      color: rgb(0.3, 0.3, 0.3),
+    });
+
+    y -= 16;
+    halaman.drawText(pihak1NamaNonXl, { x: ttdCol1X + 8, y, size: 9.5, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
+    halaman.drawText(pihak2NamaNonXl, { x: ttdCol2X + 16, y, size: 9.5, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
+
+    y -= 13;
+    const p1JabLines = pihak1JabatanNonXl.length > 38 ? [
+      pihak1JabatanNonXl.slice(0, 38),
+      pihak1JabatanNonXl.slice(38)
+    ] : [pihak1JabatanNonXl];
+
+    p1JabLines.forEach((jl, idx) => {
+      halaman.drawText(jl.trim(), {
+        x: ttdCol1X - 20,
+        y: y - idx * 11,
+        size: 8.5,
+        font,
+        color: rgb(0.2, 0.2, 0.2),
+      });
+    });
+
+    halaman.drawText(pihak2JabatanNonXl, { x: ttdCol2X - 10, y, size: 8.5, font, color: rgb(0.2, 0.2, 0.2) });
 
     const pdfBytes = await bastPdf.save();
     return new NextResponse(Buffer.from(pdfBytes), {

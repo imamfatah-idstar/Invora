@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Logo from "@/components/logo";
 import TombolCetak from "./tombol-cetak";
+import { formatHariTanggalIndo, formatTanggalSelesaiIndo } from "@/lib/xl-document-helpers";
 
 type RincianItem = {
   namaPersonel: string;
@@ -31,19 +31,6 @@ type Props = {
   dibuatPada: string;
 };
 
-function formatRupiah(nilai: string | number) {
-  return "Rp" + Number(nilai).toLocaleString("id-ID", { minimumFractionDigits: 2 });
-}
-
-function tanggalIndonesiaHariIni() {
-  const bulanIndo = [
-    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-    "Juli", "Agustus", "September", "Oktober", "November", "Desember"
-  ];
-  const d = new Date();
-  return `${d.getDate()} ${bulanIndo[d.getMonth()]} ${d.getFullYear()}`;
-}
-
 export default function BastNonXlView({
   pengajuanId,
   dokumenId,
@@ -59,33 +46,71 @@ export default function BastNonXlView({
   total,
   dibuatPada,
 }: Props) {
-  const [pihak1Nama, setPihak1Nama] = useState(defaultPihakPertama || "Bpk/Ibu PIC Klien");
-  const [pihak1Jabatan, setPihak1Jabatan] = useState("Project Manager / PIC");
-  const [pihak2Nama, setPihak2Nama] = useState(defaultPihakKedua || "Aris Munandar");
-  const [pihak2Jabatan, setPihak2Jabatan] = useState("Account Director");
-  const [tanggalDokumen, setTanggalDokumen] = useState(tanggalIndonesiaHariIni());
-  const [showConfig, setShowConfig] = useState(true);
+  const isCimb = klien?.toUpperCase().includes("CIMB") || klien?.toUpperCase().includes("NIAGA");
 
-  const namaKlienResmi = klien || "KLIEN MITRA";
-  const namaPerusahaanIdstar = "PT IDstar Cipta Teknologi";
-  const teksPekerjaan = keteranganTahap
-    ? `tahap ${keteranganTahap}`
-    : `periode layanan ${periode}`;
+  // Defaults matching BAST_NonXL.pdf reference
+  const defaultP1Nama = isCimb ? "Budi Oktaviyan Suryanto" : (defaultPihakPertama || "Budi Oktaviyan Suryanto");
+  const defaultP1Jabatan = isCimb
+    ? "Application Development Head - Digital Onboarding & Experience"
+    : "Application Development Head - Digital Onboarding & Experience";
+  const defaultP1Perusahaan = isCimb
+    ? "PT. Bank CIMB Niaga Tbk"
+    : (klien.startsWith("PT") ? klien : `PT. ${klien}`);
 
-  // URL unduh PDF dengan parameter yang disesuaikan
+  const defaultP2Nama = "Indah Ananti Affandi";
+  const defaultP2Jabatan = "Professional Services General Manager";
+
+  // Pre-calculate project description and milestone completion text
+  const defaultNamaKodeProyek = namaProyek
+    ? `${namaProyek}`
+    : `8116003125 - Rate Bodyshop - Perpanjangan lanjutan untuk project Octo Connect untuk Project Zolos`;
+
+  const defaultPekerjaanTahap = keteranganTahap
+    ? `Tahap ${keteranganTahap}`
+    : "Tahap III (5%)";
+
+  const defaultTanggalSelesai = formatTanggalSelesaiIndo(periode) !== "-"
+    ? formatTanggalSelesaiIndo(periode)
+    : "30-September-2026";
+
+  const defaultTanggalDokumen = formatHariTanggalIndo();
+  const defaultTanggalTtd = "3 Nov 2026";
+
+  // State management for live custom edits
+  const [pihak1Nama, setPihak1Nama] = useState(defaultP1Nama);
+  const [pihak1Jabatan, setPihak1Jabatan] = useState(defaultP1Jabatan);
+  const [pihak1Perusahaan, setPihak1Perusahaan] = useState(defaultP1Perusahaan);
+
+  const [pihak2Nama, setPihak2Nama] = useState(defaultP2Nama);
+  const [pihak2Jabatan, setPihak2Jabatan] = useState(defaultP2Jabatan);
+
+  const [namaKodeProyek, setNamaKodeProyek] = useState(defaultNamaKodeProyek);
+  const [pekerjaanTahap, setPekerjaanTahap] = useState(defaultPekerjaanTahap);
+  const [tanggalSelesai, setTanggalSelesai] = useState(defaultTanggalSelesai);
+  const [tanggalDokumen, setTanggalDokumen] = useState(defaultTanggalDokumen);
+  const [tanggalTtdPihak1, setTanggalTtdPihak1] = useState(defaultTanggalTtd);
+
+  const [showConfig, setShowConfig] = useState(false);
+
+  // Sync to PDF download query params
   const queryPdf = new URLSearchParams({
     pihak1Nama,
     pihak1Jabatan,
+    pihak1Perusahaan,
     pihak2Nama,
     pihak2Jabatan,
+    namaKodeProyek,
+    pekerjaanTahap,
+    tanggalSelesai,
     tgl: tanggalDokumen,
+    tanggalTtd: tanggalTtdPihak1,
   }).toString();
 
   const urlPdf = `/api/pengajuan/${pengajuanId}/dokumen/${dokumenId}/pdf?${queryPdf}`;
 
   return (
     <div className="doc-page">
-      {/* Toolbar Atas */}
+      {/* Top Toolbar */}
       <div className="doc-toolbar no-print">
         <Link href={`/pengajuan/${pengajuanId}`} className="back-link">
           &larr; Submission Details
@@ -96,239 +121,445 @@ export default function BastNonXlView({
             className="btn"
             onClick={() => setShowConfig(!showConfig)}
           >
-            {showConfig ? "Hide Signatories Form" : "⚙️ Edit Signatories & Date"}
+            {showConfig ? "Hide Settings" : "⚙️ Edit Signatories & Info"}
           </button>
           <TombolCetak />
           <a href={urlPdf} target="_blank" className="btn btn-primary">
-            ⬇ Download Non-XL BAST PDF
+            ⬇ Download BAST Non-XL PDF
           </a>
         </div>
       </div>
 
-      {/* Form Input Data Pihak Pertama & Kedua (Manual tiap generate sesuai Bagian 40-41) */}
+      {/* Configuration Card (Collapsible) */}
       {showConfig && (
         <div className="card no-print" style={{ marginBottom: 20, background: "#fafbfc" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
             <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>
-              ⚙️ Non-XL BAST Signatories &amp; Date Settings
+              ⚙️ Non-XL BAST Signatories &amp; Details Settings (BAST_NonXL.pdf)
             </h3>
             <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
-              This data is instantly synced to the document below and downloaded PDF
+              Changes sync instantly to preview and generated PDF
             </span>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
             <div className="field">
-              <label>First Party — Name ({namaKlienResmi})</label>
+              <label>Pihak Pertama — Nama</label>
               <input
                 type="text"
                 value={pihak1Nama}
                 onChange={(e) => setPihak1Nama(e.target.value)}
-                placeholder="Client PIC Name"
+                placeholder="e.g. Budi Oktaviyan Suryanto"
               />
             </div>
             <div className="field">
-              <label>First Party — Designation / Title</label>
+              <label>Pihak Pertama — Jabatan</label>
               <input
                 type="text"
                 value={pihak1Jabatan}
                 onChange={(e) => setPihak1Jabatan(e.target.value)}
-                placeholder="Designation at Client"
+                placeholder="e.g. Application Development Head..."
               />
             </div>
             <div className="field">
-              <label>Second Party — Name (IDStar)</label>
+              <label>Pihak Pertama — Perusahaan</label>
+              <input
+                type="text"
+                value={pihak1Perusahaan}
+                onChange={(e) => setPihak1Perusahaan(e.target.value)}
+                placeholder="e.g. PT. Bank CIMB Niaga Tbk"
+              />
+            </div>
+
+            <div className="field">
+              <label>Pihak Kedua — Nama (IDStar)</label>
               <input
                 type="text"
                 value={pihak2Nama}
                 onChange={(e) => setPihak2Nama(e.target.value)}
-                placeholder="IDStar Signatory Name"
+                placeholder="e.g. Indah Ananti Affandi"
               />
             </div>
             <div className="field">
-              <label>Second Party — Designation / Title</label>
+              <label>Pihak Kedua — Jabatan (IDStar)</label>
               <input
                 type="text"
                 value={pihak2Jabatan}
                 onChange={(e) => setPihak2Jabatan(e.target.value)}
-                placeholder="Designation at IDStar"
+                placeholder="e.g. Professional Services General Manager"
               />
             </div>
-            <div className="field" style={{ gridColumn: "1 / -1" }}>
-              <label>BAST Document Date</label>
+
+            <div className="field">
+              <label>Keterangan Pekerjaan / Tahap (Poin 2)</label>
+              <input
+                type="text"
+                value={pekerjaanTahap}
+                onChange={(e) => setPekerjaanTahap(e.target.value)}
+                placeholder="e.g. Tahap III (5%)"
+              />
+            </div>
+            <div className="field">
+              <label>Tanggal Selesai (Poin 2)</label>
+              <input
+                type="text"
+                value={tanggalSelesai}
+                onChange={(e) => setTanggalSelesai(e.target.value)}
+                placeholder="e.g. 30-September-2026"
+              />
+            </div>
+            <div className="field">
+              <label>Tanggal Dokumen (Pembuka)</label>
               <input
                 type="text"
                 value={tanggalDokumen}
                 onChange={(e) => setTanggalDokumen(e.target.value)}
-                placeholder="e.g. 21 October 2026"
+                placeholder="e.g. Kamis 22 Oktober 2026"
+              />
+            </div>
+            <div className="field">
+              <label>Tanggal Tanda Tangan Pihak Pertama</label>
+              <input
+                type="text"
+                value={tanggalTtdPihak1}
+                onChange={(e) => setTanggalTtdPihak1(e.target.value)}
+                placeholder="e.g. 3 Nov 2026"
+              />
+            </div>
+            <div className="field" style={{ gridColumn: "1 / -1" }}>
+              <label>Nama / Kode Proyek (Tabel Poin 1)</label>
+              <input
+                type="text"
+                value={namaKodeProyek}
+                onChange={(e) => setNamaKodeProyek(e.target.value)}
+                placeholder="e.g. 8116003125 - Rate Bodyshop - Perpanjangan lanjutan..."
               />
             </div>
           </div>
         </div>
       )}
 
-      {/* Lembar Dokumen Fisik BAST Non-XL (Format Resmi 1 Halaman) */}
-      <div className="doc-sheet" style={{ padding: "40px 48px", background: "#ffffff" }}>
-        <div className="doc-watermark">DRAFT</div>
-
-        {/* Header Dokumen: Logo Klien & IDStar */}
+      {/* Official Physical BAST Sheet (Exact Replica of BAST_NonXL.pdf) */}
+      <div
+        className="doc-sheet"
+        style={{
+          maxWidth: 794,
+          minHeight: 1123,
+          padding: "46px 56px",
+          background: "#ffffff",
+          fontFamily: "Arial, Helvetica, sans-serif",
+          fontSize: 13,
+          color: "#111827",
+          lineHeight: 1.45,
+          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+          margin: "0 auto",
+          position: "relative",
+        }}
+      >
+        {/* Header: Logos */}
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            borderBottom: "2px solid #111827",
-            paddingBottom: 16,
-            marginBottom: 24,
+            marginBottom: 28,
           }}
         >
           <div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: "#111827", textTransform: "uppercase" }}>
-              {namaKlienResmi}
-            </div>
-            <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 2 }}>
-              Customer / Mitra Perusahaan
-            </div>
+            {isCimb ? (
+              <img
+                src="/cimb-niaga-logo.png"
+                alt="CIMB Niaga"
+                style={{ height: 32, width: "auto", display: "block" }}
+              />
+            ) : (
+              <div
+                style={{
+                  fontSize: 18,
+                  fontWeight: 800,
+                  color: "#111827",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px",
+                }}
+              >
+                {pihak1Perusahaan}
+              </div>
+            )}
           </div>
-          <div style={{ textAlign: "right" }}>
-            <Logo variant="color" height={34} />
-            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-primary)", marginTop: 2 }}>
-              PT IDSTAR CIPTA TEKNOLOGI
-            </div>
+          <div>
+            <img
+              src="/idstar-logo-color.png"
+              alt="IDstar service with quality"
+              style={{ height: 44, width: "auto", display: "block" }}
+            />
           </div>
         </div>
 
-        {/* Judul & Nomor Dokumen */}
-        <div style={{ textAlign: "center", marginBottom: 24 }}>
-          <h1 style={{ fontSize: 18, fontWeight: 800, margin: 0, textDecoration: "underline", letterSpacing: "0.03em" }}>
-            BERITA ACARA SERAH TERIMA PEKERJAAN
+        {/* Title */}
+        <div style={{ textAlign: "center", margin: "24px 0 24px" }}>
+          <h1
+            style={{
+              fontSize: 16,
+              fontWeight: 800,
+              margin: 0,
+              textDecoration: "underline",
+              textUnderlineOffset: 3,
+              letterSpacing: "0.5px",
+              color: "#111827",
+            }}
+          >
+            BERITA ACARA SERAH TERIMA
           </h1>
-          <div style={{ fontSize: 13, marginTop: 4, fontWeight: 600, color: "#374151" }}>
-            Nomor: BAST/{nomorPo}/{periode}/{dokumenId}
-          </div>
-          <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 2 }}>
-            Purchase Order (PO): <b>{nomorPo}</b> &middot; Proyek: <b>{namaProyek}</b>
+          <div
+            style={{
+              fontSize: 13.5,
+              fontWeight: 700,
+              margin: "6px 0 0",
+              textDecoration: "underline",
+              textUnderlineOffset: 3,
+              color: "#111827",
+            }}
+          >
+            {nomorPo}
           </div>
         </div>
 
-        {/* Paragraf Pembuka */}
-        <p style={{ fontSize: 13, lineHeight: 1.6, textAlign: "justify", marginBottom: 16 }}>
-          Pada hari ini, tanggal <b>{tanggalDokumen}</b>, yang bertanda tangan di bawah ini:
+        {/* Preamble */}
+        <p style={{ margin: "0 0 16px", fontSize: 13, lineHeight: 1.5 }}>
+          Pada hari ini, {tanggalDokumen} yang bertanda tangan dibawah ini :
         </p>
 
-        {/* Identitas 2 Pihak */}
-        <table style={{ width: "100%", fontSize: 13, marginBottom: 18, borderCollapse: "collapse" }}>
-          <tbody>
-            <tr>
-              <td style={{ width: "25px", verticalAlign: "top", fontWeight: 700 }}>1.</td>
-              <td style={{ width: "140px", verticalAlign: "top", color: "var(--color-text-muted)" }}>Nama</td>
-              <td style={{ width: "15px", verticalAlign: "top" }}>:</td>
-              <td style={{ verticalAlign: "top", fontWeight: 700 }}>{pihak1Nama}</td>
-            </tr>
-            <tr>
-              <td></td>
-              <td style={{ color: "var(--color-text-muted)" }}>Jabatan</td>
-              <td>:</td>
-              <td>{pihak1Jabatan}</td>
-            </tr>
-            <tr>
-              <td></td>
-              <td style={{ color: "var(--color-text-muted)" }}>Perusahaan</td>
-              <td>:</td>
-              <td><b>{namaKlienResmi}</b> (selanjutnya disebut sebagai <b>&quot;PIHAK PERTAMA&quot;</b>)</td>
-            </tr>
-            <tr><td colSpan={4} style={{ height: 10 }}></td></tr>
-            <tr>
-              <td style={{ verticalAlign: "top", fontWeight: 700 }}>2.</td>
-              <td style={{ verticalAlign: "top", color: "var(--color-text-muted)" }}>Nama</td>
-              <td style={{ verticalAlign: "top" }}>:</td>
-              <td style={{ verticalAlign: "top", fontWeight: 700 }}>{pihak2Nama}</td>
-            </tr>
-            <tr>
-              <td></td>
-              <td style={{ color: "var(--color-text-muted)" }}>Jabatan</td>
-              <td>:</td>
-              <td>{pihak2Jabatan}</td>
-            </tr>
-            <tr>
-              <td></td>
-              <td style={{ color: "var(--color-text-muted)" }}>Perusahaan</td>
-              <td>:</td>
-              <td><b>{namaPerusahaanIdstar}</b> (selanjutnya disebut sebagai <b>&quot;PIHAK KEDUA&quot;</b>)</td>
-            </tr>
-          </tbody>
-        </table>
-
-        {/* Klausul Kesepakatan Serah Terima */}
-        <p style={{ fontSize: 13, lineHeight: 1.6, textAlign: "justify", marginBottom: 16 }}>
-          PIHAK PERTAMA dan PIHAK KEDUA secara bersama-sama menerangkan bahwa PIHAK KEDUA telah menyelesaikan pekerjaan
-          penyediaan jasa keahlian / konsultan untuk proyek <b>{namaProyek}</b> pada <b>{teksPekerjaan}</b> sesuai dengan
-          ketentuan Purchase Order No. <b>{nomorPo}</b>, dengan rincian serah terima sebagai berikut:
-        </p>
-
-        {/* Tabel Penugasan & Nilai */}
-        <table className="doc-tabel" style={{ marginBottom: 18, fontSize: 12.5 }}>
-          <thead>
-            <tr>
-              <th style={{ width: 40, textAlign: "center" }}>No</th>
-              <th>Nama Personel</th>
-              <th>Posisi / PO Line</th>
-              <th style={{ textAlign: "center" }}>Hari / Acuan</th>
-              <th style={{ textAlign: "right" }}>Nilai Serah Terima</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rincian.map((r, i) => (
-              <tr key={i}>
-                <td style={{ textAlign: "center" }}>{i + 1}</td>
-                <td style={{ fontWeight: 600 }}>{r.namaPersonel}</td>
-                <td>
-                  {r.nomorLine ? `Line ${r.nomorLine} ${r.deskripsiLine ? `(${r.deskripsiLine})` : ""}` : (namaProyek || "-")}
-                </td>
-                <td style={{ textAlign: "center" }}>
-                  {r.hariKerjaAcuanBulan === 0 ? "-" : `${r.hariKerjaDapatDitagihkan} / ${r.hariKerjaAcuanBulan}`}
-                </td>
-                <td style={{ textAlign: "right", fontWeight: 600 }}>{formatRupiah(r.hasilHitung)}</td>
+        {/* Pihak Pertama */}
+        <div style={{ margin: "0 0 16px", fontSize: 13 }}>
+          <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 13 }}>
+            <tbody>
+              <tr>
+                <td style={{ width: 85, paddingBottom: 3 }}>Nama</td>
+                <td style={{ width: 15, paddingBottom: 3 }}>:</td>
+                <td style={{ fontWeight: 600, paddingBottom: 3 }}>{pihak1Nama}</td>
               </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr>
-              <td colSpan={4} style={{ textAlign: "right", fontWeight: 700 }}>
-                Total Nilai Pekerjaan (Sebelum PPN)
-              </td>
-              <td style={{ textAlign: "right", fontWeight: 800, color: "var(--color-primary-dark)" }}>
-                {formatRupiah(total)}
-              </td>
-            </tr>
-          </tfoot>
-        </table>
-
-        {/* Pernyataan Penutup */}
-        <p style={{ fontSize: 13, lineHeight: 1.6, textAlign: "justify", marginBottom: 32 }}>
-          Pekerjaan tersebut telah diserahterimakan oleh PIHAK KEDUA dan diterima dengan baik serta lengkap oleh PIHAK PERTAMA.
-          Berita Acara Serah Terima ini dibuat dalam rangkap yang cukup dan memiliki kekuatan hukum yang sah sebagai kelengkapan
-          dokumen penagihan dan dasar pembayaran bagi PIHAK KEDUA.
-        </p>
-
-        {/* Kolom Tanda Tangan 2 Pihak */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, textAlign: "center", fontSize: 13 }}>
-          <div>
-            <p style={{ margin: "0 0 4px", color: "var(--color-text-muted)" }}>PIHAK PERTAMA,</p>
-            <p style={{ margin: "0 0 60px", fontWeight: 700 }}>{namaKlienResmi}</p>
-            <p style={{ margin: 0, fontWeight: 700, textDecoration: "underline" }}>{pihak1Nama}</p>
-            <p style={{ margin: "2px 0 0", color: "var(--color-text-muted)", fontSize: 12 }}>{pihak1Jabatan}</p>
-          </div>
-          <div>
-            <p style={{ margin: "0 0 4px", color: "var(--color-text-muted)" }}>PIHAK KEDUA,</p>
-            <p style={{ margin: "0 0 60px", fontWeight: 700 }}>{namaPerusahaanIdstar}</p>
-            <p style={{ margin: 0, fontWeight: 700, textDecoration: "underline" }}>{pihak2Nama}</p>
-            <p style={{ margin: "2px 0 0", color: "var(--color-text-muted)", fontSize: 12 }}>{pihak2Jabatan}</p>
-          </div>
+              <tr>
+                <td style={{ width: 85, verticalAlign: "top" }}>Jabatan</td>
+                <td style={{ width: 15, verticalAlign: "top" }}>:</td>
+                <td>{pihak1Jabatan}</td>
+              </tr>
+            </tbody>
+          </table>
+          <p style={{ margin: "10px 0 0", lineHeight: 1.5 }}>
+            Dalam hal ini bertindak untuk dan atas nama {pihak1Perusahaan}, dan<br />
+            untuk selanjutnya disebut sebagai pihak <b>PERTAMA</b>
+          </p>
         </div>
 
-        <p className="doc-footnote" style={{ marginTop: 40, fontSize: 11, textAlign: "center" }}>
-          Dokumen resmi INVORA &middot; IDStar Group &middot; Dibuat pada: {dibuatPada} &middot; Dokumen ID #{dokumenId} (Versi {dokumenVersi})
+        {/* Pihak Kedua */}
+        <div style={{ margin: "0 0 20px", fontSize: 13 }}>
+          <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 13 }}>
+            <tbody>
+              <tr>
+                <td style={{ width: 85, paddingBottom: 3 }}>Nama</td>
+                <td style={{ width: 15, paddingBottom: 3 }}>:</td>
+                <td style={{ fontWeight: 600, paddingBottom: 3 }}>{pihak2Nama}</td>
+              </tr>
+              <tr>
+                <td style={{ width: 85, verticalAlign: "top" }}>Jabatan</td>
+                <td style={{ width: 15, verticalAlign: "top" }}>:</td>
+                <td>{pihak2Jabatan}</td>
+              </tr>
+            </tbody>
+          </table>
+          <p style={{ margin: "10px 0 0", lineHeight: 1.5 }}>
+            Dalam hal ini bertindak untuk dan atas nama PT. IDstar Cipta Teknologi, dan untuk<br />
+            selanjutnya disebut sebagai pihak <b>KEDUA</b>
+          </p>
+        </div>
+
+        {/* Point 1: Documents & PO Table */}
+        <div style={{ margin: "0 0 14px", fontSize: 13 }}>
+          <p style={{ margin: "0 0 8px" }}>1. Berdasarkan dokumen-dokumen berikut :</p>
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              fontSize: 12.5,
+              border: "1px solid #111827",
+            }}
+          >
+            <thead>
+              <tr style={{ backgroundColor: "#ffffff" }}>
+                <th
+                  style={{
+                    border: "1px solid #111827",
+                    padding: "6px 8px",
+                    width: 45,
+                    textAlign: "center",
+                    fontWeight: 700,
+                  }}
+                >
+                  No
+                </th>
+                <th
+                  style={{
+                    border: "1px solid #111827",
+                    padding: "6px 12px",
+                    width: 190,
+                    textAlign: "left",
+                    fontWeight: 700,
+                  }}
+                >
+                  No PO
+                </th>
+                <th
+                  style={{
+                    border: "1px solid #111827",
+                    padding: "6px 12px",
+                    textAlign: "left",
+                    fontWeight: 700,
+                  }}
+                >
+                  Nama / Kode Proyek
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td
+                  style={{
+                    border: "1px solid #111827",
+                    padding: "8px",
+                    textAlign: "center",
+                    verticalAlign: "top",
+                  }}
+                >
+                  1
+                </td>
+                <td
+                  style={{
+                    border: "1px solid #111827",
+                    padding: "8px 12px",
+                    verticalAlign: "top",
+                    fontWeight: 600,
+                  }}
+                >
+                  {nomorPo}
+                </td>
+                <td
+                  style={{
+                    border: "1px solid #111827",
+                    padding: "8px 12px",
+                    verticalAlign: "top",
+                    lineHeight: 1.45,
+                  }}
+                >
+                  {namaKodeProyek}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Point 2: Completion of work */}
+        <div style={{ margin: "0 0 12px", fontSize: 13, lineHeight: 1.5 }}>
+          2. Pihak Pertama telah menyelesaikan pekerjaan {pekerjaanTahap} sampai tanggal<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;<u>{tanggalSelesai}</u> sudah selesai dilakukan.
+        </div>
+
+        {/* Point 3: Completeness & payment term */}
+        <div style={{ margin: "0 0 20px", fontSize: 13, lineHeight: 1.5 }}>
+          3. Dokumen BAST ini merupakan dokumen kelengkapan dan syarat pembayaran<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;untuk pihak KEDUA.
+        </div>
+
+        {/* Closing paragraph */}
+        <p style={{ margin: "0 0 34px", fontSize: 13, lineHeight: 1.5 }}>
+          Demikian Berita Acara ini dibuat dan ditandatangani oleh para pihak untuk dipergunakan sebagaimana mestinya.
         </p>
+
+        {/* Signatures: 2 Columns */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 40,
+            textAlign: "center",
+            fontSize: 13,
+            marginTop: 10,
+          }}
+        >
+          {/* Pihak Pertama (Klien) */}
+          <div>
+            <div>Pihak Pertama</div>
+            <div style={{ fontWeight: 600, marginTop: 2 }}>{pihak1Perusahaan}</div>
+            <div
+              style={{
+                height: 80,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                position: "relative",
+              }}
+            >
+              <span
+                style={{
+                  fontStyle: "italic",
+                  fontSize: 12,
+                  color: "#4b5563",
+                  transform: "rotate(-4deg)",
+                  letterSpacing: "0.5px",
+                }}
+              >
+                {tanggalTtdPihak1}
+              </span>
+            </div>
+            <div style={{ fontWeight: 700, textDecoration: "none" }}>{pihak1Nama}</div>
+            <div
+              style={{
+                fontSize: 11.5,
+                color: "#374151",
+                marginTop: 2,
+                lineHeight: 1.35,
+                maxWidth: 240,
+                marginLeft: "auto",
+                marginRight: "auto",
+              }}
+            >
+              {pihak1Jabatan}
+            </div>
+          </div>
+
+          {/* Pihak Kedua (IDStar) */}
+          <div>
+            <div>Pihak Kedua</div>
+            <div style={{ fontWeight: 600, marginTop: 2 }}>PT. IDstar Cipta Teknologi</div>
+            <div
+              style={{
+                height: 80,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <img
+                src="/ttd-indah.png"
+                alt="Signature Indah Ananti"
+                style={{ height: 50, width: "auto", display: "block" }}
+              />
+            </div>
+            <div style={{ fontWeight: 700, textDecoration: "none" }}>{pihak2Nama}</div>
+            <div
+              style={{
+                fontSize: 11.5,
+                color: "#374151",
+                marginTop: 2,
+                lineHeight: 1.35,
+                maxWidth: 240,
+                marginLeft: "auto",
+                marginRight: "auto",
+              }}
+            >
+              {pihak2Jabatan}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
