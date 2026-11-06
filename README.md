@@ -7,27 +7,32 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-316192?style=flat-square&logo=postgresql)](https://supabase.com/)
 [![License](https://img.shields.io/badge/Proprietary-PT%20IDStar%20Cipta%20Teknologi-red?style=flat-square)]()
 
-Sistem enterprise internal **PT IDStar Cipta Teknologi** yang dirancang khusus untuk mengelola seluruh siklus hidup penagihan (*invoicing*), rekonsiliasi hari kerja talenta (*timesheet*), penerbitan berkas BAST/CAC resmi, pertukaran paket *Goods Receipt (GR) Request* multi-sheet dengan klien (khususnya XL Smart dan Non-XL), penanganan selisih persetujuan (*Deficiency GR*), hingga penerbitan Faktur Pajak, Invoice Resmi, dan penutupan *Purchase Order (PO)* otomatis.
+Sistem enterprise internal **PT IDStar Cipta Teknologi** yang dirancang khusus untuk mengelola seluruh siklus hidup penagihan (*invoicing*), rekonsiliasi hari kerja talenta (*timesheet*), penerbitan dokumen resmi **BAST (XL & Non-XL)**, **CAC XL**, dan **Good Receipt (GR) BAU Approval XL**, pertukaran paket *Goods Receipt (GR) Request* multi-sheet dengan klien via portal resmi getApprove XL, penanganan selisih persetujuan (*Deficiency GR*), hingga penerbitan Faktur Pajak, Invoice Resmi IDStar, dan penutupan *Purchase Order (PO)* otomatis.
 
 ---
 
 ## Daftar Isi
 1. [Latar Belakang & Masalah Bisnis](#1-latar-belakang--masalah-bisnis)
 2. [Peran Pengguna & Hak Akses (RBAC)](#2-peran-pengguna--hak-akses-rbac)
+   - [Matriks Hak Akses Akun Resmi](#matriks-hak-akses-akun-resmi-idstar-group)
+   - [Akun Demo 1-Click Dropdown](#akun-demo-1-click-dropdown)
 3. [Arsitektur Diagram Alur Utama (End-to-End Flow)](#3-arsitektur-diagram-alur-utama-end-to-end-flow)
 4. [Siklus Status Pengajuan (State Machine)](#4-siklus-status-pengajuan-state-machine)
 5. [Detail Alur Proses Operasional](#5-detail-alur-proses-operasional)
    - [Tahap 1: Pengelolaan Data Master & Referensi](#tahap-1-pengelolaan-data-master--referensi)
    - [Tahap 2: Pembuatan Draf Pengajuan & Mesin Hitung Otomatis](#tahap-2-pembuatan-draf-pengajuan--mesin-hitung-otomatis)
    - [Tahap 3: Verifikasi Dua Lapis (Maker-Checker Workflow)](#tahap-3-verifikasi-dua-lapis-maker-checker-workflow)
-   - [Tahap 4: Percabangan Proses Berdasarkan Klien (XL vs Non-XL)](#tahap-4-percabangan-proses-berdasarkan-klien-xl-vs-non-xl)
+   - [Tahap 4: Percabangan Dokumen Resmi Berdasarkan Klien](#tahap-4-percabangan-dokumen-resmi-berdasarkan-klien)
+     - [A. BAST Khusus Non-XL (Sesuai `BAST_NonXL.pdf`)](#a-bast-khusus-non-xl-sesuai-bast_nonxlpdf)
+     - [B. BAST & CAC Khusus XL (Sesuai `BAST_PO.pdf` & `CAC_PO.pdf`)](#b-bast--cac-khusus-xl-sesuai-bast_popdf--cac_popdf)
+     - [C. Good Receipt (GR) Khusus XL (Sesuai `Good_Receipt.pdf`)](#c-good-receipt-gr-khusus-xl-sesuai-good_receiptpdf)
+     - [D. Integrasi Portal Resmi getApprove XL](#d-integrasi-portal-resmi-getapprove-xl)
    - [Tahap 5: Pencatatan GR Aktual & Mesin Deficiency GR](#tahap-5-pencatatan-gr-aktual--mesin-deficiency-gr)
    - [Tahap 6: Penerbitan Invoice Resmi & Faktur Pajak](#tahap-6-penerbitan-invoice-resmi--faktur-pajak)
    - [Tahap 7: Kontrol Penyelesaian PO (Closing PO) & Rekonsiliasi](#tahap-7-kontrol-penyelesaian-po-closing-po--rekonsiliasi)
    - [Tahap 8: Dashboard Monitoring Outstanding Invoice & Aging Schedule](#tahap-8-dashboard-monitoring-outstanding-invoice--aging-schedule)
    - [Tahap 9: Modul Pencatatan Pelunasan (Payment Settlement)](#tahap-9-modul-pencatatan-pelunasan-payment-settlement)
-   - [Tahap 10: Estimasi Jadwal Cair Otomatis (Cash-in Forecasting)](#tahap-10-estimasi-jadwal-cair-otomatis-cash-in-forecasting)
-   - [Tahap 11: Sistem Pengingat Jatuh Tempo (Automated Email Reminder)](#tahap-11-sistem-pengingat-jatuh-tempo-automated-email-reminder)
+   - [Tahap 10: Sistem Pengingat Jatuh Tempo (Automated Email Reminder)](#tahap-10-sistem-pengingat-jatuh-tempo-automated-email-reminder)
 6. [Teknologi & Arsitektur Sistem](#6-teknologi--arsitektur-sistem)
 7. [Struktur Direktori Proyek](#7-struktur-direktori-proyek)
 8. [Panduan Instalasi & Menjalankan Aplikasi](#8-panduan-instalasi--menjalankan-aplikasi)
@@ -45,33 +50,56 @@ PT IDStar Cipta Teknologi menempatkan puluhan hingga ratusan talenta IT profesio
 | **Ketiadaan Pemisahan Tugas (*Segregation of Duties*):** Satu orang bisa membuat dan menyetujui draf tagihan sekaligus, menimbulkan risiko tata kelola (GCG). | **Maker-Checker Enforced by Server:** Pembuat draf (*Petugas*) secara sistemik dilarang menyetujui pengajuannya sendiri. Hanya akun *Checker* yang memiliki wewenang approval/revisi. |
 | **Kelebihan Tagihan Lintas PO (*Cross-PO*):** Nilai tagihan talenta yang melampaui sisa plafon PO aktif harus dipilah secara manual. | **Alur Cross-PO Otomatis:** Sistem mendeteksi sisa saldo PO utama, menagihkan sisa maksimal, lalu mengalokasikan kelebihan tagihan ke PO penerus secara berantai. |
 | **Paket GR Request XL yang Rumit:** Klien XL mewajibkan format file Excel 3-sheet (*Vendor, SOW, COVER*) dengan alur revisi bolak-balik. | **Automated Excel Package Engine:** Men-generate sheet Vendor otomatis via `exceljs`, menyediakan form unggah balikan XL, merge cerdas, serta riwayat versi. |
-| **Format Dokumen Multi-Klien Berbeda:** Klien Non-XL (Bank Mandiri, Telkomsel, Astra) memerlukan BAST formal 2 pihak, bukan berkas CAC internal XL. | **Multi-Client Routing:** Deteksi otomatis tipe klien dari data PO. Non-XL langsung diarahkan ke generator BAST 1 halaman dua pihak resmi siap tanda tangan. |
+| **Format Dokumen Multi-Klien Berbeda:** Klien Non-XL (Bank CIMB Niaga, BCA, dll) memerlukan BAST formal 2 pihak, bukan berkas CAC internal XL. | **Multi-Client Routing:** Deteksi otomatis tipe klien dari data PO. Non-XL diarahkan ke generator BAST 1 halaman dua pihak resmi (sesuai referensi `BAST_NonXL.pdf`). |
+| **Standarisasi Dokumen Good Receipt:** Pengajuan GR XL membutuhkan dokumen BAU Approval 2 halaman yang identik dengan portal approval. | **Good Receipt Generator (BAU Approval):** Menghasilkan dokumen GR resmi 2 halaman sesuai `Good_Receipt.pdf` lengkap dengan tanda tangan dan cap autentik. |
 | **Deficiency GR (Persetujuan Parsial Klien):** Klien menyetujui nilai GR lebih kecil dari pengajuan, dan selisihnya rawan lupa/terklaim ganda (*double-claim*). | **Deficiency GR Engine with One-Time Carry-Over:** Menghitung selisih persetujuan otomatis, mengunci kompensasi tepat satu kali ke penagihan bulan berikutnya. |
-| **Akses Akun Non-Korporat:** Risiko kebocoran data finansial dan kontrak kerja. | **Google SSO Domain Lockdown:** Otentikasi terpusat yang dibatasi secara ketat hanya untuk email resmi `@idstar.group`. |
+| **Akses Akun Non-Korporat:** Risiko kebocoran data finansial dan kontrak kerja. | **Strict Email Lockdown & RBAC:** Hak akses role dibatasi ketat hanya untuk email resmi yang ditugaskan di domain `@idstar.group`. |
 
 ---
 
 ## 2. Peran Pengguna & Hak Akses (RBAC)
 
-Sistem menerapkan prinsip pemisahan wewenang (*Segregation of Duties*):
+Sistem menerapkan prinsip pemisahan wewenang (*Segregation of Duties*) yang ditegakkan secara server-side melalui modul `src/lib/user-roles.ts` dan middleware `require-role.ts`:
 
 ```
        [ Super Admin ]
-              │ (Kelola Pengguna, Data Master, Kalender Kerja, Audit Trail)
+              │ (Kelola Akun & Hak Akses, Audit Trail, Reset Data Uji)
               ▼
-    [ Petugas (Maker) ] ──────────────► [ Checker (Reviewer) ]
-  • Input Data Referensi & PO           • Verifikasi kalkulasi & dokumen
+    [ Petugas (Input Data) ] ─────────► [ Checker (Pemeriksa) ]
+  • Input Data Master & Referensi       • Audit kelengkapan & nominal tagihan
   • Buat Draf Pengajuan & Prorata       • Approve / Return (Minta Revisi)
   • Unggah Timesheet & Dokumen          • Validasi Paket GR Request XL
   • Input Realisasi GR & Faktur Pajak   • Dilarang mengedit angka langsung
   (Dilarang approve pengajuan sendiri)
 ```
 
-| Role | Tanggung Jawab Utama | Batasan & Pengamanan |
-| :--- | :--- | :--- |
-| **Super Admin** | Manajemen akun pengguna, konfigurasi perusahaan, master kalender kerja, dan audit trail sistem. | Memiliki akses menyeluruh untuk konfigurasi data referensi. |
-| **Petugas (Maker)** | Input master data, membuat draf pengajuan, unggah timesheet, generate dokumen CAC/BAST, input nomor slip GR & faktur pajak. | **Dilarang keras menyetujui pengajuannya sendiri.** Tombol konfirmasi draf hanya memindahkan status ke antrean Checker. |
-| **Checker (Reviewer)** | Melakukan audit kelengkapan dokumen, memvalidasi hari kerja & rate, menyetujui/mengembalikan pengajuan, validasi file GR Request. | **Tidak dapat mengubah nominal langsung** tanpa meminta revisi dari Petugas pembuat draf. |
+### Matriks Hak Akses Akun Resmi (IDStar Group)
+
+Akses ke masing-masing peran dibatasi secara ketat hanya untuk email-email berikut:
+
+| Peran | Email Resmi | Nama Tampilan | Sapaan Dashboard | Hak Akses Fitur | Password Default |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Checker** | `dewi.ani@idstar.group` | Dewi Ani | **Hai Dewi** | Review & approval pengajuan, cek paket GR, verifikasi pelunasan, akses menu Admin | `idstar123` |
+| **Checker** | `muhammad.miqdam@idstar.group` | Muhammad Miqdam | **Hai Miqdam** | Review & approval pengajuan, cek paket GR, verifikasi pelunasan | `idstar123` |
+| **Input (Petugas)** | `imam.fatah@idstar.group` | Imam Fatah | **Hai Imam** | Buat pengajuan, prorata, alokasi Cross PO, cetak CAC/BAST/GR, akses menu Admin | `idstar123` |
+| **Input (Petugas)** | `nitia.cahyaningrum@idstar.group` | Nitia Cahyaningrum | **Hai Nitia** | Buat pengajuan, prorata, cetak CAC/BAST/GR, input slip GR & Faktur Pajak | `idstar123` |
+| **Input (Petugas)** | `rihhadatul.syam@idstar.group` | Rihhadatul Syam | **Hai Riri** | Buat pengajuan, prorata, cetak CAC/BAST/GR, input slip GR & Faktur Pajak | `idstar123` |
+| **Admin** | `dewi.ani@idstar.group` | Dewi Ani | **Hai Dewi** | Kelola akun & hak akses, kelola data, reset data staging | `idstar123` |
+| **Admin** | `imam.fatah@idstar.group` | Imam Fatah | **Hai Imam** | Kelola akun & hak akses, kelola data, reset data staging | `idstar123` |
+
+> [!NOTE]
+> - Kata sandi default untuk seluruh akun `@idstar.group` adalah **`idstar123`** (juga menerima `contoh123` untuk fleksibilitas pengetesan). Rincian kredensial tersimpan pada berkas `password.txt`.
+> - Pengguna dengan multi-peran (seperti Ibu Dewi untuk Checker + Admin, atau Mas Imam untuk Input + Admin) secara otomatis mendapatkan menu navigasi gabungan yang sesuai.
+
+### Akun Demo 1-Click Dropdown
+
+Untuk mempermudah demonstrasi dan pengujian cepat, halaman masuk (*Sign In*) menyediakan tombol dropdown 1-click tanpa ikon/deskripsi panjang, dan label nama contoh telah **dibersihkan sepenuhnya**:
+
+| Label Tombol | Email Demo | Nama Tampilan | Sapaan Dashboard | Password Otomatis |
+| :--- | :--- | :--- | :--- | :--- |
+| **admin** | `admin@contoh.local` | Admin | **Hai Admin** | `contoh123` |
+| **checker** | `checker@contoh.local` | Checker | **Hai Checker** | `contoh123` |
+| **input** | `petugas@contoh.local` | Petugas | **Hai Petugas** | `contoh123` |
 
 ---
 
@@ -107,19 +135,20 @@ flowchart TD
         R5 --> R6[Tanggal Submit CAC Terisi Otomatis]
     end
 
-    %% Percabangan Klien
+    %% Percabangan Klien & Dokumen
     subgraph S4["4. Cabang Dokumen Berdasarkan Klien"]
         K1{Deteksi Jenis Klien dari po.klien}
         
         %% Jalur XL
-        K1 -- Klien XL --> X1[Generate Draf Dokumen CAC]
-        X1 --> X2[Generate File GR Request Excel 3-Sheet]
-        X2 --> X3[Unggah Dokumen Balikan XL & Gabungkan]
-        X3 --> X4[Checker Validasi & Approve GR Request]
+        K1 -- Klien XL --> X1[Generate Dokumen CAC XL - CAC_PO.pdf]
+        X1 --> X2[Generate Dokumen BAST XL - BAST_PO.pdf]
+        X2 --> X3[Generate Dokumen GR XL - Good_Receipt.pdf]
+        X3 --> X4[Paket GR Request Excel 3-Sheet & getApprove XL]
+        X4 --> X5[Checker Validasi & Approve GR Request]
         
         %% Jalur Non-XL
         K1 -- Klien Non-XL --> N1[Bypass Alur CAC & GR Request]
-        N1 --> N2[Generate BAST Formal 1-Halaman 2 Pihak]
+        N1 --> N2[Generate BAST Formal 1-Halaman 2 Pihak - BAST_NonXL.pdf]
         N2 --> N3[Lampirkan Timesheet Lengkap]
     end
 
@@ -140,7 +169,7 @@ flowchart TD
         I1[DPP Invoice Terkunci = Nilai GR Disetujui]
         I2[Hitung PPN Otomatis 11% / 12%]
         I3[Petugas Mengisi No. Faktur Pajak & No. Invoice]
-        I4[Kirim Invoice Lengkap ke Klien / Portal COUPA]
+        I4[Kirim Template Invoice Resmi IDStar ke Klien]
         I5[Sistem Akumulasi Nilai GR ke Master PO]
         I6{Akumulasi Nilai GR >= Nilai Item PO?}
         I6 -- Ya --> I7[Status PO Otomatis: Selesai / Closed]
@@ -150,7 +179,7 @@ flowchart TD
     S1 --> S2
     S2 --> S3
     R5 --> K1
-    X4 --> G1
+    X5 --> G1
     N3 --> G1
     G1 --> G2
     G2 --> G3
@@ -170,8 +199,6 @@ flowchart TD
 
 ## 4. Siklus Status Pengajuan (State Machine)
 
-Perubahan status pengajuan dikendalikan oleh aturan transisi ketat:
-
 ```mermaid
 stateDiagram-v2
     [*] --> draft: Petugas membuat draf pengajuan
@@ -179,9 +206,9 @@ stateDiagram-v2
     menunggu_checker --> perlu_revisi: Checker menemukan selisih/dokumen kurang
     perlu_revisi --> draft: Petugas memperbaiki data pengajuan
     menunggu_checker --> siap_diajukan: Checker menyetujui pengajuan
-    siap_diajukan --> diajukan: Dokumen disubmit ke portal klien (COUPA/Get Approve)
+    siap_diajukan --> diajukan: Dokumen disubmit ke portal klien (COUPA/getApprove)
     diajukan --> realisasi_gr: Klien menyetujui slip GR & nilai aktual diinput
-    realisasi_gr --> invoice_faktur: Terbit Faktur Pajak & Invoice Resmi
+    realisasi_gr --> invoice_faktur: Terbit Faktur Pajak & Invoice Resmi IDStar
     invoice_faktur --> [*]: Pembayaran Lunas & Closing PO
 ```
 
@@ -190,154 +217,131 @@ stateDiagram-v2
 ## 5. Detail Alur Proses Operasional
 
 ### Tahap 1: Pengelolaan Data Master & Referensi
-Sebelum proses penagihan berjalan, sistem menyiapkan data dasar yang terstruktur:
-1. **Master PO (Purchase Order) & PO Line Items:**
-   - Menyimpan nomor kontrak PO, nama proyek, tahun anggaran, pagu item sebelum PPN (`nilaiItem`), sisa saldo plafon (`saldoSebelumPpn`), nama klien, dan jenis tagihan (`bulanan` vs `tahap`).
-   - Line Items memecah lingkup pekerjaan berdasarkan spesialisasi (misal: *Senior Backend Java*, *QA Automation*, dll).
-2. **Master Personel & Rate Card:**
-   - Menyimpan profil talenta dan riwayat tarif bulanan/harian beserta masa berlaku kontrak (`berlakuDari` s/d `berlakuSampai`).
+1. **Master PO & Line Items:** Kontrak PO, nama proyek, tahun anggaran, pagu item sebelum PPN (`nilaiItem`), sisa saldo plafon (`saldoSebelumPpn`), nama klien, dan jenis tagihan (`bulanan` vs `tahap`).
+2. **Master Personel & Rate Card:** Profil talenta dan riwayat tarif bulanan/harian beserta masa berlaku kontrak.
 3. **Pemetaan Personel ke PO:** Menautkan personel aktif dengan baris PO yang relevan.
 4. **Master Kalender Kerja:** Menentukan jumlah hari kerja acuan bulanan setelah dipotong akhir pekan, libur nasional, dan cuti bersama resmi.
+5. **Role Visibility Control:** Menu **Data Management** (`/kelola-data`) disembunyikan dari peran Petugas (Data Entry) dan hanya dapat diakses oleh Super Admin.
 
 ### Tahap 2: Pembuatan Draf Pengajuan & Mesin Hitung Otomatis
-Petugas memilih nomor PO dan periode bulan penagihan (format `YYYY-MM`). Sistem memproses perhitungan di balik layar:
-
 * **A. Tagihan Bulanan (Prorata Hari Kerja):**
   $$\text{Nilai Tagihan} = \left(\frac{\text{Hari Kerja Ditagihkan}}{\text{Hari Kerja Acuan Bulan}}\right) \times \text{Rate Bulanan}$$
-  *Hari kerja dapat bersumber langsung dari upload timesheet absensi atau kalkulasi kalender kontrak.*
-
-* **B. Tagihan Berbasis Tahap (Milestone):**
-  Untuk kontrak berbasis deliverable/termin, petugas mengisi nominal penagihan secara manual disertai keterangan milestone (misal: `"Tahap I - Penyelesaian 50% UAT"`).
-
-* **C. Alokasi Lintas PO (*Cross-PO Allocation*):**
-  Bila sisa pagu PO pertama tidak mencukupi untuk membayar tagihan penuh personel:
-  1. Sistem otomatis menagihkan sisa pagu maksimal pada PO pertama.
-  2. Sisa tagihan yang belum tertampung ditandai untuk dialokasikan ke PO penerus pada periode yang sama.
-
-* **D. Deteksi Deficiency GR Menggantung:**
-  Sistem otomatis memeriksa apakah terdapat selisih potongan GR dari bulan sebelumnya yang belum terserap. Jika ada, sistem langsung menampilkan banner peringatan dan memperhitungkan selisih tersebut ke dalam draf.
+* **B. Tagihan Berbasis Tahap (Milestone):** Nominal penagihan diisi manual disertai rincian milestone penyerahan pekerjaan.
+* **C. Alokasi Lintas PO (*Cross-PO Allocation*):** Jika sisa pagu PO pertama tidak mencukupi, sistem menagihkan sisa pagu maksimal pada PO pertama dan mengalokasikan sisanya ke PO penerus pada periode yang sama.
+* **D. Deteksi Deficiency GR Menggantung:** Menampilkan peringatan dan memperhitungkan selisih potongan GR dari bulan sebelumnya secara otomatis.
 
 ### Tahap 3: Verifikasi Dua Lapis (Maker-Checker Workflow)
-1. **Konfirmasi Petugas:** Petugas memeriksa kesesuaian rincian, lalu menekan tombol konfirmasi. Status berubah menjadi `menunggu_checker`.
-2. **Review oleh Checker:**
-   - Checker melakukan audit atas hari kerja, rate card, dokumen lampiran, dan ketersediaan pagu PO.
-   - **Tindakan:**
-     - **Minta Revisi (`perlu_revisi`):** Checker wajib mengisi catatan perbaikan. Status kembali ke draf agar Petugas dapat memperbaiki data.
-     - **Setujui (`siap_diajukan`):** Pengajuan disahkan. Sistem otomatis mengisi stempel waktu `tanggalSubmitCac`.
+1. **Konfirmasi Petugas:** Mengubah status menjadi `menunggu_checker`.
+2. **Review Checker:**
+   - **Minta Revisi (`perlu_revisi`):** Checker wajib mengisi catatan perbaikan. Status kembali ke draf agar Petugas dapat memperbaiki data.
+   - **Setujui (`siap_diajukan`):** Pengajuan disahkan dan stempel waktu `tanggalSubmitCac` terisi otomatis.
 
-### Tahap 4: Percabangan Proses Berdasarkan Klien (XL vs Non-XL)
-Sistem secara cerdas mendeteksi kolom `po.klien`:
+---
 
-* **Jalur A: Klien XL (Alur CAC & GR Request COUPA):**
-  1. Generate dokumen CAC (Customer Acceptance Certificate) format standar XL.
-  2. Generate file spreadsheet Excel GR Request 3-sheet (*Vendor, SOW, COVER*).
-  3. Siklus balikan: unggah file revisi dari tim XL, lakukan penggabungan otomatis (*merge*), dan Checker memvalidasi hasil akhir.
-  4. Kolom nomor invoice dikunci rapat hingga Checker meloloskan tahap GR Request.
+### Tahap 4: Percabangan Dokumen Resmi Berdasarkan Klien
 
-* **Jalur B: Klien Non-XL (BAST Formal 1 Lembar 2 Pihak):**
-  1. Melewati langkah CAC dan format Excel GR XL.
-  2. Generate dokumen BAST formal 1 halaman lengkap dengan klausul hukum dua pihak:
-     - **Pihak Pertama:** Penyedia jasa (PT IDStar Cipta Teknologi).
-     - **Pihak Kedua:** Klien penerima jasa (nama instansi, alamat, pejabat berwenang).
-  3. Dokumen siap dicetak dalam format PDF resmi dengan rincian talenta dan kolom tanda tangan kedua pihak.
-  4. Indikator peringatan visual muncul di dashboard jika berkas BAST belum diunduh/ditandatangani.
+Sistem mendeteksi kolom `po.klien` dan menyediakan generator dokumen resmi berpresisi tinggi:
+
+#### A. BAST Khusus Non-XL (Sesuai `BAST_NonXL.pdf`)
+Digunakan untuk klien perbankan enterprise (misal: PT Bank CIMB Niaga Tbk) dan klien non-telekomunikasi lainnya:
+1. **Kop Dokumen Resmi:** Logo Klien di kiri atas (termasuk logo autentik CIMB Niaga `/cimb-niaga-logo.png`) dan Logo IDStar berwarna di kanan atas (`/idstar-logo-color.png`).
+2. **Format Judul & Preamble:** Judul bergaris bawah `BERITA ACARA SERAH TERIMA` dengan nomor PO, diikuti pembuka tanggal Indonesia formal (*"Pada hari ini, Kamis 22 Oktober 2026 yang bertanda tangan dibawah ini :"*).
+3. **Klausul 3 Poin Baku:**
+   - *Poin 1:* Tabel dokumen 3 kolom (`No`, `No PO`, `Nama / Kode Proyek`).
+   - *Poin 2:* Pernyataan penyelesaian tahapan pekerjaan sampai tanggal tertentu (*"Tahap III (5%) sampai tanggal 30-September-2026 sudah selesai dilakukan"*).
+   - *Poin 3:* Dokumen BAST sebagai syarat kelengkapan pembayaran Pihak Kedua.
+4. **Tanda Tangan 2 Kolom Sejajar:** Kolom Pihak Pertama (Klien) dengan ruang tanggal TTD, dan Kolom Pihak Kedua (PT IDstar Cipta Teknologi) dengan tanda tangan basah resmi Ibu Indah Ananti Affandi (`/ttd-indah.png`).
+5. **Live Editor di Web:** [`bast-non-xl-view.tsx`](file:///c:/Users/admin/Downloads/proses-invoicing-app/src/app/pengajuan/[id]/dokumen/[dokumenId]/bast-non-xl-view.tsx) memungkinkan edit rincian kedua pihak secara langsung dengan sinkronisasi instan ke URL unduh PDF.
+
+#### B. BAST & CAC Khusus XL (Sesuai `BAST_PO.pdf` & `CAC_PO.pdf`)
+Digunakan khusus untuk penagihan kontrak PT XLSmart Telecom Sejahtera:
+1. **BAST XL (2 Halaman):** Berbingkai formal dengan klausul penerimaan jasa IT, tabel rincian line item, breakdown nilai, dan kolom tanda tangan dua pihak.
+2. **CAC XL (2 Halaman):** Format *Customer Acceptance Certificate* resmi mencantumkan nomor PO, PO Value, GR Value, SAP Location Code (`0010`), Project Location (`Headquarter`), status kontrak (*Amend Signed*), dan Terms of Payment (*9 Months*).
+
+#### C. Good Receipt (GR) Khusus XL (Sesuai `Good_Receipt.pdf`)
+Dokumen resmi BAU Approval 2 halaman yang diterbitkan untuk proses persetujuan Goods Receipt:
+1. **Halaman 1 (Formulir BAU Approval):**
+   - Header berbingkai dengan logo resmi XL (`/xl-gr-logo.jpeg`) dan judul `BAU Approval`.
+   - Data 3 kolom presisi: `Request Title`, `Vendor Name: PT. IDSTAR CIPTA TEKNOLOGI (0000123218)`, `BAST Request ID`, `CAC Request ID`, `SOW Document`, dan daftar baris `GR Number Item #1..#N` format `Slip-Line-Year ; Nominal ; Qty` (contoh: `2000565039-00001-2026 ; 171.631.000 ; 5,818`).
+   - Footer halaman: `Request ID: ICPGA/Finance_Business_Partner_&_Budgeting/...` dan penomoran `Page 1 of 2`.
+2. **Halaman 2 (Approval Pages):**
+   - Kotak informasi 4 baris rata tengah: `APPROVAL PAGES`, `Document Type : IT CAPEX PO GR Approval`, `Document Title`, dan `Request Id`.
+   - **3 Kartu Persetujuan dengan Tanda Tangan & Cap Autentik:**
+     - **Kartu 1 (Created By):** Tanda tangan asli Ibu Nitia Refa Cahyaningrum (`/gr-sign-created.png`), divisi Finance, tanggal approval.
+     - **Kartu 2 (Approved By):** Cap resmi RPA System Integration (`/gr-sign-rpa.jpeg`), `xlrpa-getapprove@xl.co.id`, tanggal approval.
+     - **Kartu 3 (Approved By):** Tanda tangan PIC Klien (`/gr-sign-approved.png`), `vads.dnabila@xlsmart.co.id`, tanggal approval.
+3. **Live Web View & PDF:** [`gr-xl-view.tsx`](file:///c:/Users/admin/Downloads/proses-invoicing-app/src/app/pengajuan/[id]/dokumen/[dokumenId]/gr-xl-view.tsx) menyediakan preview interaktif dan tombol unduh PDF vector `pdf-lib`.
+
+#### D. Integrasi Portal Resmi getApprove XL
+Pada setiap tahapan pengajuan klien XL (BAST, CAC, dan GR), sistem menyediakan tombol pintas **🚀 Get Approve XL** yang langsung mengarahkan pengguna ke portal resmi:
+[https://www.getapprove.xlsmart.co.id/auth/login?nexturl=%2Fapproval-document%23id%3Dcc5582a1-9e20-4926-865d-9e7d9c65b73c](https://www.getapprove.xlsmart.co.id/auth/login?nexturl=%252Fapproval-document%2523id%253Dcc5582a1-9e20-4926-865d-9e7d9c65b73c).
+
+---
 
 ### Tahap 5: Pencatatan GR Aktual & Mesin Deficiency GR
-Setelah berkas diajukan, klien memproses persetujuan Goods Receipt (GR) resmi:
 1. **Input Realisasi GR:** Petugas memasukkan nomor GR Slip (`nomorGrSlip`), tanggal persetujuan, dan nominal riil yang disetujui klien (`nilaiGrDisetujui`) sebelum PPN.
 2. **Evaluasi Selisih (*Deficiency GR*):**
    $$\text{Selisih GR} = \text{Total Tagihan Pengajuan} - \text{Nilai GR Disetujui}$$
    - **Impas (`0.00`):** Nilai GR disetujui sama persis dengan pengajuan (100% match).
-   - **Kekurangan GR ($> 0$):** Klien menyetujui lebih kecil dari tagihan. Nilai selisih positif otomatis di-carry over untuk **menambah** tagihan pengajuan berikutnya.
-   - **Kelebihan GR ($< 0$):** Klien menyetujui lebih besar. Nilai selisih negatif otomatis di-carry over untuk **memotong** tagihan pengajuan berikutnya.
-3. **Jaminan One-Time Carry-Over:** Kolom `selisihGrDipakaiPadaPengajuanId` mengunci relasi antar-pengajuan sehingga selisih tidak akan pernah terkompensasi lebih dari satu kali dalam audit keuangan.
+   - **Kekurangan GR ($> 0$):** Selisih positif otomatis di-carry over untuk **menambah** tagihan pengajuan berikutnya.
+   - **Kelebihan GR ($< 0$):** Selisih negatif otomatis di-carry over untuk **memotong** tagihan pengajuan berikutnya.
+3. **Jaminan One-Time Carry-Over:** Kolom `selisihGrDipakaiPadaPengajuanId` mengunci relasi antar-pengajuan sehingga selisih tidak akan pernah terkompensasi lebih dari satu kali.
+
+---
 
 ### Tahap 6: Penerbitan Invoice Resmi & Faktur Pajak
-1. **Penguncian Dasar Pengenaan Pajak (DPP):** Sesuai regulasi perpajakan dan aturan penagihan korporat: **Nilai DPP Invoice sebelum PPN wajib sama persis dengan Nilai GR yang Disetujui**.
-2. **Perhitungan PPN Otomatis:** Mendukung tarif PPN 11% (UU HPP) maupun 12% (penyesuaian baru).
-   $$\text{PPN} = \text{DPP} \times \text{Tarif PPN}$$
-   $$\text{Total Tagihan Akhir} = \text{DPP} + \text{PPN}$$
-3. **Pencatatan Dokumen:** Petugas menginput nomor e-Faktur Pajak resmi dari DJP dan nomor invoice resmi perusahaan.
+1. **Template Invoice Resmi IDStar (Sesuai `IDstar-Group-Mail.png`):**
+   - Header korporat IDStar Group modern dengan logo warna resolusi tinggi.
+   - Penomoran invoice dan metadata PO terstruktur rapi dalam format satu bahasa (English profesional).
+   - Penguncian DPP sebelum PPN sama persis dengan Nilai GR yang Disetujui klien.
+   - Perhitungan otomatis PPN 11%/12% dan estimasi potongan PPh 23 (2%).
+   - Rekening bank penerimaan resmi PT IDStar Cipta Teknologi (BCA & Mandiri).
+   - Dilengkapi cap resmi IDStar (`/idstar-stamp.png`) dan tanda tangan digital Finance Director.
+2. **Pencatatan Dokumen:** Input nomor e-Faktur Pajak resmi DJP dan nomor invoice resmi perusahaan.
+
+---
 
 ### Tahap 7: Kontrol Penyelesaian PO (Closing PO) & Rekonsiliasi
 1. **Akumulasi Realisasi Nilai GR:** Sistem memperbarui total kumulatif serapan dana pada tabel PO (`po.nilaiGr`).
 2. **Otomatisasi Status Closing PO:**
    $$\text{Jika } \sum \text{Nilai GR Disetujui} \ge \text{Nilai Item PO} \longrightarrow \text{Status PO: Selesai (Closed)}$$
-   *Bila pagu belum habis terserap, PO tetap berstatus Aktif untuk periode penagihan berikutnya.*
 3. **Dashboard & Monitoring:**
    - **Summary PO (`/summary-po`):** Memantau pagu, serapan realisasi, dan sisa plafon per tahun anggaran secara real-time.
-   - **Analisa Durasi Invoicing (`/dashboard/analisa-durasi`):** Melacak rata-rata durasi siklus penagihan (CAC disetujui $\rightarrow$ GR disetujui $\rightarrow$ Invoice lunas).
+   - **Analisa Durasi Invoicing (`/dashboard/analisa-durasi`):** Melacak rata-rata durasi siklus penagihan dari penyerahan berkas hingga persetujuan.
    - **Rekon Invoice (`/api/rekon-invoice`):** Rekapitulasi status penagihan internal untuk rekonsiliasi akuntansi bulanan.
 
+---
+
 ### Tahap 8: Dashboard Monitoring Outstanding Invoice & Aging Schedule
-Untuk menjaga likuiditas dan mitigasi risiko piutang macet (*bad debt*), sistem dilengkapi modul *Aging Schedule* interaktif di `/dashboard/outstanding`:
-1. **Term of Payment (TOP) Dinamis:** Mendukung simulasi syarat pembayaran fleksibel (30 hari standar, 45 hari, 60 hari, hingga 90 hari enterprise).
+Modul interaktif di `/dashboard/outstanding` untuk memantau piutang berjalan:
+1. **Term of Payment (TOP) Dinamis:** Simulasi syarat pembayaran (30 hari standar, 45 hari, 60 hari, 90 hari).
 2. **Kalkulasi Hari Jatuh Tempo & Overdue:**
    $$\text{Tanggal Jatuh Tempo} = \text{Tanggal Invoice} + \text{TOP (hari)}$$
-   $$\text{Hari Lewat Jatuh Tempo (Overdue)} = \max(0, \text{Hari Ini} - \text{Tanggal Jatuh Tempo})$$
-3. **Pengelompokan Umur Piutang (*Aging Buckets*):**
-   - **Current:** Invoice belum jatuh tempo ($\le 0$ hari)
-   - **1–30 Hari:** Menunggak ringan
-   - **31–60 Hari:** Menunggak sedang
-   - **61–90 Hari:** Perhatian khusus (*Warning*)
-   - **> 90 Hari:** Risiko tinggi (*Critical Risk*)
-4. **Metrik Finansial Utama (KPI Cards):**
-   - Total Piutang Belum Lunas (*Outstanding AR*)
-   - Total Piutang Telah Jatuh Tempo (*Overdue AR*)
-   - Rasio Penagihan Berhasil (*Collection Rate %*)
-   - *Days Sales Outstanding* (DSO) rata-rata hari penagihan
-5. **Fitur Filter & Ekspor:** Pencarian real-time berdasarkan Klien, status penagihan, kategori bucket aging, serta tombol **Ekspor CSV Aging Schedule** langsung untuk kebutuhan rapat divisi Finance & Direksi.
+   $$\text{Hari Overdue} = \max(0, \text{Hari Ini} - \text{Tanggal Jatuh Tempo})$$
+3. **Pengelompokan Umur Piutang (*Aging Buckets*):** Current ($\le 0$ hari), 1–30 Hari, 31–60 Hari, 61–90 Hari, dan > 90 Hari.
+4. **Metrik Finansial Utama (KPI Cards):** Total Piutang Belum Lunas, Overdue AR, Collection Rate %, dan Days Sales Outstanding (DSO).
+5. **Ekspor CSV:** Tombol ekspor data aging langsung ke format CSV untuk kebutuhan laporan keuangan.
+
+---
 
 ### Tahap 9: Modul Pencatatan Pelunasan (Payment Settlement)
-Pencatatan pembayaran riil dari rekening koran bank klien diintegrasikan langsung pada halaman detail pengajuan `/pengajuan/[id]`:
-1. **Komponen Pengurang Tagihan (Pajak & Potongan):**
-   - **Nominal Diterima Bersih (*Net Received*):** Nilai dana riil yang masuk ke rekening bank perusahaan.
-   - **PPh 23 Dipotong Klien (2%):** Otomatis dihitung dari DPP ($\text{DPP} \times 2\%$) atau diinput sesuai bukti potong pajak resmi.
-   - **Potongan/Biaya Lain:** Biaya administrasi transfer antar-bank atau penyesuaian penalti.
-   - **Bukti Potong PPh 23 (Bupot):** Input nomor bupot dan tanggal penerbitan bupot dari klien.
+Pencatatan pembayaran riil dari rekening koran bank klien di `/pengajuan/[id]`:
+1. **Komponen Pengurang Tagihan:**
+   - Nominal Diterima Bersih (*Net Received*) di rekening bank.
+   - PPh 23 Dipotong Klien (2%) dari DPP beserta nomor bukti potong (Bupot).
+   - Biaya administrasi transfer bank / penyesuaian penalti.
 2. **Formula Rekonsiliasi Pelunasan:**
    $$\text{Total Terbayar Efektif} = \text{Nominal Diterima} + \text{PPh 23} + \text{Potongan Lain}$$
    $$\text{Sisa Piutang} = \max(0, \text{Total Tagihan Final} - \text{Total Terbayar Efektif})$$
-3. **Penegakan Maker-Checker pada Pelunasan:**
-   - **Petugas (Maker):** Menginput rincian transfer, bank tujuan, nominal bersih, PPh 23, nomor bupot, dan mengunggah berkas bukti transfer.
-   - **Checker (Reviewer):** Melakukan audit kecocokan bukti bayar dengan rekening koran. **Sistem secara ketat melarang Petugas memverifikasi pelunasan yang dicatatnya sendiri.**
-   - **Status Pelunasan Otomatis:** Setelah diverifikasi Checker, status pengajuan otomatis beralih menjadi **LUNAS (PAID)** atau **TERBAYAR SEBAGIAN (PARTIALLY PAID)**, dan meng-update metrik pada Dashboard Outstanding secara real-time.
+3. **Penegakan Maker-Checker pada Pelunasan:** Petugas mencatat rincian transfer dan mengunggah bukti bayar, sedangkan Checker mengaudit dan memverifikasi keabsahan dana.
 
-### Tahap 10: Estimasi Jadwal Cair Otomatis (Cash-in Forecasting)
-Untuk mendukung visibilitas likuiditas dan perencanaan kas perusahaan (*treasury management*), modul `/dashboard/forecast` memproyeksikan arus kas masuk secara cerdas:
-1. **Perhitungan Net Kas Masuk Realistis:**
-   Menghitung estimasi dana riil yang masuk rekening bank dengan memperhitungkan potongan wajib PPh 23 (2%) dari DPP:
-   $$\text{Net Kas Masuk} = (\text{DPP} + \text{PPN}) - (\text{DPP} \times 2\%)$$
-2. **Kalkulasi Estimasi Tanggal Cair Berbasis Kalender Kerja Bank:**
-   $$\text{Tanggal Estimasi Cair} = \text{SesuaikanHariKerja}(\text{Tanggal Acuan} + \text{TOP} + \text{Buffer Keterlambatan})$$
-   *Bila tanggal jatuh tempo bertepatan dengan akhir pekan (Sabtu/Minggu) atau hari libur nasional, sistem secara otomatis menggeser jadwal pencairan ke hari kerja perbankan terdekat (Senin).*
-3. **Klasifikasi Tingkat Kepastian Pembayaran (Confidence Level):**
-   - **🟢 Tinggi (>90%):** Invoice dan Faktur Pajak resmi sudah terbit dari DJP.
-   - **🟡 Sedang (~75%):** Goods Receipt (GR) telah disetujui klien; invoice dalam proses administrasi akhir.
-   - **⚪ Proyeksi (~50%):** Pengajuan masih berstatus draf atau dalam review berkas CAC/BAST.
-4. **Simulasi Skenario Likuiditas (What-If Analysis):**
-   - Pengaturan dinamis Term of Payment (TOP 30 hari standar, 45 hari, 60 hari).
-   - Pengujian stres arus kas (*Cash-flow Stress Test*) dengan buffer keterlambatan bayar (+0 hari Tepat Waktu, +7 hari Ringan, +14 hari Moderat, +30 hari Berat).
-5. **Agregasi Periode Waktu & Ekspor:**
-   - Rekapitulasi: *Immediate Inflow* (7 hari ke depan), Minggu Depan (8–14 hari), Bulan Berjalan, dan Bulan Depan.
-   - Fitur **Ekspor CSV Proyeksi Cash-in** untuk kebutuhan rapat rutin manajemen dan direksi.
+---
 
-### Tahap 11: Sistem Pengingat Jatuh Tempo (Automated Email Reminder)
-Untuk mempercepat proses penagihan (*collection*) dan mencegah terjadinya piutang tak tertagih, sistem menyediakan modul generator surat dan pengingat pembayaran otomatis:
-1. **5 Tingkat Urgensi Template Email:**
-   - **H-7 (Peringatan Dini):** Nada ramah dan santun, mengingatkan bahwa invoice akan jatuh tempo dalam 7 hari ke depan serta mengonfirmasi jadwal proses pembayaran.
-   - **Hari H / H-0 (Jatuh Tempo Hari Ini):** Nada profesional, mengonfirmasi apakah instruksi transfer bank telah diproses pada hari ini.
-   - **H+7 (Follow-Up Keterlambatan I):** Menanyakan jadwal realisasi atau adanya kendala administratif jika pembayaran belum diterima.
-   - **H+14 (Peringatan Pembayaran Tahap II):** Permohonan prioritas penyelesaian pembayaran invoice secara formal.
-   - **H+30 (Surat Pemberitahuan Tunggakan Kritis):** Surat tagihan resmi (*Demand Notice*) untuk mitigasi risiko penalti atau penghentian SLA layanan.
-2. **Kelengkapan Dokumen & Data Rekening Otomatis:**
-   - Setiap draf surat secara otomatis menyertakan nomor invoice, nomor faktur pajak resmi, nomor PO, nama proyek, periode penagihan, rincian sisa piutang, dan rekening koran penerimaan resmi PT IDStar Cipta Teknologi (BCA & Mandiri).
-3. **Eksekusi Pengiriman & Audit Trail:**
-   - **Buka di Email Client (`mailto:`):** Membuka aplikasi email lokal pengguna (Outlook, Thunderbird, Apple Mail, Gmail) dengan subjek dan isi surat yang sudah terisi otomatis.
-   - **Salin Teks Cepat:** Memungkinkan pengguna menyalin seluruh teks draf untuk dikirimkan melalui aplikasi pesan bisnis (WhatsApp/Teams/Slack).
-   - **Pencatatan Log Audit:** Setiap reminder yang digenerate dicatat ke tabel `reminder_log` beserta waktu kirim, jenis reminder, dan user ID pengirim untuk kebutuhan audit penagihan internal.
-4. **Aksi Cepat dari Tabel Outstanding:**
-   - Tombol **"✉️ Ingatkan"** disematkan langsung pada setiap baris invoice yang berstatus belum lunas di Dashboard Outstanding & Aging Schedule.
+### Tahap 10: Sistem Pengingat Jatuh Tempo (Automated Email Reminder)
+Modul pengingat pembayaran otomatis dengan 5 tingkat urgensi:
+1. **5 Tingkat Urgensi Template:** H-7 (Peringatan Dini), Hari H / H-0 (Jatuh Tempo Hari Ini), H+7 (Follow-Up I), H+14 (Peringatan II), dan H+30 (Surat Tagihan Formal).
+2. **Rincian Otomatis:** Nomor invoice, faktur pajak, nomor PO, nama proyek, rincian sisa tagihan, dan rekening resmi IDStar (BCA & Mandiri).
+3. **Eksekusi Pengiriman:** Buka langsung di email client lokal (`mailto:`), salin teks cepat, serta pencatatan otomatis ke `reminder_log`.
 
 ---
 
@@ -347,16 +351,16 @@ Untuk mempercepat proses penagihan (*collection*) dan mencegah terjadinya piutan
 +-------------------------------------------------------------------------+
 |                               FRONTEND                                  |
 |   Next.js 16 (App Router, Turbopack) + React 19                         |
-|   Komponen: StatusProsesForm, BastNonXlView, SummaryPO, PengajuanClient |
-|   Styling: Modern CSS & Tailwind CSS                                    |
+|   Views: GrXlView, BastNonXlView, BastXlView, CacXlView, DashboardView   |
+|   Styling: Modern CSS & Design Tokens                                   |
 +-------------------------------------------------------------------------+
                                     │
                                     ▼
 +-------------------------------------------------------------------------+
 |                               BACKEND                                   |
 |   Next.js Server Actions & Route Handlers (TypeScript 5)                |
-|   Business Logic: src/lib/deficiency-gr.ts, klien.ts, google-auth.ts    |
-|   Document Engines: pdf-lib (Stamping/PDF) + exceljs (Spreadsheet)      |
+|   Business Logic: src/lib/user-roles.ts, deficiency-gr.ts, klien.ts     |
+|   Document Engines: pdf-lib (Vector PDF) + exceljs (Spreadsheet)        |
 |   Financial Precision: decimal.js                                       |
 +-------------------------------------------------------------------------+
                                     │
@@ -364,19 +368,19 @@ Untuk mempercepat proses penagihan (*collection*) dan mencegah terjadinya piutan
 +-------------------------------------------------------------------------+
 |                            DATABASE LAYER                               |
 |   Drizzle ORM 0.45.2 (Type-safe schema & migrations)                    |
-|   PostgreSQL on Supabase Cloud (Row-Level Security / RLS terpasang)    |
+|   PostgreSQL on Supabase Cloud                                          |
 +-------------------------------------------------------------------------+
 ```
 
 ### Rincian Dependensi Utama:
-- **Framework:** Next.js 16.3.5 (App Router, React Server Components)
-- **Library UI:** React 19.2.8 & Lucide Icons
+- **Framework:** Next.js 16.3.5 (App Router, Turbopack)
+- **Library UI:** React 19.2.8
 - **Database & ORM:** PostgreSQL (Supabase) dengan Drizzle ORM 0.45.2 & driver `postgres`
-- **Kalkulasi Finansial:** `decimal.js` untuk menjamin kalkulasi moneter bebas dari galat floating point
+- **Kalkulasi Finansial:** `decimal.js` untuk komputasi moneter presisi
 - **Pengolahan Dokumen:**
-  - `pdf-lib`: Komposisi dan stamping PDF resmi BAST 2 pihak dan draf CAC
-  - `exceljs`: Pembuatan dan manipulasi template spreadsheet GR Request 3-sheet (*Vendor, SOW, COVER*)
-- **Keamanan & Otentikasi:** Kredensial lokal terenkripsi `bcryptjs` + Google Workspace OAuth2 dengan validasi domain khusus `@idstar.group`
+  - `pdf-lib`: Engine vector PDF untuk BAST Non-XL (`BAST_NonXL.pdf`), BAST XL (`BAST_PO.pdf`), CAC XL (`CAC_PO.pdf`), Good Receipt XL (`Good_Receipt.pdf`), dan Invoice Resmi.
+  - `exceljs`: Pembuatan dan manipulasi paket spreadsheet GR Request 3-sheet (*Vendor, SOW, COVER*).
+- **Keamanan & Otentikasi:** Enkripsi `bcryptjs` + Google Workspace OAuth2 (@idstar.group) + Server-Side RBAC strict lockdown.
 
 ---
 
@@ -385,47 +389,55 @@ Untuk mempercepat proses penagihan (*collection*) dan mencegah terjadinya piutan
 ```
 proses-invoicing-app/
 ├── drizzle/                      # Berkas migrasi database SQL (Drizzle Kit)
-├── public/                       # Aset statis & logo perusahaan
-├── scripts/                      # Skrip operasional, migrasi, dan data seed
-│   ├── seed-data-bervariasi.ts   # Seeding data dummy komprehensif (8 PO, 16 talenta, 13 pengajuan)
-│   ├── ganti-sandi.ts            # Utilitas reset password akun pengguna
-│   └── generate-validation-excel.js # Generator berkas evaluasi UAT
+├── public/                       # Aset resmi & logo perusahaan
+│   ├── cimb-niaga-logo.png       # Logo resmi CIMB Niaga (diekstrak dari BAST_NonXL.pdf)
+│   ├── gr-sign-approved.png      # Tanda tangan PIC Klien (Good_Receipt.pdf)
+│   ├── gr-sign-created.png       # Tanda tangan Nitia Refa / Finance (Good_Receipt.pdf)
+│   ├── gr-sign-rpa.jpeg          # Cap RPA System Integration (Good_Receipt.pdf)
+│   ├── idstar-logo-color.png     # Logo warna IDStar Group
+│   ├── idstar-stamp.png          # Cap stempel resmi IDStar Group
+│   ├── ttd-indah.png             # Tanda tangan resmi Ibu Indah Ananti Affandi
+│   └── xl-gr-logo.jpeg           # Logo resmi XL (Good_Receipt.pdf)
+├── scripts/                      # Skrip operasional & sinkronisasi data
+│   ├── backup-database.ts        # Pencadangan seluruh tabel database ke JSON
+│   ├── restore-database.ts       # Pemulihan data database dari cadangan JSON
+│   ├── sync-authorized-users.ts  # Sinkronisasi hak akses email & kredensial resmi
+│   └── seed-users.ts             # Seeding pengguna & peran default
 ├── src/
 │   ├── app/                      # Next.js App Router
 │   │   ├── api/                  # REST API Route Handlers
-│   │   │   ├── auth/             # Otentikasi (login, logout, session, google-callback)
-│   │   │   ├── pengajuan/        # Workflow pengajuan, CAC, GR Request, & pembayaran (pelunasan)
-│   │   │   ├── rekon-invoice/    # Ekspor laporan rekon invoice
-│   │   │   └── summary-po/       # Endpoint data summary pagu PO
-│   │   ├── akun/                 # Halaman manajemen akun & hak akses
-│   │   ├── dashboard/            # Analisa durasi & metrik invoicing
-│   │   │   ├── forecast/         # Estimasi Jadwal Cair Otomatis & Cash-in Forecasting
-│   │   │   └── outstanding/      # Dashboard Monitoring Outstanding Invoice & Aging Schedule
-│   │   ├── data-referensi/       # Kelola Master PO, Personel, Rate Card, Kalender, Klien
-│   │   ├── kelola-data/          # Impor massal data master & tracker
-│   │   ├── login/                # Halaman login modern dengan Google SSO
-│   │   ├── pengajuan/            # Modul utama draf, review Checker, BAST, GR, & panel pelunasan
+│   │   │   ├── auth/             # Login, logout, session, demo, & google callback
+│   │   │   ├── pengajuan/        # Workflow pengajuan, CAC, BAST, GR, & pembayaran
+│   │   │   └── summary-po/       # Data summary pagu PO
+│   │   ├── dashboard/            # Analisa durasi & dashboard metrik
+│   │   │   └── outstanding/      # Dashboard Monitoring Outstanding & Aging Schedule
+│   │   ├── data-referensi/       # Master PO, Personel, Rate Card, Kalender, Klien
+│   │   ├── kelola-data/          # Reset data staging (khusus Admin)
+│   │   ├── login/                # Redirect ke halaman login utama
+│   │   ├── login-client.tsx      # Komponen form login, Google SSO, & demo dropdown
+│   │   ├── pengajuan/            # Modul utama draf, review Checker, & panel kelengkapan
+│   │   │   └── [id]/dokumen/[dokumenId]/
+│   │   │       ├── bast-non-xl-view.tsx # Tampilan interaktif BAST Non-XL (BAST_NonXL.pdf)
+│   │   │       ├── bast-xl-view.tsx     # Tampilan interaktif BAST XL (BAST_PO.pdf)
+│   │   │       ├── cac-xl-view.tsx      # Tampilan interaktif CAC XL (CAC_PO.pdf)
+│   │   │       └── gr-xl-view.tsx       # Tampilan interaktif GR XL (Good_Receipt.pdf)
 │   │   └── summary-po/           # Dashboard visual pagu dan sisa saldo PO
-│   ├── components/               # Komponen UI bersama (Topbar, Footer, Select, Modals)
+│   ├── components/               # Komponen UI bersama (Topbar, Logo, Modals)
 │   ├── db/                       # Konfigurasi Drizzle ORM & skema database
-│   │   ├── index.ts              # Koneksi client database postgres (pooler-optimized)
-│   │   └── schema.ts             # Definisi skema tabel & relasi PostgreSQL (termasuk pembayaran & reminder_log)
+│   │   ├── index.ts              # Koneksi client database postgres
+│   │   └── schema.ts             # Definisi skema tabel & relasi PostgreSQL
 │   └── lib/                      # Core business logic
-│       ├── aging.ts              # Engine Aging Buckets, TOP 30/45/60/90, Overdue, & DSO
-│       ├── cash-in-forecast.ts   # Engine Cash-in Forecasting, penyesuaian hari kerja bank, & simulasi TOP
+│       ├── aging.ts              # Engine Aging Buckets, TOP, Overdue, & DSO
 │       ├── deficiency-gr.ts      # Engine kalkulasi selisih GR & carry-over
-│       ├── deficiency-gr-server.ts # Server logic deficiency GR
 │       ├── google-auth.ts        # Validasi Google Workspace OAuth SSO (@idstar.group)
 │       ├── gr-request-excel.ts   # Generator paket spreadsheet Excel GR Request 3-sheet
 │       ├── hitung-pengajuan.ts   # Mesin hitung prorata hari kerja & tagihan tahap
-│       ├── kalender.ts           # Logika hari kerja & kalender libur nasional
 │       ├── klien.ts              # Deteksi routing klien XL vs Non-XL
-│       ├── perhitungan.ts        # Utilitas kalkulasi moneter dengan Decimal.js
-│       ├── reminder.ts           # Generator template email pengingat jatuh tempo & rekening IDStar
-│       └── require-role.ts       # Middleware proteksi peran (RBAC)
-├── .gitignore                    # Aturan proteksi file rahasia & filter dokumen
-├── drizzle.config.ts             # Konfigurasi Drizzle Kit
-├── next.config.ts                # Konfigurasi Next.js
+│       ├── require-role.ts       # Middleware proteksi peran server-side (RBAC)
+│       ├── require-role-api.ts   # Middleware proteksi peran untuk API Handlers
+│       ├── user-roles.ts         # Konfigurasi hak akses email resmi & sapaan dashboard
+│       └── xl-document-helpers.ts # Helper format tanggal Indonesia, angka terbilang, & GR
+├── password.txt                  # Catatan kredensial default seluruh akun pengguna
 ├── package.json                  # Manifest dependensi & skrip Node.js
 └── README.md                     # Dokumentasi komprehensif proyek (file ini)
 ```
@@ -436,7 +448,7 @@ proses-invoicing-app/
 
 ### Prasyarat:
 - **Node.js:** Versi 20.x atau lebih baru
-- **Package Manager:** `npm`, `pnpm`, atau `yarn`
+- **Package Manager:** `npm` (atau `pnpm` / `yarn`)
 - **Database:** PostgreSQL (disarankan instans Supabase)
 
 ### 1. Kloning Repositori & Instalasi Dependensi
@@ -447,7 +459,7 @@ npm install
 ```
 
 ### 2. Konfigurasi Environment Variables
-Buat file `.env` di direktori *root* (gunakan `.env.example` sebagai referensi):
+Buat file `.env` di direktori *root*:
 ```env
 # Database Connection (Supabase PostgreSQL)
 DATABASE_URL="postgresql://postgres:[PASSWORD]@[HOST]:[PORT]/postgres?sslmode=require"
@@ -455,25 +467,22 @@ DATABASE_URL="postgresql://postgres:[PASSWORD]@[HOST]:[PORT]/postgres?sslmode=re
 # Session Security
 SESSION_SECRET="your-ultra-secure-random-secret-key-32-chars-min"
 
-# Google Workspace SSO (Opsional untuk login Google)
+# Google Workspace SSO (Opsional untuk login Google @idstar.group)
 GOOGLE_CLIENT_ID="your-client-id.apps.googleusercontent.com"
 GOOGLE_CLIENT_SECRET="your-client-secret"
 GOOGLE_REDIRECT_URI="http://localhost:3000/api/auth/google/callback"
 ```
 
-### 3. Migrasi Skema Basis Data
-Sinkronisasikan definisi skema TypeScript ke database PostgreSQL:
+### 3. Migrasi Skema Basis Data & Sinkronisasi Pengguna
 ```bash
+# Push skema ke Supabase PostgreSQL
 npx drizzle-kit push
+
+# Sinkronisasikan akun resmi & kredensial default
+npx tsx scripts/sync-authorized-users.ts
 ```
 
-### 4. Seeding Data Dummy Pengujian (Opsional)
-Jalankan skrip *seed* untuk mengisi database dengan dataset variatif realistis:
-```bash
-npx tsx scripts/seed-data-bervariasi.ts
-```
-
-### 5. Menjalankan Server Development
+### 4. Menjalankan Server Development
 ```bash
 npm run dev
 ```
@@ -483,9 +492,9 @@ Buka browser di [http://localhost:3000](http://localhost:3000).
 
 ## 9. Dataset Pengujian & Hasil Validasi UAT
 
-Aplikasi telah melalui pengujian komprehensif (*User Acceptance Testing*) bersama tim Finance & Legal:
+Aplikasi telah melalui pengujian komprehensif (*User Acceptance Testing*) bersama tim Finance & Invoicing:
 
-- **25 Skenario UAT Lengkap:** Menguji Google SSO `@idstar.group`, penegakan *Segregation of Duties*, prorata masuk/keluar tengah bulan, alokasi *Cross-PO* berantai, siklus bolak-balik Excel GR XL 3-sheet, BAST formal Non-XL dua pihak, mesin *Deficiency GR*, hingga penutupan PO otomatis.
+- **25 Skenario UAT Lengkap:** Menguji Google SSO `@idstar.group`, penegakan *Segregation of Duties*, prorata hari kerja, alokasi *Cross-PO* berantai, siklus bolak-balik Excel GR XL 3-sheet, BAST formal Non-XL dua pihak, BAST/CAC XL, Good Receipt BAU Approval XL, mesin *Deficiency GR*, hingga penutupan PO otomatis.
 - **Tingkat Kelulusan:** 100% Lolos (**25/25 Pass, 0 Defect**).
 - **Efisiensi Waktu Operasional:** Memangkas durasi penyiapan dokumen penagihan dari **3–5 hari kerja (32 jam)** menjadi **kurang dari 30 menit (efisiensi 96.9%)**.
 - **Tingkat Akurasi Finansial:** Menghilangkan insiden salah hitung prorata dan salah alokasi pagu PO dari 5–8% menjadi **0% (*Zero Calculation Error*)**.
