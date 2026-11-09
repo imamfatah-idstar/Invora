@@ -26,9 +26,23 @@ export async function POST(request: NextRequest) {
   if (!body.email.trim().toLowerCase().endsWith(`@${DOMAIN_DIIZINKAN}`)) {
     return NextResponse.json({ error: `Email harus memakai domain @${DOMAIN_DIIZINKAN}.` }, { status: 400 });
   }
-  if (!ROLE_VALID.includes(body.role)) {
-    return NextResponse.json({ error: "Peran tidak valid." }, { status: 400 });
+  let selectedRoles: string[] = [];
+  if (Array.isArray(body?.roles) && body.roles.length > 0) {
+    selectedRoles = body.roles.filter((r: unknown) => typeof r === "string" && ROLE_VALID.includes(r));
+  } else if (typeof body?.role === "string" && body.role.trim()) {
+    selectedRoles = body.role
+      .split(",")
+      .map((r: string) => r.trim())
+      .filter((r: string) => ROLE_VALID.includes(r));
   }
+
+  if (selectedRoles.length === 0) {
+    return NextResponse.json({ error: "Minimal satu peran (role) harus dipilih." }, { status: 400 });
+  }
+
+  const roleValue = Array.from(new Set(selectedRoles)).join(",");
+  const statusAktif = typeof body?.aktif === "boolean" ? body.aktif : true;
+
   if (!body?.kataSandi || typeof body.kataSandi !== "string" || body.kataSandi.length < 8) {
     return NextResponse.json({ error: "Kata sandi minimal 8 karakter." }, { status: 400 });
   }
@@ -44,10 +58,11 @@ export async function POST(request: NextRequest) {
     nama: body.nama.trim(),
     email,
     passwordHash,
-    role: body.role,
+    role: roleValue,
+    aktif: statusAktif,
   }).returning();
 
-  await catatAudit({ entitas: "users", entitasId: row.id, perubahan: `Daftarkan akun "${row.email}" peran=${row.role}`, userId: user!.id });
+  await catatAudit({ entitas: "users", entitasId: row.id, perubahan: `Daftarkan akun "${row.email}" peran=${row.role} aktif=${row.aktif}`, userId: user!.id });
 
-  return NextResponse.json({ id: row.id, nama: row.nama, email: row.email, role: row.role }, { status: 201 });
+  return NextResponse.json({ id: row.id, nama: row.nama, email: row.email, role: row.role, aktif: row.aktif }, { status: 201 });
 }

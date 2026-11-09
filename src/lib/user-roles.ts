@@ -80,18 +80,54 @@ export const AUTHORIZED_USERS: Record<string, UserProfile> = {
     roles: ["petugas"],
     primaryRole: "petugas",
   },
+  "multi@contoh.local": {
+    email: "multi@contoh.local",
+    nama: "Demo Multi-Role",
+    panggilan: "Demo",
+    roles: ["admin", "petugas", "checker"],
+    primaryRole: "admin",
+  },
 };
+
+export function parseRoles(roleStr?: string | null): Role[] {
+  if (!roleStr) return ["petugas"];
+  const list = roleStr
+    .split(",")
+    .map((r) => r.trim().toLowerCase())
+    .filter((r): r is Role => ["admin", "petugas", "checker"].includes(r));
+  return list.length > 0 ? Array.from(new Set(list)) : ["petugas"];
+}
+
+export function getAllUserRoles(user: { email: string; role?: string | null }): Role[] {
+  const profile = getAuthorizedProfile(user.email);
+  const dbRoles = parseRoles(user.role);
+  const combined = new Set<Role>();
+
+  if (profile?.roles) {
+    profile.roles.forEach((r) => combined.add(r));
+  }
+  dbRoles.forEach((r) => combined.add(r));
+
+  return combined.size > 0 ? Array.from(combined) : ["petugas"];
+}
 
 export function getAuthorizedProfile(email?: string | null): UserProfile | null {
   if (!email) return null;
   return AUTHORIZED_USERS[email.toLowerCase().trim()] || null;
 }
 
-export function isAuthorizedForRole(email: string | null | undefined, role: Role): boolean {
-  if (!email) return false;
-  const profile = getAuthorizedProfile(email);
-  if (!profile) return false;
-  return profile.roles.includes(role);
+export function isAuthorizedForRole(
+  target: string | { email: string; role?: string | null } | null | undefined,
+  role: Role
+): boolean {
+  if (!target) return false;
+  if (typeof target === "string") {
+    const profile = getAuthorizedProfile(target);
+    if (profile?.roles.includes(role)) return true;
+    return false;
+  }
+  const allRoles = getAllUserRoles(target);
+  return allRoles.includes(role);
 }
 
 export function getGreetingName(email?: string | null, rawName?: string | null): string {

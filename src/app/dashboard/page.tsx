@@ -8,9 +8,9 @@ export default async function Dashboard() {
   const user = await userSaatIni();
   if (!user) redirect("/");
 
-  const canAdmin = isAuthorizedForRole(user.email, "admin") || user.role === "admin";
-  const canPetugas = isAuthorizedForRole(user.email, "petugas") || user.role === "petugas";
-  const canChecker = isAuthorizedForRole(user.email, "checker") || user.role === "checker";
+  const canAdmin = user.role === "admin";
+  const canPetugas = user.role === "petugas";
+  const canChecker = user.role === "checker";
 
   const menu: MenuItem[] = [
     ...(canPetugas || canChecker ? [{
@@ -60,7 +60,7 @@ export default async function Dashboard() {
 
   return (
     <>
-      <Topbar nama={user.nama} role={user.role} email={user.email} />
+      <Topbar nama={user.nama} role={user.role} email={user.email} roles={user.roles} />
       <DashboardView user={{ nama: user.nama, role: user.role, email: user.email }} menu={menu} />
     </>
   );

@@ -164,8 +164,8 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
 
   const total = rincian.reduce((acc, r) => acc + Number(r.hasilHitung), 0);
 
-  const isPetugas = isAuthorizedForRole(userLogin.email, "petugas") || userLogin.role === "petugas";
-  const isChecker = isAuthorizedForRole(userLogin.email, "checker") || userLogin.role === "checker";
+  const isPetugas = userLogin.role === "petugas";
+  const isChecker = userLogin.role === "checker";
 
   const bisaKonfirmasi = (header.status === "draft" || header.status === "perlu_revisi") && isPetugas;
   const bisaEdit = header.status === "perlu_revisi" && isPetugas;
@@ -202,7 +202,7 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
 
   return (
     <>
-      <Topbar nama={userLogin.nama} role={userLogin.role} email={userLogin.email} />
+      <Topbar nama={userLogin.nama} role={userLogin.role} email={userLogin.email} roles={userLogin.roles} />
       <main className="page">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: 12 }}>
           <a href="/pengajuan" className="back-link" style={{ margin: 0 }}>&larr; Submissions</a>

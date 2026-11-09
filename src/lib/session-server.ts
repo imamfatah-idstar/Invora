@@ -6,5 +6,6 @@ import { ambilUserDariSesi } from "@/lib/auth";
 export async function userSaatIni() {
   const cookieStore = await cookies();
   const token = cookieStore.get("sesi_token")?.value;
-  return ambilUserDariSesi(token);
+  const activeRoleCookie = cookieStore.get("sesi_role")?.value;
+  return ambilUserDariSesi(token, activeRoleCookie);
 }

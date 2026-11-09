@@ -12,27 +12,29 @@ async function main() {
     const isDemo = email.endsWith("@contoh.local");
     const passwordHash = isDemo ? passwordHashDemo : passwordHashIdstar;
 
+    const rolesString = profile.roles.join(",");
+
     const [existing] = await db.select().from(users).where(eq(users.email, email));
     if (existing) {
       await db
         .update(users)
         .set({
           nama: profile.nama,
-          role: profile.primaryRole,
+          role: rolesString,
           passwordHash: passwordHash,
           aktif: true,
         })
         .where(eq(users.id, existing.id));
-      console.log(`Updated: ${email} (${profile.primaryRole})`);
+      console.log(`Updated: ${email} (${rolesString})`);
     } else {
       await db.insert(users).values({
         nama: profile.nama,
         email: profile.email,
         passwordHash: passwordHash,
-        role: profile.primaryRole,
+        role: rolesString,
         aktif: true,
       });
-      console.log(`Created: ${email} (${profile.primaryRole})`);
+      console.log(`Created: ${email} (${rolesString})`);
     }
   }
 }

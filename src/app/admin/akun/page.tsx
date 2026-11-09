@@ -22,13 +22,13 @@ export default async function HalamanAkun() {
       <FormTambahAkun />
       <div className="table-wrap">
         <table>
-          <thead><tr><th>Full Name</th><th>Email</th><th colSpan={2}>Role &amp; Status</th></tr></thead>
+          <thead><tr><th>Full Name</th><th>Email</th><th>Role Permissions (Checklist) &amp; Status</th></tr></thead>
           <tbody>
             {daftar.map((u) => (
               <tr key={u.id}>
-                <td>{u.nama}</td>
+                <td style={{ fontWeight: 600 }}>{u.nama}</td>
                 <td>{u.email}</td>
-                <td colSpan={2}>
+                <td>
                   <BarisAksiAkun
                     id={u.id}
                     role={u.role}
@@ -38,7 +38,7 @@ export default async function HalamanAkun() {
                 </td>
               </tr>
             ))}
-            {daftar.length === 0 && <tr><td colSpan={4} className="table-empty">No user accounts found.</td></tr>}
+            {daftar.length === 0 && <tr><td colSpan={3} className="table-empty">No user accounts found.</td></tr>}
           </tbody>
         </table>
       </div>

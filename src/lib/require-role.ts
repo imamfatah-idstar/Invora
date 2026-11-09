@@ -10,7 +10,7 @@ export async function wajibRole(rolesDiizinkan: Role[]) {
   if (!user) {
     redirect("/");
   }
-  const allowed = rolesDiizinkan.some((r) => isAuthorizedForRole(user.email, r) || user.role === r);
+  const allowed = rolesDiizinkan.includes(user.role as Role);
   if (!allowed) {
     redirect("/dashboard");
   }

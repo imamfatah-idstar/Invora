@@ -23,13 +23,25 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const perubahan: { role?: string; aktif?: boolean } = {};
   const catatan: string[] = [];
 
-  if (body?.role !== undefined) {
-    if (!ROLE_VALID.includes(body.role)) {
-      return NextResponse.json({ error: "Peran tidak valid." }, { status: 400 });
-    }
-    perubahan.role = body.role;
-    catatan.push(`peran -> ${body.role}`);
+  let selectedRoles: string[] | null = null;
+  if (Array.isArray(body?.roles)) {
+    selectedRoles = body.roles.filter((r: unknown) => typeof r === "string" && ROLE_VALID.includes(r));
+  } else if (typeof body?.role === "string") {
+    selectedRoles = body.role
+      .split(",")
+      .map((r: string) => r.trim())
+      .filter((r: string) => ROLE_VALID.includes(r));
   }
+
+  if (selectedRoles !== null) {
+    if (selectedRoles.length === 0) {
+      return NextResponse.json({ error: "Minimal satu peran (role) harus dipilih." }, { status: 400 });
+    }
+    const roleString = Array.from(new Set(selectedRoles)).join(",");
+    perubahan.role = roleString;
+    catatan.push(`peran -> ${roleString}`);
+  }
+
   if (body?.aktif !== undefined) {
     if (typeof body.aktif !== "boolean") {
       return NextResponse.json({ error: "Status aktif tidak valid." }, { status: 400 });

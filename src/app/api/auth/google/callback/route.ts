@@ -10,7 +10,7 @@ import {
 } from "@/lib/google-auth";
 import { buatSesi, hashKataSandi } from "@/lib/auth";
 import { catatAudit } from "@/lib/audit";
-import { getAuthorizedProfile } from "@/lib/user-roles";
+import { getAllUserRoles, getAuthorizedProfile } from "@/lib/user-roles";
 import { randomBytes } from "crypto";
 
 export async function GET(request: NextRequest) {
@@ -116,6 +116,9 @@ export async function GET(request: NextRequest) {
 
     // 5. Buat Sesi Login Resmi INVORA
     const { token, kedaluwarsa } = await buatSesi(user.id);
+    const allRoles = getAllUserRoles(user);
+    const hasMultipleRoles = allRoles.length > 1;
+    const initialRole = allRoles[0] || "petugas";
 
     await catatAudit({
       entitas: "auth",
@@ -124,10 +127,19 @@ export async function GET(request: NextRequest) {
       perubahan: `Berhasil masuk menggunakan Google Workspace SSO: ${email}`,
     });
 
-    const response = NextResponse.redirect(`${origin}/dashboard`);
+    const targetUrl = hasMultipleRoles ? `${origin}/pilih-role` : `${origin}/dashboard`;
+    const response = NextResponse.redirect(targetUrl);
 
     // Set cookie sesi resmi INVORA
     response.cookies.set("sesi_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      expires: kedaluwarsa,
+    });
+
+    response.cookies.set("sesi_role", initialRole, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",

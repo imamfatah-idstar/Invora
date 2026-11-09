@@ -17,6 +17,14 @@ type AkunDemo = {
 const DAFTAR_AKUN_DEMO: AkunDemo[] = [
   {
     role: "admin",
+    label: "Demo Multi-Role (Semua Peran)",
+    email: "multi@contoh.local",
+    color: "#8b5cf6",
+    bgLight: "#f5f3ff",
+    borderLight: "#ddd6fe",
+  },
+  {
+    role: "admin",
     label: "Admin",
     email: "admin@contoh.local",
     color: "#6366f1",
@@ -95,7 +103,12 @@ export default function LoginClient() {
       return false;
     }
 
-    router.push("/dashboard");
+    const data = await res.json().catch(() => ({}));
+    if (data.multipleRoles) {
+      router.push("/pilih-role");
+    } else {
+      router.push("/dashboard");
+    }
     router.refresh();
     return true;
   }

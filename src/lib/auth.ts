@@ -3,6 +3,7 @@ import { randomBytes } from "crypto";
 import { db } from "@/db";
 import { users, sessions } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { getAllUserRoles } from "@/lib/user-roles";
 
 export type Role = "admin" | "petugas" | "checker";
 
@@ -34,7 +35,7 @@ export async function buatSesi(userId: number) {
   return { token, kedaluwarsa };
 }
 
-export async function ambilUserDariSesi(token: string | undefined) {
+export async function ambilUserDariSesi(token: string | undefined, activeRole?: string) {
   if (!token) return null;
 
   const [sesi] = await db.select().from(sessions).where(eq(sessions.token, token));
@@ -49,7 +50,17 @@ export async function ambilUserDariSesi(token: string | undefined) {
   const [user] = await db.select().from(users).where(eq(users.id, sesi.userId));
   if (!user || !user.aktif) return null;
 
-  return user;
+  const allRoles = getAllUserRoles(user);
+  let selectedRole = allRoles[0] || "petugas";
+  if (activeRole && allRoles.includes(activeRole as Role)) {
+    selectedRole = activeRole as Role;
+  }
+
+  return {
+    ...user,
+    role: selectedRole,
+    roles: allRoles,
+  };
 }
 
 export async function hapusSesi(token: string | undefined) {

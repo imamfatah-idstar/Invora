@@ -38,7 +38,7 @@ export default async function DaftarPengajuan() {
 
   return (
     <>
-      <Topbar nama={userLogin.nama} role={userLogin.role} email={userLogin.email} />
+      <Topbar nama={userLogin.nama} role={userLogin.role} email={userLogin.email} roles={userLogin.roles} />
       <main className="page">
         <a href="/dashboard" className="back-link">&larr; Dashboard</a>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>

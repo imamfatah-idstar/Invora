@@ -11,7 +11,7 @@ export async function wajibRoleApi(rolesDiizinkan: Role[]): Promise<NextResponse
   if (!user) {
     return NextResponse.json({ error: "Belum login." }, { status: 401 });
   }
-  const allowed = rolesDiizinkan.some((r) => isAuthorizedForRole(user.email, r) || user.role === r);
+  const allowed = rolesDiizinkan.includes(user.role as Role);
   if (!allowed) {
     return NextResponse.json({ error: "Tidak berwenang untuk aksi ini." }, { status: 403 });
   }

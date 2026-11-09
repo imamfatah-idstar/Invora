@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { cekKataSandi, buatSesi, hashKataSandi } from "@/lib/auth";
-import { getAuthorizedProfile, getCleanDisplayName } from "@/lib/user-roles";
+import { getAllUserRoles, getAuthorizedProfile, getCleanDisplayName } from "@/lib/user-roles";
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
         nama: authProfile.nama,
         email: authProfile.email,
         passwordHash: passwordHash,
-        role: authProfile.primaryRole,
+        role: authProfile.roles.join(","),
         aktif: true,
       })
       .returning();
@@ -62,12 +62,20 @@ export async function POST(request: NextRequest) {
   }
 
   const { token, kedaluwarsa } = await buatSesi(user.id);
-
+  const allRoles = getAllUserRoles(user);
   const cleanName = getCleanDisplayName(user.email, user.nama);
+
+  const multipleRoles = allRoles.length > 1;
+  const initialRole = allRoles[0] || "petugas";
+
   const response = NextResponse.json({
+    sukses: true,
+    multipleRoles,
     nama: cleanName,
-    role: user.role,
+    role: initialRole,
+    roles: allRoles,
   });
+
   response.cookies.set("sesi_token", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -75,5 +83,14 @@ export async function POST(request: NextRequest) {
     path: "/",
     expires: kedaluwarsa,
   });
+
+  response.cookies.set("sesi_role", initialRole, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    expires: kedaluwarsa,
+  });
+
   return response;
 }

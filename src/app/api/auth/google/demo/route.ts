@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { apakahEmailIdstarGroup, DOMAIN_DIIZINKAN } from "@/lib/google-auth";
 import { buatSesi, hashKataSandi } from "@/lib/auth";
 import { catatAudit } from "@/lib/audit";
-import { getAuthorizedProfile, getCleanDisplayName } from "@/lib/user-roles";
+import { getAllUserRoles, getAuthorizedProfile, getCleanDisplayName } from "@/lib/user-roles";
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
@@ -76,16 +76,29 @@ export async function POST(request: NextRequest) {
   }
 
   const { token, kedaluwarsa } = await buatSesi(user.id);
+  const allRoles = getAllUserRoles(user);
   const cleanName = getCleanDisplayName(user.email, user.nama);
+  const multipleRoles = allRoles.length > 1;
+  const initialRole = allRoles[0] || "petugas";
 
   const response = NextResponse.json({
     ok: true,
+    multipleRoles,
     nama: cleanName,
-    role: user.role,
+    role: initialRole,
+    roles: allRoles,
     email: user.email,
   });
 
   response.cookies.set("sesi_token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    expires: kedaluwarsa,
+  });
+
+  response.cookies.set("sesi_role", initialRole, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
