@@ -8,7 +8,6 @@ import { useState, useEffect, useRef } from "react";
 type AkunDemo = {
   role: "admin" | "checker" | "petugas";
   label: string;
-  badge: string;
   email: string;
   color: string;
   bgLight: string;
@@ -19,7 +18,6 @@ const DAFTAR_AKUN_DEMO: AkunDemo[] = [
   {
     role: "admin",
     label: "Admin",
-    badge: "Full Access",
     email: "admin@contoh.local",
     color: "#6366f1",
     bgLight: "#eef2ff",
@@ -28,7 +26,6 @@ const DAFTAR_AKUN_DEMO: AkunDemo[] = [
   {
     role: "checker",
     label: "Checker",
-    badge: "Verification",
     email: "checker@contoh.local",
     color: "#0284c7",
     bgLight: "#f0f9ff",
@@ -37,7 +34,6 @@ const DAFTAR_AKUN_DEMO: AkunDemo[] = [
   {
     role: "petugas",
     label: "Petugas",
-    badge: "Data Entry",
     email: "petugas@contoh.local",
     color: "#059669",
     bgLight: "#ecfdf5",
@@ -470,30 +466,9 @@ export default function LoginClient() {
                           )}
                         </div>
 
-                        {/* Title, Badge & Email (Tanpa Deskripsi Panjang) */}
-                        <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, flexWrap: "wrap" }}>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>
-                            {item.label}
-                          </span>
-                          <span
-                            style={{
-                              fontSize: 9.5,
-                              fontWeight: 700,
-                              padding: "1px 5px",
-                              borderRadius: 4,
-                              background: item.bgLight,
-                              color: item.color,
-                              border: `1px solid ${item.borderLight}`,
-                              textTransform: "uppercase",
-                              letterSpacing: "0.02em",
-                            }}
-                          >
-                            {item.badge}
-                          </span>
-                          <span style={{ fontSize: 11.5, color: "#94a3b8" }}>
-                            ({item.email})
-                          </span>
-                        </div>
+                        <span style={{ fontSize: 13.5, fontWeight: 700, color: "#0f172a" }}>
+                          {item.label}
+                        </span>
                       </div>
 
                       {/* Right Action / Arrow */}
