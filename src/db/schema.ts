@@ -27,6 +27,16 @@ export const sessions = pgTable("sessions", {
   kedaluwarsaPada: text("kedaluwarsa_pada").notNull(),
 });
 
+// Token reset kata sandi via email
+export const passwordResets = pgTable("password_resets", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull(),
+  token: text("token").notNull().unique(),
+  kedaluwarsaPada: text("kedaluwarsa_pada").notNull(),
+  sudahDipakai: boolean("sudah_dipakai").notNull().default(false),
+  dibuatPada: text("dibuat_pada").notNull().default(sql`now()::text`),
+});
+
 // =========================================================================
 // DATA REFERENSI (dikelola Petugas Pengajuan dan Konfirmasi — lihat bagian 18
 // PROJECT_INSTRUCTIONS.md; Kalender Kerja tetap dikelola Administrator)

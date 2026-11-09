@@ -59,6 +59,14 @@ export default function LoginClient() {
   const [demoDropdownOpen, setDemoDropdownOpen] = useState(false);
   const demoDropdownRef = useRef<HTMLDivElement>(null);
 
+  // State Modal Lupa Password via Email
+  const [bukaModalLupaPassword, setBukaModalLupaPassword] = useState(false);
+  const [emailLupa, setEmailLupa] = useState("");
+  const [lupaLoading, setLupaLoading] = useState(false);
+  const [lupaError, setLupaError] = useState<string | null>(null);
+  const [lupaSukses, setLupaSukses] = useState<{ message: string; devPreviewUrl?: string } | null>(null);
+  const [notifSukses, setNotifSukses] = useState<string | null>(null);
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (demoDropdownRef.current && !demoDropdownRef.current.contains(event.target as Node)) {
@@ -78,13 +86,17 @@ export default function LoginClient() {
     };
   }, []);
 
-  // Tangkap pesan error dari URL callback (misal penolakan domain bukan @idstar.group)
+  // Tangkap pesan error / sukses dari URL callback
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const err = params.get("error");
       if (err) {
         setError(decodeURIComponent(err));
+      }
+      const resetSuccess = params.get("resetSuccess");
+      if (resetSuccess) {
+        setNotifSukses("Kata sandi berhasil diperbarui! Silakan masuk dengan kata sandi baru Anda.");
       }
     }
   }, []);
@@ -129,6 +141,37 @@ export default function LoginClient() {
     }
     await prosesLogin(demoEmail, "contoh123");
     setDemoLoading(null);
+  }
+
+  async function handleMintaResetPassword(e: React.FormEvent) {
+    e.preventDefault();
+    setLupaError(null);
+    setLupaSukses(null);
+    setLupaLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/minta-reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailLupa }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setLupaError(data.error ?? "Gagal mengirim tautan reset.");
+        setLupaLoading(false);
+        return;
+      }
+
+      setLupaSukses({
+        message: data.message,
+        devPreviewUrl: data.devPreviewUrl,
+      });
+      setLupaLoading(false);
+    } catch {
+      setLupaError("Terjadi kesalahan jaringan.");
+      setLupaLoading(false);
+    }
   }
 
   return (
@@ -180,6 +223,23 @@ export default function LoginClient() {
 
           {/* Form Login Manual */}
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {notifSukses && (
+              <div
+                style={{
+                  padding: "10px 14px",
+                  borderRadius: 6,
+                  background: "#ecfdf5",
+                  color: "#065f46",
+                  border: "1px solid #a7f3d0",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  textAlign: "center",
+                }}
+              >
+                ✓ {notifSukses}
+              </div>
+            )}
+
             <div className="field">
               <label style={{ fontSize: 13, fontWeight: 600 }}>Email Address</label>
               <input
@@ -191,7 +251,30 @@ export default function LoginClient() {
               />
             </div>
             <div className="field">
-              <label style={{ fontSize: 13, fontWeight: 600 }}>Password</label>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <label style={{ fontSize: 13, fontWeight: 600 }}>Password</label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmailLupa(email.trim());
+                    setLupaError(null);
+                    setLupaSukses(null);
+                    setBukaModalLupaPassword(true);
+                  }}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    padding: 0,
+                    fontSize: 12,
+                    color: "var(--color-primary, #ea242a)",
+                    cursor: "pointer",
+                    fontWeight: 600,
+                    textDecoration: "underline",
+                  }}
+                >
+                  Lupa Password?
+                </button>
+              </div>
               <input
                 type="password"
                 placeholder="••••••••"
@@ -475,6 +558,201 @@ export default function LoginClient() {
           </div>
         </div>
       </div>
+
+      {/* Modal Lupa Password via Email */}
+      {bukaModalLupaPassword && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.6)",
+            backdropFilter: "blur(4px)",
+            zIndex: 100,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !lupaLoading) {
+              setBukaModalLupaPassword(false);
+            }
+          }}
+        >
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: 14,
+              maxWidth: 440,
+              width: "100%",
+              padding: "24px 26px",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+              border: "1px solid #e2e8f0",
+              animation: "demoFadeIn 0.2s ease-out",
+            }}
+          >
+            {/* Header Modal */}
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 14, marginBottom: 16 }}>
+              <div
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 10,
+                  background: "rgba(234, 36, 42, 0.1)",
+                  color: "#ea242a",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+              </div>
+              <div style={{ flex: 1 }}>
+                <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#0f172a" }}>
+                  Lupa Kata Sandi?
+                </h3>
+                <p style={{ margin: "4px 0 0", fontSize: 13, color: "#64748b", lineHeight: 1.45 }}>
+                  Masukkan email akun terdaftar Anda. Sistem akan mengirimkan instruksi dan tautan aman untuk reset kata sandi.
+                </p>
+              </div>
+            </div>
+
+            {/* Konten Form / Sukses */}
+            {lupaSukses ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 14, marginTop: 8 }}>
+                <div
+                  style={{
+                    padding: "12px 14px",
+                    borderRadius: 8,
+                    background: "#ecfdf5",
+                    border: "1px solid #a7f3d0",
+                    color: "#065f46",
+                    fontSize: 13,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  <div style={{ fontWeight: 700, marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    Tautan Reset Berhasil Dikirim!
+                  </div>
+                  <div>{lupaSukses.message}</div>
+                </div>
+
+                {lupaSukses.devPreviewUrl && (
+                  <div
+                    style={{
+                      padding: "10px 12px",
+                      borderRadius: 8,
+                      background: "#f8fafc",
+                      border: "1px dashed #cbd5e1",
+                      fontSize: 12,
+                      color: "#475569",
+                    }}
+                  >
+                    <div style={{ fontWeight: 600, color: "#0f172a", marginBottom: 4 }}>
+                      Mode Pratinjau (SMTP belum dikonfigurasi):
+                    </div>
+                    <a
+                      href={lupaSukses.devPreviewUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: "inline-block",
+                        marginTop: 4,
+                        padding: "6px 12px",
+                        background: "#ea242a",
+                        color: "#fff",
+                        borderRadius: 6,
+                        textDecoration: "none",
+                        fontWeight: 600,
+                        fontSize: 12,
+                      }}
+                    >
+                      Buka Tautan Reset Sekarang &rarr;
+                    </a>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBukaModalLupaPassword(false);
+                    setLupaSukses(null);
+                  }}
+                  className="btn btn-secondary"
+                  style={{ width: "100%", justifyContent: "center", padding: 10, marginTop: 6 }}
+                >
+                  Kembali ke Halaman Masuk
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleMintaResetPassword} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                {lupaError && (
+                  <div
+                    style={{
+                      padding: "10px 12px",
+                      borderRadius: 6,
+                      background: "#fef2f2",
+                      border: "1px solid #fecaca",
+                      color: "#991b1b",
+                      fontSize: 13,
+                    }}
+                  >
+                    {lupaError}
+                  </div>
+                )}
+
+                <div className="field">
+                  <label style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>Email Akun</label>
+                  <input
+                    type="email"
+                    placeholder="nama@idstar.group atau nama@contoh.local"
+                    value={emailLupa}
+                    onChange={(e) => setEmailLupa(e.target.value)}
+                    required
+                    disabled={lupaLoading}
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      borderRadius: 6,
+                      border: "1px solid #cbd5e1",
+                      fontSize: 13.5,
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 8 }}>
+                  <button
+                    type="button"
+                    disabled={lupaLoading}
+                    onClick={() => setBukaModalLupaPassword(false)}
+                    className="btn btn-secondary"
+                    style={{ padding: "9px 16px", fontSize: 13 }}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={lupaLoading}
+                    className="btn btn-primary"
+                    style={{ padding: "9px 18px", fontSize: 13, fontWeight: 700 }}
+                  >
+                    {lupaLoading ? "Mengirim..." : "Kirim Tautan Reset"}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </main>
   );
 }
