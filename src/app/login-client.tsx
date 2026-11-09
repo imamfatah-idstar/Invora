@@ -48,9 +48,6 @@ export default function LoginClient() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [demoLoading, setDemoLoading] = useState<string | null>(null);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [googleDemoModal, setGoogleDemoModal] = useState(false);
-  const [customGoogleEmail, setCustomGoogleEmail] = useState("imam.fatah2@idstar.group");
   const [demoDropdownOpen, setDemoDropdownOpen] = useState(false);
   const demoDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -119,30 +116,6 @@ export default function LoginClient() {
     }
     await prosesLogin(demoEmail, "contoh123");
     setDemoLoading(null);
-  }
-
-  async function handleGoogleDemoSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setGoogleLoading(true);
-
-    const res = await fetch("/api/auth/google/demo", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: customGoogleEmail }),
-    });
-
-    setGoogleLoading(false);
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      setError(data.error ?? "Failed to sign in with Google account.");
-      return;
-    }
-
-    setGoogleDemoModal(false);
-    router.push("/dashboard");
-    router.refresh();
   }
 
   return (
@@ -489,130 +462,6 @@ export default function LoginClient() {
           </div>
         </div>
       </div>
-
-      {/* Modal Simulasi Akun Google IDStar */}
-      {googleDemoModal && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(15, 23, 42, 0.65)",
-            backdropFilter: "blur(4px)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 9999,
-            padding: 16,
-          }}
-        >
-          <div
-            className="card"
-            style={{
-              maxWidth: 440,
-              width: "100%",
-              background: "#ffffff",
-              borderRadius: 14,
-              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2)",
-              padding: "24px 22px",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-              <div style={{ fontSize: 24 }}>🛡️</div>
-              <div>
-                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#0f172a" }}>
-                  IDStar Google Account Verification
-                </h3>
-                <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
-                  Official Domain: <b>@idstar.group</b>
-                </div>
-              </div>
-            </div>
-
-            <p style={{ fontSize: 13, color: "var(--color-text-muted)", lineHeight: 1.5, marginBottom: 16 }}>
-              INVORA applies centralized domain security: <b>Only emails ending with @idstar.group</b> are authorized to access the system. Public domains such as @gmail.com will be rejected automatically.
-            </p>
-
-            <form onSubmit={handleGoogleDemoSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <div className="field">
-                <label style={{ fontSize: 12.5, fontWeight: 600 }}>Google Email Address</label>
-                <input
-                  type="email"
-                  value={customGoogleEmail}
-                  onChange={(e) => setCustomGoogleEmail(e.target.value)}
-                  placeholder="name@idstar.group"
-                  required
-                  style={{ width: "100%", padding: "9px 12px" }}
-                />
-              </div>
-
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", fontSize: 11.5 }}>
-                <span style={{ color: "var(--color-text-muted)", width: "100%", marginBottom: 2 }}>Quick Select Account:</span>
-                <button
-                  type="button"
-                  onClick={() => setCustomGoogleEmail("dewi.ani@idstar.group")}
-                  style={{ background: "#eff6ff", border: "1px solid #bfdbfe", color: "#1e40af", padding: "3px 8px", borderRadius: 4, cursor: "pointer", fontSize: 11 }}
-                >
-                  dewi.ani@idstar.group (Checker & Admin)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCustomGoogleEmail("muhammad.miqdam@idstar.group")}
-                  style={{ background: "#eff6ff", border: "1px solid #bfdbfe", color: "#1e40af", padding: "3px 8px", borderRadius: 4, cursor: "pointer", fontSize: 11 }}
-                >
-                  muhammad.miqdam@idstar.group (Checker)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCustomGoogleEmail("imam.fatah@idstar.group")}
-                  style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b", padding: "3px 8px", borderRadius: 4, cursor: "pointer", fontSize: 11 }}
-                >
-                  imam.fatah@idstar.group (Input & Admin)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCustomGoogleEmail("nitia.cahyaningrum@idstar.group")}
-                  style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b", padding: "3px 8px", borderRadius: 4, cursor: "pointer", fontSize: 11 }}
-                >
-                  nitia.cahyaningrum@idstar.group (Input)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCustomGoogleEmail("rihhadatul.syam@idstar.group")}
-                  style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b", padding: "3px 8px", borderRadius: 4, cursor: "pointer", fontSize: 11 }}
-                >
-                  rihhadatul.syam@idstar.group (Input)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCustomGoogleEmail("external.user@gmail.com")}
-                  style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#4b5563", padding: "3px 8px", borderRadius: 4, cursor: "pointer", fontSize: 11 }}
-                >
-                  ✕ user@gmail.com (Test Reject)
-                </button>
-              </div>
-
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 14 }}>
-                <button
-                  type="button"
-                  onClick={() => setGoogleDemoModal(false)}
-                  className="btn"
-                  style={{ padding: "8px 14px" }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={googleLoading}
-                  className="btn btn-primary"
-                  style={{ padding: "8px 16px" }}
-                >
-                  {googleLoading ? "Verifying..." : "Proceed to Sign In"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </main>
   );
 }
