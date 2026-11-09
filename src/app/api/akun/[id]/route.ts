@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { wajibRoleApi } from "@/lib/require-role-api";
 import { userSaatIni } from "@/lib/session-server";
 import { catatAudit } from "@/lib/audit";
+import { hashKataSandi } from "@/lib/auth";
 
 const ROLE_VALID = ["admin", "petugas", "checker"];
 
@@ -20,8 +21,16 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   }
 
   const body = await request.json().catch(() => null);
-  const perubahan: { role?: string; aktif?: boolean } = {};
+  const perubahan: { role?: string; aktif?: boolean; passwordHash?: string } = {};
   const catatan: string[] = [];
+
+  if (body?.kataSandi !== undefined) {
+    if (typeof body.kataSandi !== "string" || body.kataSandi.trim().length < 8) {
+      return NextResponse.json({ error: "Kata sandi baru minimal 8 karakter." }, { status: 400 });
+    }
+    perubahan.passwordHash = await hashKataSandi(body.kataSandi.trim());
+    catatan.push("reset kata sandi baru");
+  }
 
   let selectedRoles: string[] | null = null;
   if (Array.isArray(body?.roles)) {

@@ -1,5 +1,6 @@
 import Logo from "./logo";
 import TombolKeluarTopbar from "./tombol-keluar-topbar";
+import ModalGantiPassword from "./modal-ganti-password";
 import { labelRole } from "@/lib/role-label";
 import { getCleanDisplayName } from "@/lib/user-roles";
 
@@ -51,6 +52,7 @@ export default function Topbar({
             </a>
           )}
         </div>
+        <ModalGantiPassword />
         <TombolKeluarTopbar />
       </div>
     </div>
