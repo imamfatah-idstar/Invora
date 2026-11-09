@@ -845,7 +845,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (!itemsList || itemsList.length === 0) {
       if (rincian && rincian.length > 0) {
         itemsList = rincian.map((r, idx) => {
-          const slip = header.nomorGrSlip || "2000565039";
+          const slip = (header as any).nomorGrSlip || "2000565039";
           const lineStr = String(r.nomorLine || idx + 1).padStart(5, "0");
           const year = thnStr || "2026";
           const nominal = formatGrNominal(r.hasilHitung);

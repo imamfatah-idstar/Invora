@@ -12,7 +12,7 @@ import {
 
 type LineItemData = {
   namaPersonel: string;
-  nomorLine?: string | null;
+  nomorLine?: string | number | null;
   deskripsiLine?: string | null;
   hasilHitung: string | number;
   hariKerjaDapatDitagihkan: number;

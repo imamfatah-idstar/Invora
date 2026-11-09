@@ -1,0 +1,52 @@
+name: Invora Automated Security Pipeline
+
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+    branches: [main, staging]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  security-verification:
+    name: Static Analysis, Dependency Audit & Security Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install Dependencies Cleanly
+        run: npm ci --ignore-scripts
+
+      - name: Audit Kerentanan Dependensi (npm audit)
+        run: npm audit --audit-level=high
+
+      - name: Verifikasi Tipe Ketat TypeScript (Type-Safety Gate)
+        run: npx tsc --noEmit
+
+      - name: Pemeriksaan Pola Berbahaya (Custom Security Pattern Check)
+        run: |
+          echo "Memeriksa penggunaan sql.raw() tanpa audit..."
+          if grep -rn "sql\.raw(" src/; then
+            echo "PERINGATAN: Ditemukan penggunaan sql.raw() di direktori src/. Pastikan tidak ada input pengguna yang digabungkan secara langsung."
+            exit 1
+          fi
+          echo "Memeriksa penggunaan dangerouslySetInnerHTML..."
+          if grep -rn "dangerouslySetInnerHTML" src/; then
+            echo "PERINGATAN: Ditemukan dangerouslySetInnerHTML. Gunakan komponen React yang aman."
+            exit 1
+          fi
+
+      - name: Jalankan Security Unit Tests (Vitest)
+        run: npx vitest run src/__tests__/security-invora.test.ts
+

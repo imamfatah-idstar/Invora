@@ -6,14 +6,43 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 
 type AkunDemo = {
-  label: "admin" | "checker" | "input";
+  role: "admin" | "checker" | "petugas";
+  label: string;
+  badge: string;
   email: string;
+  color: string;
+  bgLight: string;
+  borderLight: string;
 };
 
 const DAFTAR_AKUN_DEMO: AkunDemo[] = [
-  { label: "admin", email: "admin@contoh.local" },
-  { label: "checker", email: "checker@contoh.local" },
-  { label: "input", email: "petugas@contoh.local" },
+  {
+    role: "admin",
+    label: "Admin",
+    badge: "Full Access",
+    email: "admin@contoh.local",
+    color: "#6366f1",
+    bgLight: "#eef2ff",
+    borderLight: "#c7d2fe",
+  },
+  {
+    role: "checker",
+    label: "Checker",
+    badge: "Verification",
+    email: "checker@contoh.local",
+    color: "#0284c7",
+    bgLight: "#f0f9ff",
+    borderLight: "#bae6fd",
+  },
+  {
+    role: "petugas",
+    label: "Petugas",
+    badge: "Data Entry",
+    email: "petugas@contoh.local",
+    color: "#059669",
+    bgLight: "#ecfdf5",
+    borderLight: "#a7f3d0",
+  },
 ];
 
 export default function LoginClient() {
@@ -35,8 +64,17 @@ export default function LoginClient() {
         setDemoDropdownOpen(false);
       }
     }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setDemoDropdownOpen(false);
+      }
+    }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
   // Tangkap pesan error dari URL callback (misal penolakan domain bukan @idstar.group)
@@ -80,6 +118,9 @@ export default function LoginClient() {
     setDemoLoading(demoEmail);
     setEmail(demoEmail);
     setKataSandi("contoh123");
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
     await prosesLogin(demoEmail, "contoh123");
     setDemoLoading(null);
   }
@@ -230,67 +271,105 @@ export default function LoginClient() {
                   @idstar.group
                 </span>
               </a>
-
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11.5, color: "var(--color-text-muted)" }}>
-                <span>🔒 Domain locked: <b>.idstar.group</b></span>
-                <button
-                  type="button"
-                  onClick={() => setGoogleDemoModal(true)}
-                  style={{ background: "none", border: "none", color: "var(--color-primary, #ea242a)", textDecoration: "underline", cursor: "pointer", fontSize: 11.5, padding: 0 }}
-                >
-                  ⚡ Try IDStar Google Account
-                </button>
-              </div>
             </div>
           </form>
 
           {/* Pemisah Demo */}
           <div style={{ display: "flex", alignItems: "center", margin: "22px 0 14px", gap: 12 }}>
-            <div style={{ flex: 1, height: 1, background: "var(--color-border)" }} />
-            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              ⚡ 1-Click Demo Login
+            <div style={{ flex: 1, height: 1, background: "var(--color-border, #e2e8f0)" }} />
+            <span style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              DEMO SANDBOX ACCESS
             </span>
-            <div style={{ flex: 1, height: 1, background: "var(--color-border)" }} />
+            <div style={{ flex: 1, height: 1, background: "var(--color-border, #e2e8f0)" }} />
           </div>
 
-          {/* Dropdown Akun Demo */}
+          {/* Select Demo Account Container */}
           <div ref={demoDropdownRef} style={{ position: "relative" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: "#475569" }}>
+                Select Demo Account
+              </label>
+              <span style={{ fontSize: 11, color: "#94a3b8" }}>
+                ⚡ 1-Click Instant Sign-In
+              </span>
+            </div>
+
+            {/* Select Trigger Box */}
             <button
               type="button"
               disabled={loading || Boolean(demoLoading)}
               onClick={() => setDemoDropdownOpen((prev) => !prev)}
+              aria-haspopup="listbox"
+              aria-expanded={demoDropdownOpen}
               style={{
                 width: "100%",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
                 padding: "10px 14px",
-                background: "#ffffff",
-                border: "1px solid var(--color-border)",
+                background: demoDropdownOpen ? "#f8fafc" : "#ffffff",
+                border: `1.5px solid ${demoDropdownOpen ? "var(--color-primary, #ea242a)" : "#cbd5e1"}`,
                 borderRadius: 8,
-                fontSize: 13,
-                fontWeight: 600,
-                color: "#374151",
+                fontSize: 13.5,
+                fontWeight: 500,
+                color: "#1e293b",
                 cursor: "pointer",
                 transition: "all 0.15s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = "var(--color-primary, #ea242a)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = "var(--color-border)";
+                boxShadow: demoDropdownOpen ? "0 0 0 3px rgba(234, 36, 42, 0.08)" : "0 1px 2px rgba(0,0,0,0.04)",
               }}
             >
-              <span>{demoLoading ? `Signing in as ${demoLoading}...` : "Select Demo Account"}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, overflow: "hidden" }}>
+                {demoLoading ? (
+                  <span
+                    style={{
+                      display: "inline-block",
+                      width: 15,
+                      height: 15,
+                      border: "2px solid #ea242a",
+                      borderTopColor: "transparent",
+                      borderRadius: "50%",
+                      animation: "spin 0.6s linear infinite",
+                      flexShrink: 0,
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: 6,
+                      background: "#f1f5f9",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "#64748b",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
+                  </div>
+                )}
+                <span style={{ fontWeight: 600, color: demoLoading ? "var(--color-primary, #ea242a)" : "#334155", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {demoLoading
+                    ? `Signing in as ${DAFTAR_AKUN_DEMO.find((d) => d.email === demoLoading)?.label || demoLoading}...`
+                    : "Choose role (Admin, Checker, Petugas)..."}
+                </span>
+              </div>
+
               <svg
                 width="16"
                 height="16"
                 viewBox="0 0 20 20"
                 fill="currentColor"
                 style={{
-                  transform: demoDropdownOpen ? "rotate(180deg)" : "rotate(0deg)",
+                  transform: demoDropdownOpen ? "rotate(0deg)" : "rotate(180deg)",
                   transition: "transform 0.2s ease",
-                  color: "#6b7280",
+                  color: "#64748b",
+                  flexShrink: 0,
+                  marginLeft: 8,
                 }}
               >
                 <path
@@ -301,29 +380,31 @@ export default function LoginClient() {
               </svg>
             </button>
 
+            {/* Dropdown Options List — Arahkan ke Atas (Dropup) */}
             {demoDropdownOpen && (
               <div
                 style={{
                   position: "absolute",
-                  top: "calc(100% + 6px)",
+                  bottom: "calc(100% + 6px)",
                   left: 0,
                   right: 0,
                   background: "#ffffff",
-                  border: "1px solid var(--color-border)",
-                  borderRadius: 8,
-                  boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08)",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 10,
+                  boxShadow: "0 -10px 25px -5px rgba(15, 23, 42, 0.12), 0 -4px 10px -2px rgba(15, 23, 42, 0.04)",
                   zIndex: 50,
                   display: "flex",
                   flexDirection: "column",
-                  padding: "6px",
-                  gap: "4px",
+                  padding: "5px",
+                  gap: "3px",
+                  animation: "demoFadeIn 0.15s ease-out",
                 }}
               >
                 {DAFTAR_AKUN_DEMO.map((item) => {
                   const isItemLoading = demoLoading === item.email;
                   return (
                     <button
-                      key={item.label}
+                      key={item.role}
                       type="button"
                       disabled={loading || Boolean(demoLoading)}
                       onClick={() => {
@@ -332,42 +413,104 @@ export default function LoginClient() {
                       }}
                       style={{
                         width: "100%",
-                        padding: "10px 14px",
-                        background: isItemLoading ? "#f3f4f6" : "transparent",
-                        border: "none",
+                        padding: "8px 10px",
+                        background: isItemLoading ? "#f1f5f9" : "transparent",
+                        border: "1px solid transparent",
                         borderRadius: 6,
                         textAlign: "left",
-                        fontSize: 13.5,
-                        fontWeight: 600,
-                        color: "#1f2937",
                         cursor: "pointer",
-                        transition: "all 0.15s ease",
+                        transition: "all 0.12s ease",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
+                        gap: 10,
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = "#f3f4f6";
-                        e.currentTarget.style.color = "var(--color-primary, #ea242a)";
+                        e.currentTarget.style.background = "#f8fafc";
+                        e.currentTarget.style.borderColor = "#e2e8f0";
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.background = "transparent";
-                        e.currentTarget.style.color = "#1f2937";
+                        e.currentTarget.style.background = isItemLoading ? "#f1f5f9" : "transparent";
+                        e.currentTarget.style.borderColor = "transparent";
                       }}
                     >
-                      <span>{item.label}</span>
-                      {isItemLoading && (
-                        <span style={{ fontSize: 11, color: "var(--color-text-muted)" }}>Signing in...</span>
-                      )}
+                      <div style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0 }}>
+                        {/* Avatar Role Icon */}
+                        <div
+                          style={{
+                            width: 28,
+                            height: 28,
+                            borderRadius: "50%",
+                            background: item.bgLight,
+                            border: `1px solid ${item.borderLight}`,
+                            color: item.color,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                          }}
+                        >
+                          {item.role === "admin" && (
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                            </svg>
+                          )}
+                          {item.role === "checker" && (
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                              <polyline points="22 4 12 14.01 9 11.01" />
+                            </svg>
+                          )}
+                          {item.role === "petugas" && (
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                            </svg>
+                          )}
+                        </div>
+
+                        {/* Title, Badge & Email (Tanpa Deskripsi Panjang) */}
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, flexWrap: "wrap" }}>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>
+                            {item.label}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: 9.5,
+                              fontWeight: 700,
+                              padding: "1px 5px",
+                              borderRadius: 4,
+                              background: item.bgLight,
+                              color: item.color,
+                              border: `1px solid ${item.borderLight}`,
+                              textTransform: "uppercase",
+                              letterSpacing: "0.02em",
+                            }}
+                          >
+                            {item.badge}
+                          </span>
+                          <span style={{ fontSize: 11.5, color: "#94a3b8" }}>
+                            ({item.email})
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Right Action / Arrow */}
+                      <div style={{ flexShrink: 0, display: "flex", alignItems: "center", color: "#94a3b8" }}>
+                        {isItemLoading ? (
+                          <span style={{ fontSize: 11, color: "var(--color-primary, #ea242a)", fontWeight: 600 }}>Signing in...</span>
+                        ) : (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="9 18 15 12 9 6" />
+                          </svg>
+                        )}
+                      </div>
                     </button>
                   );
                 })}
               </div>
             )}
-          </div>
-
-          <div style={{ textAlign: "center", marginTop: 16, fontSize: 11, color: "var(--color-text-muted)" }}>
-            Automatic demo password: <code>contoh123</code>
           </div>
         </div>
       </div>
