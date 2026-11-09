@@ -12,11 +12,13 @@ export async function kirimEmailResetPassword({
   nama,
   resetUrl,
 }: KirimEmailResetParams): Promise<{ sukses: boolean; error?: string; devPreviewUrl?: string }> {
-  const host = process.env.SMTP_HOST;
-  const port = Number(process.env.SMTP_PORT) || 587;
+  const service = process.env.SMTP_SERVICE; // misal "gmail"
   const user = process.env.SMTP_USER || process.env.EMAIL_USER;
   const pass = process.env.SMTP_PASS || process.env.EMAIL_PASS;
-  const from = process.env.SMTP_FROM || `"INVORA IDStar" <noreply@idstar.group>`;
+  const host = process.env.SMTP_HOST || (service === "gmail" || user?.includes("@gmail.com") ? "smtp.gmail.com" : undefined);
+  const port = Number(process.env.SMTP_PORT) || (host === "smtp.gmail.com" ? 465 : 587);
+  const secure = process.env.SMTP_SECURE ? process.env.SMTP_SECURE === "true" : port === 465;
+  const from = process.env.SMTP_FROM || `"INVORA IDStar" <${user || "noreply@idstar.group"}>`;
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -72,15 +74,23 @@ export async function kirimEmailResetPassword({
 </html>
 `;
 
-  // Jika konfigurasi SMTP tersedia
-  if (host && user && pass) {
+  // Jika konfigurasi SMTP / Google Workspace tersedia
+  if ((host || service) && user && pass) {
     try {
-      const transporter = nodemailer.createTransport({
-        host,
-        port,
-        secure: port === 465,
-        auth: { user, pass },
-      });
+      const transporter = service
+        ? nodemailer.createTransport({
+            service,
+            auth: { user, pass },
+          })
+        : nodemailer.createTransport({
+            host,
+            port,
+            secure,
+            auth: { user, pass },
+            tls: {
+              rejectUnauthorized: false,
+            },
+          });
 
       await transporter.sendMail({
         from,
@@ -104,5 +114,42 @@ export async function kirimEmailResetPassword({
     sukses: true,
     devPreviewUrl: resetUrl,
   };
+}
+
+/**
+ * Helper untuk memverifikasi koneksi SMTP
+ */
+export async function verifikasiKoneksiSMTP(): Promise<{ terhubung: boolean; pesan: string }> {
+  const service = process.env.SMTP_SERVICE;
+  const user = process.env.SMTP_USER || process.env.EMAIL_USER;
+  const pass = process.env.SMTP_PASS || process.env.EMAIL_PASS;
+  const host = process.env.SMTP_HOST || (service === "gmail" || user?.includes("@gmail.com") ? "smtp.gmail.com" : undefined);
+  const port = Number(process.env.SMTP_PORT) || (host === "smtp.gmail.com" ? 465 : 587);
+  const secure = process.env.SMTP_SECURE ? process.env.SMTP_SECURE === "true" : port === 465;
+
+  if ((!host && !service) || !user || !pass) {
+    return {
+      terhubung: false,
+      pesan: "Konfigurasi SMTP belum lengkap. Wajib menyertakan SMTP_USER dan SMTP_PASS.",
+    };
+  }
+
+  try {
+    const transporter = service
+      ? nodemailer.createTransport({ service, auth: { user, pass } })
+      : nodemailer.createTransport({
+          host,
+          port,
+          secure,
+          auth: { user, pass },
+          tls: { rejectUnauthorized: false },
+        });
+
+    await transporter.verify();
+    return { terhubung: true, pesan: `Koneksi SMTP berhasil terhubung ke ${host || service} (User: ${user})` };
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : "Koneksi SMTP gagal diverifikasi";
+    return { terhubung: false, pesan: errMsg };
+  }
 }
 
