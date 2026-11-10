@@ -30,7 +30,6 @@ Sistem enterprise internal **PT IDStar Cipta Teknologi** yang dirancang khusus u
    - [Tahap 7: Kontrol Penyelesaian PO (Closing PO) & Rekonsiliasi](#tahap-7-kontrol-penyelesaian-po-closing-po--rekonsiliasi)
    - [Tahap 8: Dashboard Monitoring Outstanding Invoice & Aging Schedule](#tahap-8-dashboard-monitoring-outstanding-invoice--aging-schedule)
    - [Tahap 9: Modul Pencatatan Pelunasan (Payment Settlement)](#tahap-9-modul-pencatatan-pelunasan-payment-settlement)
-   - [Tahap 10: Sistem Pengingat Jatuh Tempo (Automated Email Reminder)](#tahap-10-sistem-pengingat-jatuh-tempo-automated-email-reminder)
 6. [Teknologi & Arsitektur Sistem](#6-teknologi--arsitektur-sistem)
 7. [Struktur Direktori Proyek](#7-struktur-direktori-proyek)
 8. [Panduan Instalasi & Menjalankan Aplikasi](#8-panduan-instalasi--menjalankan-aplikasi)
@@ -330,14 +329,6 @@ Pencatatan pembayaran riil dari rekening koran bank klien di `/pengajuan/[id]`:
    $$\text{Total Terbayar Efektif} = \text{Nominal Diterima} + \text{PPh 23} + \text{Potongan Lain}$$
    $$\text{Sisa Piutang} = \max(0, \text{Total Tagihan Final} - \text{Total Terbayar Efektif})$$
 3. **Penegakan Maker-Checker pada Pelunasan:** Petugas mencatat rincian transfer dan mengunggah bukti bayar, sedangkan Checker mengaudit dan memverifikasi keabsahan dana.
-
----
-
-### Tahap 10: Sistem Pengingat Jatuh Tempo (Automated Email Reminder)
-Modul pengingat pembayaran otomatis dengan 5 tingkat urgensi:
-1. **5 Tingkat Urgensi Template:** H-7 (Peringatan Dini), Hari H / H-0 (Jatuh Tempo Hari Ini), H+7 (Follow-Up I), H+14 (Peringatan II), dan H+30 (Surat Tagihan Formal).
-2. **Rincian Otomatis:** Nomor invoice, faktur pajak, nomor PO, nama proyek, rincian sisa tagihan, dan rekening resmi IDStar (BCA & Mandiri).
-3. **Eksekusi Pengiriman:** Buka langsung di email client lokal (`mailto:`), salin teks cepat, serta pencatatan otomatis ke `reminder_log`.
 
 ---
 

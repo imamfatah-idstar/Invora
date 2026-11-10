@@ -914,24 +914,6 @@ export default function OutstandingView({
                         >
                           Details &rarr;
                         </a>
-                        {item.statusBayar !== "paid" && (
-                          <a
-                            href={`/pengajuan/${item.id}`}
-                            className="btn"
-                            title="Open form & send payment due reminder to client"
-                            style={{
-                              fontSize: 11.5,
-                              padding: "4px 8px",
-                              fontWeight: 600,
-                              whiteSpace: "nowrap",
-                              background: isOverdue ? "#fee2e2" : isDueSoon ? "#fef3c7" : "#f1f5f9",
-                              color: isOverdue ? "#991b1b" : isDueSoon ? "#92400e" : "#334155",
-                              border: `1px solid ${isOverdue ? "#fca5a5" : isDueSoon ? "#fde68a" : "#cbd5e1"}`,
-                            }}
-                          >
-                            ✉️ Remind
-                          </a>
-                        )}
                       </div>
                     </td>
                   </tr>

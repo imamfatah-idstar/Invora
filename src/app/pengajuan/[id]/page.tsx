@@ -15,9 +15,8 @@ import GrRequestPanel from "./gr-request-panel";
 import { alias } from "drizzle-orm/pg-core";
 import { apakahKlienXl } from "@/lib/klien";
 import PembayaranPanel from "./pembayaran-panel";
-import ReminderModal from "./reminder-modal";
 import InvoiceModal from "./invoice-modal";
-import { tambahHari, selisihHari } from "@/lib/aging";
+import { tambahHari } from "@/lib/aging";
 import { isAuthorizedForRole } from "@/lib/user-roles";
 
 const LABEL_STATUS: Record<string, string> = {
@@ -194,11 +193,9 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
   const totalTerbayarVerifikasi = daftarPembayaran
     .filter((p) => p.status === "diverifikasi")
     .reduce((acc, p) => acc + (Number(p.nominalDiterima) || 0) + (Number(p.potonganPph23) || 0) + (Number(p.biayaAdminBank) || 0), 0);
-  const sisaPiutangTagihan = Math.max(0, totalTagihanFinal - totalTerbayarVerifikasi);
 
   const tanggalAcuanTagihan = header.tanggalSubmitInvoice || header.tanggalApproveInvoice || header.tanggalFakturPajak || `${header.periode}-28`;
   const tanggalJatuhTempoTagihan = tambahHari(tanggalAcuanTagihan, 30);
-  const hariTerlambatTagihan = selisihHari(tanggalJatuhTempoTagihan, new Date().toISOString().split("T")[0]);
 
   return (
     <>
@@ -223,23 +220,6 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
               totalTagihan={totalTagihanFinal}
               dpp={header.nilaiGrDisetujui ? Number(header.nilaiGrDisetujui) : total}
               tarifPpn={header.tarifPpn ? Number(header.tarifPpn) : 11}
-            />
-            <ReminderModal
-              pengajuanId={header.id}
-              nomorInvoice={header.nomorInvoice || `DRAF-INV-${header.id}`}
-              nomorFakturPajak={header.nomorFakturPajak}
-              nomorPo={header.nomorPo}
-              namaProyek={header.namaProyek}
-              klien={header.klien || "XL Axiata"}
-              namaPic={header.namaUserXl}
-              kontakPic={header.kontakUserXl}
-              periode={header.periode}
-              tanggalInvoice={tanggalAcuanTagihan}
-              tanggalJatuhTempo={tanggalJatuhTempoTagihan}
-              hariTerlambat={hariTerlambatTagihan}
-              totalTagihan={totalTagihanFinal}
-              terbayar={totalTerbayarVerifikasi}
-              sisaPiutang={sisaPiutangTagihan}
             />
           </div>
         </div>
