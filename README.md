@@ -14,8 +14,6 @@ Sistem enterprise internal **PT IDStar Cipta Teknologi** yang dirancang khusus u
 ## Daftar Isi
 1. [Latar Belakang & Masalah Bisnis](#1-latar-belakang--masalah-bisnis)
 2. [Peran Pengguna & Hak Akses (RBAC)](#2-peran-pengguna--hak-akses-rbac)
-   - [Matriks Hak Akses Akun Resmi](#matriks-hak-akses-akun-resmi-idstar-group)
-   - [Akun Demo 1-Click Dropdown](#akun-demo-1-click-dropdown)
 3. [Arsitektur Diagram Alur Utama (End-to-End Flow)](#3-arsitektur-diagram-alur-utama-end-to-end-flow)
 4. [Siklus Status Pengajuan (State Machine)](#4-siklus-status-pengajuan-state-machine)
 5. [Detail Alur Proses Operasional](#5-detail-alur-proses-operasional)
@@ -73,33 +71,31 @@ Sistem menerapkan prinsip pemisahan wewenang (*Segregation of Duties*) yang dite
   (Dilarang approve pengajuan sendiri)
 ```
 
-### Matriks Hak Akses Akun Resmi (IDStar Group)
+### Pembagian Peran & Tanggung Jawab Operasional
 
-Akses ke masing-masing peran dibatasi secara ketat hanya untuk email-email berikut:
+Sistem mendefinisikan tiga peran utama dengan batasan wewenang yang tegas:
 
-| Peran | Email Resmi | Nama Tampilan | Sapaan Dashboard | Hak Akses Fitur | Password Default |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Checker** | `dewi.ani@idstar.group` | Dewi Ani | **Hai Dewi** | Review & approval pengajuan, cek paket GR, verifikasi pelunasan, akses menu Admin | `idstar123` |
-| **Checker** | `muhammad.miqdam@idstar.group` | Muhammad Miqdam | **Hai Miqdam** | Review & approval pengajuan, cek paket GR, verifikasi pelunasan | `idstar123` |
-| **Input (Petugas)** | `imam.fatah@idstar.group` | Imam Fatah | **Hai Imam** | Buat pengajuan, prorata, alokasi Cross PO, cetak CAC/BAST/GR, akses menu Admin | `idstar123` |
-| **Input (Petugas)** | `nitia.cahyaningrum@idstar.group` | Nitia Cahyaningrum | **Hai Nitia** | Buat pengajuan, prorata, cetak CAC/BAST/GR, input slip GR & Faktur Pajak | `idstar123` |
-| **Input (Petugas)** | `rihhadatul.syam@idstar.group` | Rihhadatul Syam | **Hai Riri** | Buat pengajuan, prorata, cetak CAC/BAST/GR, input slip GR & Faktur Pajak | `idstar123` |
-| **Admin** | `dewi.ani@idstar.group` | Dewi Ani | **Hai Dewi** | Kelola akun & hak akses, kelola data, reset data staging | `idstar123` |
-| **Admin** | `imam.fatah@idstar.group` | Imam Fatah | **Hai Imam** | Kelola akun & hak akses, kelola data, reset data staging | `idstar123` |
+1. **Administrator (Super Admin)**
+   - Mengelola akun pengguna, hak akses peran, dan aktivasi/deaktivasi akun staf.
+   - Mengelola data master dan referensi sistem (PO, Rate Card, Pemetaan Kolom, Kalender Kerja).
+   - Memantau jejak audit (*audit trail*) dan melakukan kontrol sistem secara berkala.
+
+2. **Petugas (Maker / Input Data)**
+   - Bertanggung jawab melakukan input master data dan membuat draf pengajuan penagihan bulanan.
+   - Mengunggah timesheet dan dokumen kelengkapan pendukung.
+   - Menghitung nilai tagihan prorata hari kerja dan menginisiasi alokasi lintas PO (*Cross-PO*).
+   - Menginput realisasi nomor Good Receipt (GR) dan Faktur Pajak.
+   - **Batasan Sistem:** Dilarang keras menyetujui (*approve*) pengajuannya sendiri.
+
+3. **Checker (Approver / Pemeriksa)**
+   - Bertanggung jawab memverifikasi keabsahan data, akurasi perhitungan nominal, dan kelengkapan berkas tagihan.
+   - Menyetujui (*approve*) atau mengembalikan pengajuan untuk diperbaiki (*return for revision*).
+   - Memeriksa dan memvalidasi paket pertukaran dokumen *Goods Receipt (GR) Request*.
+   - Mengaudit dan memverifikasi pencatatan bukti pelunasan pembayaran (*payment settlement*).
+   - **Batasan Sistem:** Tidak memiliki wewenang untuk mengubah angka tagihan secara langsung demi menjaga integritas data.
 
 > [!NOTE]
-> - Kata sandi default untuk seluruh akun `@idstar.group` adalah **`idstar123`** (juga menerima `contoh123` untuk fleksibilitas pengetesan). Rincian kredensial tersimpan pada berkas `password.txt`.
-> - Pengguna dengan multi-peran (seperti Ibu Dewi untuk Checker + Admin, atau Mas Imam untuk Input + Admin) secara otomatis mendapatkan menu navigasi gabungan yang sesuai.
-
-### Akun Demo 1-Click Dropdown
-
-Untuk mempermudah demonstrasi dan pengujian cepat, halaman masuk (*Sign In*) menyediakan tombol dropdown 1-click tanpa ikon/deskripsi panjang, dan label nama contoh telah **dibersihkan sepenuhnya**:
-
-| Label Tombol | Email Demo | Nama Tampilan | Sapaan Dashboard | Password Otomatis |
-| :--- | :--- | :--- | :--- | :--- |
-| **admin** | `admin@contoh.local` | Admin | **Hai Admin** | `contoh123` |
-| **checker** | `checker@contoh.local` | Checker | **Hai Checker** | `contoh123` |
-| **input** | `petugas@contoh.local` | Petugas | **Hai Petugas** | `contoh123` |
+> Pengguna yang memiliki lebih dari satu peran (misalnya staf dengan wewenang Petugas sekaligus Admin) dapat memilih peran aktif saat masuk melalui halaman seleksi peran (*Role Selector*), serta secara otomatis mendapatkan menu navigasi yang relevan sesuai peran aktif yang dipilih.
 
 ---
 
@@ -437,7 +433,6 @@ proses-invoicing-app/
 │       ├── require-role-api.ts   # Middleware proteksi peran untuk API Handlers
 │       ├── user-roles.ts         # Konfigurasi hak akses email resmi & sapaan dashboard
 │       └── xl-document-helpers.ts # Helper format tanggal Indonesia, angka terbilang, & GR
-├── password.txt                  # Catatan kredensial default seluruh akun pengguna
 ├── package.json                  # Manifest dependensi & skrip Node.js
 └── README.md                     # Dokumentasi komprehensif proyek (file ini)
 ```
