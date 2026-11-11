@@ -166,6 +166,9 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
 
       {jenis === "bulanan" && baris && (
         <>
+          <div className="alert alert-info" style={{ marginTop: 12, marginBottom: 12, fontSize: 13 }}>
+            💡 <b>Timesheet &amp; Perhitungan Prorata:</b> Klik tombol <b>Upload Timesheet</b> pada baris personel untuk memasukkan total hari kerja dan kehadiran agar nilai tagihan dihitung secara <b>prorata (pro-rate)</b>. Jika tidak dimasukkan, sistem akan menggunakan hari kerja standar acuan kalender.
+          </div>
           <div className="table-wrap">
             <table>
               <thead><tr>
