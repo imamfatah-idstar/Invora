@@ -38,10 +38,28 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Format harus .csv." }, { status: 400 });
   }
 
-  const teks = await file.text();
-  const baris = parseCsv(teks);
-  if (baris.length < 2) return NextResponse.json({ error: "File CSV kosong atau tidak terbaca." }, { status: 400 });
+  const teksMentah = await file.text();
+  const teks = teksMentah.replace(/^\uFEFF/, "");
+  const semuaBaris = parseCsv(teks);
 
+  let indeksHeader = -1;
+  for (let i = 0; i < semuaBaris.length; i++) {
+    const barisNorm = semuaBaris[i].map(normalisasiHeader);
+    if (barisNorm.includes("nama")) {
+      indeksHeader = i;
+      break;
+    }
+  }
+
+  if (indeksHeader === -1) {
+    indeksHeader = semuaBaris.findIndex((b) => b.some((cell) => cell.trim() !== ""));
+  }
+
+  if (indeksHeader === -1 || semuaBaris.length - indeksHeader < 2) {
+    return NextResponse.json({ error: "File CSV kosong atau tidak terbaca." }, { status: 400 });
+  }
+
+  const baris = semuaBaris.slice(indeksHeader);
   const headerDinormalisasi = baris[0].map(normalisasiHeader);
   if (!headerDinormalisasi.includes("nama")) {
     return NextResponse.json({ error: `Kolom "nama" tidak ditemukan di file.` }, { status: 400 });

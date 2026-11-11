@@ -21,18 +21,38 @@ function hariSebelum(tanggalISO: string): string {
   return d.toISOString().slice(0, 10);
 }
 
-// File Integral pakai format tanggal "DD/MM/YYYY" (mis. "01/08/2025") di
-// kolom spk_start_date. Null/format tak dikenali -> null (pemanggil fallback
-// ke hariIni).
+// File Integral pakai format tanggal "DD/MM/YYYY" (mis. "01/08/2025") atau
+// format ISO "YYYY-MM-DD" (mis. "2026-09-01") di kolom spk_start_date.
+// Null/format tak dikenali -> null (pemanggil fallback ke hariIni).
 function parseTanggalIntegral(nilai: string | undefined): string | null {
   if (!nilai) return null;
   const teks = nilai.trim();
-  const m = teks.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (!m) return null;
-  const [, dd, mm, yyyy] = m;
-  const d = new Date(Date.UTC(Number(yyyy), Number(mm) - 1, Number(dd)));
-  if (isNaN(d.getTime())) return null;
-  return d.toISOString().slice(0, 10);
+  if (!teks) return null;
+
+  // Format ISO / SQL: YYYY-MM-DD atau YYYY/MM/DD
+  const mIso = teks.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+  if (mIso) {
+    const [, yyyy, mm, dd] = mIso;
+    const d = new Date(Date.UTC(Number(yyyy), Number(mm) - 1, Number(dd)));
+    if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+  }
+
+  // Format DD/MM/YYYY atau DD-MM-YYYY
+  const m = teks.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
+  if (m) {
+    const [, dd, mm, yyyy] = m;
+    const d = new Date(Date.UTC(Number(yyyy), Number(mm) - 1, Number(dd)));
+    if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+  }
+
+  // Excel serial number jika ada
+  if (/^\d+(\.\d+)?$/.test(teks) && Number(teks) > 20000 && Number(teks) < 80000) {
+    const epoch = new Date(Date.UTC(1899, 11, 30));
+    epoch.setUTCDate(epoch.getUTCDate() + Number(teks));
+    return epoch.toISOString().slice(0, 10);
+  }
+
+  return null;
 }
 
 export async function POST(request: NextRequest) {
@@ -50,17 +70,68 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Format harus .csv — unduh sheet Integral lewat File > Download > Comma Separated Values (.csv)." }, { status: 400 });
   }
 
-  const teks = await file.text();
-  const baris = parseCsv(teks);
-  if (baris.length < 2) return NextResponse.json({ error: "File CSV kosong atau tidak terbaca." }, { status: 400 });
-  const objek = csvKeObjek(baris);
+  const teksMentah = await file.text();
+  // Hilangkan UTF-8 BOM jika ada
+  const teks = teksMentah.replace(/^\uFEFF/, "");
+  const semuaBaris = parseCsv(teks);
 
-  const header = baris[0].map((h) => h.trim());
-  for (const kolomWajib of ["name", "rate_card", "placement_name", "client_name", "spk_start_date", "po_number"]) {
-    if (!header.includes(kolomWajib)) {
-      return NextResponse.json({ error: `Kolom "${kolomWajib}" tidak ditemukan di file. Pastikan unduh langsung dari sheet Integral tanpa mengubah header.` }, { status: 400 });
+  // Cari baris header: lewati baris kosong / koma kosong di atas file
+  let indeksHeader = -1;
+  for (let i = 0; i < semuaBaris.length; i++) {
+    const barisNorm = semuaBaris[i].map((c) => c.trim().toLowerCase());
+    if (barisNorm.includes("name") || (barisNorm.includes("rate_card") && barisNorm.includes("po_number"))) {
+      indeksHeader = i;
+      break;
     }
   }
+
+  // Fallback jika tidak ditemukan nama kolom kunci: cari baris pertama yang memiliki sel non-kosong
+  if (indeksHeader === -1) {
+    indeksHeader = semuaBaris.findIndex((b) => b.some((cell) => cell.trim() !== ""));
+  }
+
+  if (indeksHeader === -1 || semuaBaris.length - indeksHeader < 2) {
+    return NextResponse.json({ error: "File CSV kosong atau tidak memiliki baris data yang valid." }, { status: 400 });
+  }
+
+  const baris = semuaBaris.slice(indeksHeader);
+  const headerAsli = baris[0];
+  const headerNorm = headerAsli.map((h) => h.trim().toLowerCase());
+
+  // Petakan alias header umum agar toleran terhadap variasi penamaan
+  const ALIAS_HEADER: Record<string, string> = {
+    name: "name",
+    nama: "name",
+    personel: "name",
+    talent: "name",
+    rate_card: "rate_card",
+    ratecard: "rate_card",
+    rate: "rate_card",
+    placement_name: "placement_name",
+    placement: "placement_name",
+    penempatan: "placement_name",
+    client_name: "client_name",
+    client: "client_name",
+    klien: "client_name",
+    spk_start_date: "spk_start_date",
+    start_date: "spk_start_date",
+    po_number: "po_number",
+    ponumber: "po_number",
+    no_po: "po_number",
+    nomor_po: "po_number",
+  };
+
+  const headerTerstandar = headerNorm.map((h) => ALIAS_HEADER[h] ?? h);
+
+  for (const kolomWajib of ["name", "rate_card", "placement_name", "client_name", "spk_start_date", "po_number"]) {
+    if (!headerTerstandar.includes(kolomWajib)) {
+      return NextResponse.json({
+        error: `Kolom "${kolomWajib}" tidak ditemukan di file. Kolom yang terdeteksi: ${headerAsli.filter((h) => h.trim()).join(", ") || "(kosong)"}`,
+      }, { status: 400 });
+    }
+  }
+
+  const objek = csvKeObjek([headerTerstandar, ...baris.slice(1)]);
 
   // Dedupe per nama (ambil baris terakhir) — sheet Integral bisa berisi baris
   // ganda untuk orang yang sama dalam satu tab.
