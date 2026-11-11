@@ -24,7 +24,8 @@ export async function POST(request: NextRequest) {
 
   // Jika user belum ada di DB tapi terdaftar dalam AUTHORIZED_USERS resmi, buatkan otomatis
   if (!user && authProfile) {
-    const passwordHash = await hashKataSandi("idstar123");
+    const isDemo = email.endsWith("@contoh.local");
+    const passwordHash = await hashKataSandi(isDemo ? "contoh123" : "idstar123");
     const [newUser] = await db
       .insert(users)
       .values({
@@ -36,6 +37,12 @@ export async function POST(request: NextRequest) {
       })
       .returning();
     user = newUser;
+  }
+
+  // Jika akun demo contoh.local dinonaktifkan sebelumnya, aktifkan kembali otomatis agar demo selalu berfungsi
+  if (user && email.endsWith("@contoh.local") && !user.aktif) {
+    await db.update(users).set({ aktif: true }).where(eq(users.id, user.id));
+    user.aktif = true;
   }
 
   // Pesan error sengaja disamakan
