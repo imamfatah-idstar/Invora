@@ -20,6 +20,8 @@ export type BarisHitung = {
   // Snapshot poLineItemId dari pemetaan_personel_po (bagian 33) — dibawa ke
   // pengajuan_detail saat pengajuan disimpan, dipakai untuk generate GR Request.
   poLineItemId: number | null;
+  // Tanggal dokumen timesheet (atau tanggal upload timesheet)
+  tanggalTimesheet?: string | null;
 };
 
 // Hitung prorata semua personel yang terpetakan ke sebuah PO, untuk satu periode.
@@ -86,6 +88,7 @@ export async function hitungSemuaPersonelUntukPo(poId: number, periode: string):
     const ts = timesheetBaris[0];
 
     if (ts) {
+      const tglTs = ts.tanggalTimesheet || (ts.diunggahPada ? ts.diunggahPada.slice(0, 10) : null);
       if (ts.totalHariKerja === 0) {
         hasil.push({
           personelId: p.personelId, namaPersonel: p.namaPersonel,
@@ -94,6 +97,7 @@ export async function hitungSemuaPersonelUntukPo(poId: number, periode: string):
           error: "Total hari kerja pada timesheet = 0. Perhitungan ditolak (pembagi nol tidak diperbolehkan).",
           sumberHitung: "timesheet",
           poLineItemId: p.poLineItemId,
+          tanggalTimesheet: tglTs,
         });
         continue;
       }
@@ -108,6 +112,7 @@ export async function hitungSemuaPersonelUntukPo(poId: number, periode: string):
         hariKerjaAcuanBulan: ts.totalHariKerja,
         hasilHitung, error: null, sumberHitung: "timesheet",
         poLineItemId: p.poLineItemId,
+        tanggalTimesheet: tglTs,
       });
       continue;
     }
@@ -126,6 +131,7 @@ export async function hitungSemuaPersonelUntukPo(poId: number, periode: string):
         hariKerjaAcuanBulan: r.hariKerjaAcuanBulan,
         hasilHitung: r.hasilHitung, error: null, sumberHitung: "kalender",
         poLineItemId: p.poLineItemId,
+        tanggalTimesheet: null,
       });
     } catch (e) {
       hasil.push({
@@ -134,6 +140,7 @@ export async function hitungSemuaPersonelUntukPo(poId: number, periode: string):
         hasilHitung: null, error: e instanceof PembagiNolError ? e.message : "Gagal menghitung.",
         sumberHitung: "kalender",
         poLineItemId: p.poLineItemId,
+        tanggalTimesheet: null,
       });
     }
   }

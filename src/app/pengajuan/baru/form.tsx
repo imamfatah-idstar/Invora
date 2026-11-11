@@ -12,6 +12,7 @@ type BarisHitung = {
   nilaiRateDipakai: string | null; hariKerjaDapatDitagihkan: number | null;
   hariKerjaAcuanBulan: number | null; hasilHitung: string | null; error: string | null;
   sumberHitung: "timesheet" | "kalender";
+  tanggalTimesheet?: string | null;
   // Hasil alokasi lintas-PO (bagian 35) — dari terapkanAlokasiLintasPo di server.
   nilaiPenuh: string | null;
   sudahDialokasikanDiPoLain: string;
@@ -181,13 +182,16 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
           <div className="table-wrap">
             <table>
               <thead><tr>
-                <th></th><th>Personnel</th>
-                <th>Rate</th><th>Billable / Reference Days</th>
+                <th style={{ width: 32 }}></th>
+                <th>Personnel</th>
+                <th>Rate</th>
+                <th>Billable / Ref Days</th>
+                <th>Timesheet Date</th>
                 <th>Source</th>
                 <th>Full Amount</th>
                 <th>Allocated to Other PO</th>
                 <th>Billed to This PO</th>
-                <th>Timesheet</th>
+                <th>Timesheet Action</th>
               </tr></thead>
               <tbody>
                 {baris.map((b) => {
@@ -197,16 +201,25 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
                     <td>
                       <input type="checkbox" disabled={tidakBisaDipilih} checked={dipilih.has(b.personelId)} onChange={() => toggle(b.personelId)} />
                     </td>
-                    <td>{b.namaPersonel}</td>
+                    <td style={{ fontWeight: 600 }}>{b.namaPersonel}</td>
                     <td>{b.nilaiRateDipakai ? formatRupiah(b.nilaiRateDipakai) : "-"}</td>
                     <td>{b.hariKerjaDapatDitagihkan ?? "-"} / {b.hariKerjaAcuanBulan ?? "-"}</td>
+                    <td>
+                      {b.tanggalTimesheet ? (
+                        <span className="badge badge-info" style={{ fontFamily: "monospace", fontSize: 11 }}>
+                          {b.tanggalTimesheet}
+                        </span>
+                      ) : (
+                        <span style={{ color: "var(--muted)" }}>-</span>
+                      )}
+                    </td>
                     <td>
                       <span className={`badge ${b.sumberHitung === "timesheet" ? "badge-siap_diajukan" : ""}`}>
                         {b.sumberHitung === "timesheet" ? "Timesheet" : "Working Calendar"}
                       </span>
                     </td>
                     {b.error ? (
-                      <td colSpan={3} style={{ color: "var(--color-danger)" }}>{b.error}</td>
+                      <td colSpan={4} style={{ color: "var(--color-danger)" }}>{b.error}</td>
                     ) : (
                       <>
                         <td>{b.nilaiPenuh ? formatRupiah(b.nilaiPenuh) : "-"}</td>
@@ -242,7 +255,7 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
                   </tr>
                   );
                 })}
-                {baris.length === 0 && <tr><td colSpan={9} className="table-empty">No personnel mapped to this PO for the selected period.</td></tr>}
+                {baris.length === 0 && <tr><td colSpan={10} className="table-empty">No personnel mapped to this PO for the selected period.</td></tr>}
               </tbody>
             </table>
           </div>

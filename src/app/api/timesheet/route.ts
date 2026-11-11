@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
   const poId = Number(form.get("poId"));
   const userXlId = Number(form.get("userXlId"));
   const periode = form.get("periode");
+  const tanggalTimesheet = (form.get("tanggalTimesheet") as string) || new Date().toISOString().slice(0, 10);
   const totalHariKerja = angkaBulatValid(form.get("totalHariKerja"));
   const totalKehadiran = angkaBulatValid(form.get("totalKehadiran"));
   const file = form.get("file");
@@ -102,6 +103,7 @@ export async function POST(request: NextRequest) {
       .update(timesheet)
       .set({
         userXlId, totalHariKerja, totalKehadiran,
+        tanggalTimesheet,
         namaFile: file.name, pathFile: path.join("uploads", "timesheet", namaFileDisimpan),
         diunggahOlehUserId: user.id,
       })
@@ -120,6 +122,7 @@ export async function POST(request: NextRequest) {
       .insert(timesheet)
       .values({
         personelId, poId, userXlId, periode, totalHariKerja, totalKehadiran,
+        tanggalTimesheet,
         namaFile: file.name, pathFile: path.join("uploads", "timesheet", namaFileDisimpan),
         diunggahOlehUserId: user.id,
       })

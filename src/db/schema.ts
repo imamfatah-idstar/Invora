@@ -309,6 +309,7 @@ export const timesheet = pgTable("timesheet", {
     .notNull()
     .references(() => users.id),
   diunggahPada: text("diunggah_pada").notNull().default(sql`now()::text`),
+  tanggalTimesheet: text("tanggal_timesheet"), // "YYYY-MM-DD" tanggal dokumen timesheet
 });
 
 // =========================================================================

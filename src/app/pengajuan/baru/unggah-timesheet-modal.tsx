@@ -9,6 +9,9 @@ export default function UnggahTimesheetModal({
   periode: string; sudahAda: boolean; onSelesai: () => void; onTutup: () => void;
 }) {
   const [file, setFile] = useState<File | null>(null);
+  const [tanggalTimesheet, setTanggalTimesheet] = useState(
+    new Date().toISOString().slice(0, 10)
+  );
   const [totalHariKerja, setTotalHariKerja] = useState("");
   const [totalKehadiran, setTotalKehadiran] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +27,7 @@ export default function UnggahTimesheetModal({
     fd.append("poId", String(poId));
     fd.append("userXlId", String(userXlId));
     fd.append("periode", periode);
+    fd.append("tanggalTimesheet", tanggalTimesheet);
     fd.append("totalHariKerja", totalHariKerja);
     fd.append("totalKehadiran", totalKehadiran);
     fd.append("file", file);
@@ -44,6 +48,15 @@ export default function UnggahTimesheetModal({
         <h3 style={{ marginTop: 0 }}>Upload Timesheet — {namaPersonel}</h3>
         <p style={{ fontSize: 13, opacity: 0.75 }}>Billing Period {periode}. {sudahAda ? "A timesheet already exists for this period — uploading a new file will overwrite existing data." : "No timesheet recorded for this period yet."}</p>
 
+        <div className="field">
+          <label>Timesheet Document Date (Tanggal Timesheet)</label>
+          <input
+            type="date"
+            value={tanggalTimesheet}
+            onChange={(e) => setTanggalTimesheet(e.target.value)}
+            required
+          />
+        </div>
         <div className="field">
           <label>Timesheet File (PDF/Excel/CSV)</label>
           <input type="file" accept=".pdf,.xlsx,.xls,.csv" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
