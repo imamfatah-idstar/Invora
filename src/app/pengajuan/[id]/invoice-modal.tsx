@@ -50,7 +50,6 @@ export default function InvoiceModal({
   const [buka, setBuka] = useState(false);
   const [tabAktif, setTabAktif] = useState<"cetak" | "email">("cetak");
   const [format, setFormat] = useState<"detail" | "ringkas">("detail");
-  const [bank, setBank] = useState<"all" | "bca" | "mandiri">("all");
   const [emailViewMode, setEmailViewMode] = useState<"preview" | "text">("preview");
 
   // State untuk Kirim Email
@@ -66,7 +65,7 @@ export default function InvoiceModal({
   const formatRp = (val: number) => "Rp " + Math.round(val).toLocaleString("id-ID");
 
   const buildUrl = (download: boolean) => {
-    return `/api/pengajuan/${pengajuanId}/invoice/pdf?format=${format}&bank=${bank}${download ? "&download=true" : ""}`;
+    return `/api/pengajuan/${pengajuanId}/invoice/pdf?format=${format}${download ? "&download=true" : ""}`;
   };
 
   // Pre-calculate formatted values for email
@@ -368,7 +367,7 @@ export default function InvoiceModal({
                 <>
                   <div>
                     <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#1e293b", marginBottom: 8 }}>
-                      1. Select Layout Preset (Single Language):
+                      Select Layout Preset (Single Language):
                     </label>
                     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                       <label
@@ -430,62 +429,6 @@ export default function InvoiceModal({
                           </div>
                         </div>
                       </label>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#1e293b", marginBottom: 8 }}>
-                      2. Official Bank Payment Account on Document:
-                    </label>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-                      <button
-                        type="button"
-                        onClick={() => setBank("all")}
-                        style={{
-                          padding: "8px 10px",
-                          fontSize: 12,
-                          fontWeight: 600,
-                          borderRadius: 6,
-                          border: `1px solid ${bank === "all" ? "#ea242a" : "#cbd5e1"}`,
-                          backgroundColor: bank === "all" ? "#fef2f2" : "#ffffff",
-                          color: bank === "all" ? "#ea242a" : "#475569",
-                          cursor: "pointer",
-                        }}
-                      >
-                        BCA &amp; Mandiri (Both)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setBank("bca")}
-                        style={{
-                          padding: "8px 10px",
-                          fontSize: 12,
-                          fontWeight: 600,
-                          borderRadius: 6,
-                          border: `1px solid ${bank === "bca" ? "#ea242a" : "#cbd5e1"}`,
-                          backgroundColor: bank === "bca" ? "#fef2f2" : "#ffffff",
-                          color: bank === "bca" ? "#ea242a" : "#475569",
-                          cursor: "pointer",
-                        }}
-                      >
-                        BCA Only
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setBank("mandiri")}
-                        style={{
-                          padding: "8px 10px",
-                          fontSize: 12,
-                          fontWeight: 600,
-                          borderRadius: 6,
-                          border: `1px solid ${bank === "mandiri" ? "#ea242a" : "#cbd5e1"}`,
-                          backgroundColor: bank === "mandiri" ? "#fef2f2" : "#ffffff",
-                          color: bank === "mandiri" ? "#ea242a" : "#475569",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Mandiri Only
-                      </button>
                     </div>
                   </div>
 

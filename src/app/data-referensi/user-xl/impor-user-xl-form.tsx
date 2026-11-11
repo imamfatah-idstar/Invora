@@ -1,6 +1,6 @@
 "use client";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 type Hasil = { totalDiproses: number; userXlBaru: number; kontakDiperbarui: number; tidakBerubah: number };
 
@@ -30,7 +30,7 @@ export default function FormImporUserXl() {
 
   return (
     <div className="card" style={{ marginBottom: 16 }}>
-      <h3 style={{ marginTop: 0 }}>Impor User XL dari File</h3>
+      <h3 style={{ marginTop: 0 }}>Impor User dari File</h3>
       <p className="subtitle" style={{ fontSize: 13 }}>
         Unggah file CSV dengan kolom <code>nama</code> (wajib) dan <code>kontak</code> (opsional, boleh juga
         diberi nama email/telepon/no hp) — supaya tidak perlu isi satu-satu manual. Nama baru ditambahkan;
