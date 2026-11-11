@@ -349,11 +349,14 @@ export const dokumen = pgTable("dokumen", {
   pengajuanId: integer("pengajuan_id")
     .notNull()
     .references(() => pengajuan.id),
-  jenis: text("jenis").notNull(), // CAC | BAST
-  status: text("status").notNull().default("draft"), // draft | final
+  jenis: text("jenis").notNull(), // CAC | BAST | GR
+  status: text("status").notNull().default("draft"), // draft | disetujui | perlu_revisi
   versi: integer("versi").notNull().default(1),
   namaFile: text("nama_file"),
   dibuatPada: text("dibuat_pada").notNull().default(sql`now()::text`),
+  disetujuiOlehUserId: integer("disetujui_oleh_user_id").references(() => users.id),
+  disetujuiPada: text("disetujui_pada"),
+  catatanChecker: text("catatan_checker"),
 });
 
 // Lampiran tambahan per pengajuan — file yang dibuat/diisi Input Data DI LUAR

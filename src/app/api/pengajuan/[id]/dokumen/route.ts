@@ -16,7 +16,7 @@ import { catatAudit } from "@/lib/audit";
 // sana belum dibangun) — dokumen ini bukan pengganti proses itu. Halaman
 // cetaknya menampilkan label ini dengan jelas, tidak disembunyikan.
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const gagal = await wajibRoleApi(["petugas"]);
+  const gagal = await wajibRoleApi(["petugas", "checker", "admin"]);
   if (gagal) return gagal;
   const user = await userSaatIni();
   const { id } = await params;

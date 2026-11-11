@@ -16,6 +16,7 @@ import { alias } from "drizzle-orm/pg-core";
 import { apakahKlienXl } from "@/lib/klien";
 import PembayaranPanel from "./pembayaran-panel";
 import InvoiceModal from "./invoice-modal";
+import DaftarDokumenTable from "./daftar-dokumen-table";
 import { tambahHari } from "@/lib/aging";
 import { isAuthorizedForRole } from "@/lib/user-roles";
 
@@ -123,9 +124,21 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
     .from(checkerReview).innerJoin(users, eq(checkerReview.userId, users.id))
     .where(eq(checkerReview.pengajuanId, header.id));
 
+  const userCheckerDok = alias(users, "user_checker_dok");
   const daftarDokumen = await db
-    .select({ id: dokumen.id, jenis: dokumen.jenis, versi: dokumen.versi, dibuatPada: dokumen.dibuatPada, status: dokumen.status })
+    .select({
+      id: dokumen.id,
+      jenis: dokumen.jenis,
+      versi: dokumen.versi,
+      dibuatPada: dokumen.dibuatPada,
+      status: dokumen.status,
+      disetujuiPada: dokumen.disetujuiPada,
+      disetujuiOlehUserId: dokumen.disetujuiOlehUserId,
+      namaChecker: userCheckerDok.nama,
+      catatanChecker: dokumen.catatanChecker,
+    })
     .from(dokumen)
+    .leftJoin(userCheckerDok, eq(dokumen.disetujuiOlehUserId, userCheckerDok.id))
     .where(eq(dokumen.pengajuanId, header.id));
 
   // Ambil daftar pembayaran pelunasan (MVP 5)
@@ -169,14 +182,20 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
   const bisaKonfirmasi = (header.status === "draft" || header.status === "perlu_revisi") && isPetugas;
   const bisaEdit = header.status === "perlu_revisi" && isPetugas;
   const bisaDicek = header.status === "menunggu_checker" && isChecker;
-  const bisaBuatDokumen = (header.status === "siap_diajukan" || header.status === "diajukan") && isPetugas;
+  const bisaBuatDokumen = (header.status === "siap_diajukan" || header.status === "diajukan") && (isPetugas || isChecker);
   // Kelengkapan dokumen (CAC, BAST, lampiran tambahan) — disiapkan Input Data
   // ATAU Checker, sebagai prasyarat sebelum otomasi ke Get Approve/COUPA bisa
   // dijalankan (belum dibangun). Lihat PROJECT_INSTRUCTIONS.md bagian 22-23.
   const bisaKelengkapan = (header.status === "siap_diajukan" || header.status === "diajukan") &&
     (isPetugas || isChecker);
-  const cacAda = daftarDokumen.some((d) => d.jenis === "CAC");
-  const bastAda = daftarDokumen.some((d) => d.jenis === "BAST");
+  const cacDoc = daftarDokumen.find((d) => d.jenis === "CAC");
+  const bastDoc = daftarDokumen.find((d) => d.jenis === "BAST");
+  const grDoc = daftarDokumen.find((d) => d.jenis === "GR");
+  const cacAda = !!cacDoc;
+  const bastAda = !!bastDoc;
+  const cacDisetujui = cacDoc?.status === "disetujui";
+  const bastDisetujui = bastDoc?.status === "disetujui";
+  const grDisetujui = grDoc?.status === "disetujui";
   const lampiranBalanceAda = daftarLampiran.some((l) => l.label === LABEL_LAMPIRAN_BALANCE);
   const lampiranLain = daftarLampiran.filter((l) => l.label !== LABEL_LAMPIRAN_BALANCE);
   const poAsliAda = !!header.namaFilePoAsli;
@@ -326,10 +345,10 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
 
         {(bisaBuatDokumen || daftarDokumen.length > 0) && (
           <div className="card" style={{ marginTop: 20 }}>
-            <h3 style={{ marginTop: 0 }}>Documents: {isKlienXl ? "CAC / BAST" : "BAST"}</h3>
+            <h3 style={{ marginTop: 0 }}>Documents: {isKlienXl ? "CAC / BAST / GR" : "BAST"}</h3>
             <p className="subtitle">
               {isKlienXl ? (
-                <>Internal drafts based on this submission data following official CAC/BAST formatting — submit to Get Approve CAC / COUPA for official approval.</>
+                <>Internal drafts based on this submission data following official CAC/BAST/GR formatting — submit to Get Approve CAC / COUPA for official approval.</>
               ) : (
                 <>Non-XL client — formal BAST document with timesheets as billing support documentation.</>
               )}
@@ -363,22 +382,12 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
             </div>
 
             {daftarDokumen.length > 0 && (
-              <div className="table-wrap" style={{ marginTop: 16 }}>
-                <table>
-                  <thead><tr><th>Document Type</th><th>Version</th><th>Status</th><th>Created At</th><th></th></tr></thead>
-                  <tbody>
-                    {daftarDokumen.map((d) => (
-                      <tr key={d.id}>
-                        <td>{LABEL_JENIS_DOKUMEN[d.jenis] ?? d.jenis}</td>
-                        <td>{d.versi}</td>
-                        <td><span className="badge badge-draft">{d.status}</span></td>
-                        <td>{d.dibuatPada}</td>
-                        <td><a href={`/pengajuan/${header.id}/dokumen/${d.id}`} className="btn-text">Open</a></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <DaftarDokumenTable
+                pengajuanId={header.id}
+                initialDokumen={daftarDokumen}
+                userRole={userLogin.role}
+                userNama={userLogin.nama}
+              />
             )}
           </div>
         )}
@@ -457,16 +466,23 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
             </p>
             <ul style={{ margin: "0 0 16px 0", paddingLeft: 18, fontSize: 14 }}>
               {isKlienXl ? (
-                <li>{cacAda ? "✓" : "○"} CAC Document {cacAda ? "created" : "not yet created"}</li>
+                <li>
+                  {cacAda ? "✓" : "○"} CAC Document {cacAda ? (cacDisetujui ? "— ✓ Approved by Checker" : "— created (Pending Checker Approval)") : "— not yet created"}
+                </li>
               ) : isTagihanTahap ? (
                 <li>✓ Milestone billing (manual) — timesheet not required {header.keteranganTahap ? `(${header.keteranganTahap})` : ""}</li>
               ) : (
                 <li>{semuaPakaiTimesheet ? "✓" : "○"} Timesheets {semuaPakaiTimesheet ? "completed for all personnel" : "incomplete for some personnel (mandatory for Non-XL)"}</li>
               )}
               <li>
-                {bastAda ? "✓" : "○"} BAST Document {bastAda ? "created" : "not yet created"}
+                {bastAda ? "✓" : "○"} BAST Document {bastAda ? (bastDisetujui ? "— ✓ Approved by Checker" : "— created (Pending Checker Approval)") : "— not yet created"}
                 {!bastAda && <span className="badge badge-danger" style={{ marginLeft: 6, fontSize: 11 }}>Required</span>}
               </li>
+              {isKlienXl && (
+                <li>
+                  {grDoc ? "✓" : "○"} GR Document (Good Receipt BAU) {grDoc ? (grDisetujui ? "— ✓ Approved by Checker" : "— created (Pending Checker Approval)") : "— not yet created"}
+                </li>
+              )}
               <li>{poAsliAda ? "✓" : "○"} Original PO Document — {poAsliAda ? header.namaFilePoAsli : <>not yet uploaded, <a href="/data-referensi/po">upload under Reference Data · PO / Line Items</a></>}</li>
               <li>{lampiranBalanceAda ? "✓" : "○"} PO Balance Attachment (tracking spreadsheet excerpt) {lampiranBalanceAda ? "uploaded" : "not yet uploaded"}</li>
               <li>{lampiranLain.length > 0 ? "✓" : "○"} Additional attachments (spreadsheets, supporting docs) — {lampiranLain.length} file(s) uploaded</li>

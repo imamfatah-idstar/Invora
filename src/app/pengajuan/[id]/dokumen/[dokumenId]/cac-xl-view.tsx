@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import TombolCetak from "./tombol-cetak";
+import CheckerApprovalBar from "./checker-approval-bar";
 import {
   formatTanggalDokumen,
   formatPeriodeBulan,
@@ -27,6 +28,14 @@ type Props = {
   defaultLocationSap?: string;
   defaultProjectLocation?: string;
   dibuatPada: string;
+  approvalData?: {
+    status: string;
+    disetujuiPada?: string | null;
+    namaChecker?: string | null;
+    catatanChecker?: string | null;
+    userRole: string;
+    userNama: string;
+  };
 };
 
 export default function CacXlView({
@@ -47,6 +56,7 @@ export default function CacXlView({
   defaultLocationSap = "0010",
   defaultProjectLocation = "Headquarter",
   dibuatPada,
+  approvalData,
 }: Props) {
   const tglDefault = formatTanggalDokumen();
   const { workCompletedDate } = formatPeriodeBulan(periode);
@@ -206,6 +216,21 @@ export default function CacXlView({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Checker Approval Bar */}
+      {approvalData && (
+        <CheckerApprovalBar
+          pengajuanId={pengajuanId}
+          dokumenId={dokumenId}
+          jenis="CAC"
+          statusAwal={approvalData.status}
+          disetujuiPadaAwal={approvalData.disetujuiPada}
+          namaCheckerAwal={approvalData.namaChecker}
+          catatanCheckerAwal={approvalData.catatanChecker}
+          userRole={approvalData.userRole}
+          userNama={approvalData.userNama}
+        />
       )}
 
       {/* Authentic XL CAC Sheet matching CAC_PO.pdf */}

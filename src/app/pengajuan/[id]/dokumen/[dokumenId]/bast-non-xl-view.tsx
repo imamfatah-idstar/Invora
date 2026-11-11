@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import TombolCetak from "./tombol-cetak";
+import CheckerApprovalBar from "./checker-approval-bar";
 import { formatHariTanggalIndo, formatTanggalSelesaiIndo } from "@/lib/xl-document-helpers";
 
 type RincianItem = {
@@ -29,6 +30,14 @@ type Props = {
   rincian: RincianItem[];
   total: number;
   dibuatPada: string;
+  approvalData?: {
+    status: string;
+    disetujuiPada?: string | null;
+    namaChecker?: string | null;
+    catatanChecker?: string | null;
+    userRole: string;
+    userNama: string;
+  };
 };
 
 export default function BastNonXlView({
@@ -45,6 +54,7 @@ export default function BastNonXlView({
   rincian,
   total,
   dibuatPada,
+  approvalData,
 }: Props) {
   const isCimb = klien?.toUpperCase().includes("CIMB") || klien?.toUpperCase().includes("NIAGA");
 
@@ -235,6 +245,23 @@ export default function BastNonXlView({
               />
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Checker Approval Bar */}
+      {approvalData && (
+        <div style={{ maxWidth: 794, margin: "0 auto 16px auto" }}>
+          <CheckerApprovalBar
+            pengajuanId={pengajuanId}
+            dokumenId={dokumenId}
+            jenis="BAST"
+            statusAwal={approvalData.status}
+            disetujuiPadaAwal={approvalData.disetujuiPada}
+            namaCheckerAwal={approvalData.namaChecker}
+            catatanCheckerAwal={approvalData.catatanChecker}
+            userRole={approvalData.userRole}
+            userNama={approvalData.userNama}
+          />
         </div>
       )}
 

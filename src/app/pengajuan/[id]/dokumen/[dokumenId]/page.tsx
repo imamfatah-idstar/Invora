@@ -10,6 +10,8 @@ import TombolCetak from "./tombol-cetak";
 import Logo from "@/components/logo";
 import { LABEL_LAMPIRAN_BALANCE } from "@/lib/lampiran-label";
 import { apakahKlienXl } from "@/lib/klien";
+import { wajibRole } from "@/lib/require-role";
+import CheckerApprovalBar from "./checker-approval-bar";
 import BastNonXlView from "./bast-non-xl-view";
 import BastXlView from "./bast-xl-view";
 import CacXlView from "./cac-xl-view";
@@ -26,11 +28,25 @@ const LABEL_JENIS: Record<string, string> = {
 };
 
 export default async function HalamanDokumen({ params }: { params: Promise<{ id: string; dokumenId: string }> }) {
+  const userLogin = await wajibRole(["petugas", "checker"]);
   const { id, dokumenId } = await params;
   const pengajuanId = Number(id);
 
   const [dok] = await db.select().from(dokumen).where(eq(dokumen.id, Number(dokumenId)));
   if (!dok || dok.pengajuanId !== pengajuanId) notFound();
+
+  const [userChecker] = dok.disetujuiOlehUserId
+    ? await db.select({ nama: users.nama }).from(users).where(eq(users.id, dok.disetujuiOlehUserId)).limit(1)
+    : [null];
+
+  const approvalData = {
+    status: dok.status,
+    disetujuiPada: dok.disetujuiPada,
+    namaChecker: userChecker?.nama ?? null,
+    catatanChecker: dok.catatanChecker,
+    userRole: userLogin.role,
+    userNama: userLogin.nama,
+  };
 
   const [header] = await db
     .select({
@@ -112,6 +128,7 @@ export default async function HalamanDokumen({ params }: { params: Promise<{ id:
         defaultFinanceJabatan="Finance Manager"
         defaultPekerjaan="Jasa IT"
         dibuatPada={dok.dibuatPada}
+        approvalData={approvalData}
       />
     );
   }
@@ -133,6 +150,7 @@ export default async function HalamanDokumen({ params }: { params: Promise<{ id:
         defaultFinanceNama="Dewi Ani Mulyakarti"
         defaultFinanceJabatan="Finance Manager"
         dibuatPada={dok.dibuatPada}
+        approvalData={approvalData}
       />
     );
   }
@@ -153,6 +171,7 @@ export default async function HalamanDokumen({ params }: { params: Promise<{ id:
         rincian={rincian}
         dibuatPada={dok.dibuatPada}
         defaultSowDocument={grReq?.namaFileGabungan || grReq?.namaFileBalikanXl || "7a1a6279-d98e-4b17-ad0e-221bca5a4749.xlsx"}
+        approvalData={approvalData}
       />
     );
   }
@@ -174,6 +193,7 @@ export default async function HalamanDokumen({ params }: { params: Promise<{ id:
         rincian={rincian}
         total={total}
         dibuatPada={dok.dibuatPada}
+        approvalData={approvalData}
       />
     );
   }
@@ -187,6 +207,17 @@ export default async function HalamanDokumen({ params }: { params: Promise<{ id:
           Download Merged PDF{kelengkapanPdfLengkap ? " (3 pages)" : ""}
         </a>
       </div>
+      <CheckerApprovalBar
+        pengajuanId={pengajuanId}
+        dokumenId={dok.id}
+        jenis={dok.jenis}
+        statusAwal={dok.status}
+        disetujuiPadaAwal={dok.disetujuiPada}
+        namaCheckerAwal={userChecker?.nama}
+        catatanCheckerAwal={dok.catatanChecker}
+        userRole={userLogin.role}
+        userNama={userLogin.nama}
+      />
       {!kelengkapanPdfLengkap && (
         <div className="alert alert-warning no-print">
           Merged PDF will still be generated, but only contains the certificate page —

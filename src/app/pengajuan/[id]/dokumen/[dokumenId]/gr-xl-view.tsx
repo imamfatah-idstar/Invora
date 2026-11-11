@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import TombolCetak from "./tombol-cetak";
+import CheckerApprovalBar from "./checker-approval-bar";
 import {
   formatGrDate,
   formatGrNominal,
@@ -32,6 +33,14 @@ type Props = {
   rincian: LineItemData[];
   dibuatPada: string;
   defaultSowDocument?: string;
+  approvalData?: {
+    status: string;
+    disetujuiPada?: string | null;
+    namaChecker?: string | null;
+    catatanChecker?: string | null;
+    userRole: string;
+    userNama: string;
+  };
 };
 
 export default function GrXlView({
@@ -47,6 +56,7 @@ export default function GrXlView({
   rincian,
   dibuatPada,
   defaultSowDocument = "7a1a6279-d98e-4b17-ad0e-221bca5a4749.xlsx",
+  approvalData,
 }: Props) {
   const { periodeFormatted } = formatPeriodeBulan(periode);
 
@@ -384,6 +394,23 @@ export default function GrXlView({
               ))}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Checker Approval Bar */}
+      {approvalData && (
+        <div style={{ maxWidth: 820, margin: "0 auto 16px auto" }}>
+          <CheckerApprovalBar
+            pengajuanId={pengajuanId}
+            dokumenId={dokumenId}
+            jenis="GR"
+            statusAwal={approvalData.status}
+            disetujuiPadaAwal={approvalData.disetujuiPada}
+            namaCheckerAwal={approvalData.namaChecker}
+            catatanCheckerAwal={approvalData.catatanChecker}
+            userRole={approvalData.userRole}
+            userNama={approvalData.userNama}
+          />
         </div>
       )}
 

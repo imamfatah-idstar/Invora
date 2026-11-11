@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import TombolCetak from "./tombol-cetak";
+import CheckerApprovalBar from "./checker-approval-bar";
 import {
   formatTanggalLengkapIndo,
   formatTanggalDokumen,
@@ -23,6 +24,14 @@ type Props = {
   defaultFinanceJabatan?: string;
   defaultPekerjaan?: string;
   dibuatPada: string;
+  approvalData?: {
+    status: string;
+    disetujuiPada?: string | null;
+    namaChecker?: string | null;
+    catatanChecker?: string | null;
+    userRole: string;
+    userNama: string;
+  };
 };
 
 export default function BastXlView({
@@ -39,6 +48,7 @@ export default function BastXlView({
   defaultFinanceJabatan = "Finance Manager",
   defaultPekerjaan = "Jasa IT",
   dibuatPada,
+  approvalData,
 }: Props) {
   const tanggalInfo = formatTanggalLengkapIndo();
   const tglDefault = formatTanggalDokumen();
@@ -163,6 +173,21 @@ export default function BastXlView({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Checker Approval Bar */}
+      {approvalData && (
+        <CheckerApprovalBar
+          pengajuanId={pengajuanId}
+          dokumenId={dokumenId}
+          jenis="BAST"
+          statusAwal={approvalData.status}
+          disetujuiPadaAwal={approvalData.disetujuiPada}
+          namaCheckerAwal={approvalData.namaChecker}
+          catatanCheckerAwal={approvalData.catatanChecker}
+          userRole={approvalData.userRole}
+          userNama={approvalData.userNama}
+        />
       )}
 
       {/* Authentic XL BAST Sheet matching BAST_PO.pdf */}
