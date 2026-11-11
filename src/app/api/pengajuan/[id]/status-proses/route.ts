@@ -22,14 +22,14 @@ const FIELD_DIIZINKAN = [
 ] as const;
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const gagal = await wajibRoleApi(["petugas", "checker"]);
+  const gagal = await wajibRoleApi(["petugas", "checker", "admin"]);
   if (gagal) return gagal;
   const user = await userSaatIni();
   const { id } = await params;
   const pengajuanId = Number(id);
 
   const [ajuan] = await db
-    .select({ id: pengajuan.id, poId: pengajuan.poId, klien: po.klien })
+    .select({ id: pengajuan.id, poId: pengajuan.poId, klien: po.klien, nomorInvoice: pengajuan.nomorInvoice })
     .from(pengajuan)
     .innerJoin(po, eq(pengajuan.poId, po.id))
     .where(eq(pengajuan.id, pengajuanId));
@@ -50,6 +50,16 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     patch[field] = nilai;
   }
 
+  // tanggalInvoice -> tanggalSubmitInvoice alias
+  if ("tanggalInvoice" in body && !("tanggalSubmitInvoice" in body)) {
+    const raw = typeof body.tanggalInvoice === "string" ? body.tanggalInvoice.trim() : "";
+    const nilai = raw === "" ? null : raw;
+    if (!tanggalValidAtauKosong(nilai)) {
+      return NextResponse.json({ error: "Tanggal invoice tidak valid." }, { status: 400 });
+    }
+    patch.tanggalSubmitInvoice = nilai;
+  }
+
   // nomorGrSlip: teks nomor dokumen GR resmi dari klien/COUPA
   if ("nomorGrSlip" in body) {
     const raw = typeof body.nomorGrSlip === "string" ? body.nomorGrSlip.trim() : "";
@@ -60,11 +70,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   // aplikasi ini (satu urutan bersama semua customer). Lihat bagian 30.
   if ("nomorInvoice" in body) {
     const nilai = typeof body.nomorInvoice === "string" ? body.nomorInvoice.trim() : "";
-    // Validasi bagian 34 & bagian 45: untuk klien XL, nomor invoice tidak boleh diisi sebelum GR Request
-    // dikonfirmasi "sudah dicek" oleh Checker. Untuk klien Non-XL, GR Request di-skip total.
+    // Validasi bagian 34 & bagian 45: untuk klien XL baru, nomor invoice tidak boleh diisi sebelum GR Request
+    // dikonfirmasi "sudah dicek" oleh Checker, kecuali saat edit invoice yang sudah ada atau explicit isEditInvoice.
     if (nilai !== "") {
       const isKlienXl = apakahKlienXl(ajuan.klien);
-      if (isKlienXl) {
+      if (isKlienXl && !ajuan.nomorInvoice && !body.isEditInvoice) {
         const [grRow] = await db.select({ dicekPada: grRequest.dicekPada }).from(grRequest).where(eq(grRequest.pengajuanId, pengajuanId));
         if (!grRow || !grRow.dicekPada) {
           return NextResponse.json(

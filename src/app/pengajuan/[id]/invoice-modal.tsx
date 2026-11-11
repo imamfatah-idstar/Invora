@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { extractEmailFromKontak } from "@/lib/reminder";
 import {
   generateIdstarEmailTemplate,
@@ -16,6 +17,8 @@ interface InvoiceModalProps {
   pengajuanId: number;
   nomorInvoice: string;
   nomorFakturPajak?: string | null;
+  tanggalFakturPajak?: string | null;
+  nomorGrSlip?: string | null;
   nomorPo: string;
   klien: string;
   namaProyek: string;
@@ -34,6 +37,8 @@ export default function InvoiceModal({
   pengajuanId,
   nomorInvoice,
   nomorFakturPajak,
+  tanggalFakturPajak,
+  nomorGrSlip,
   nomorPo,
   klien,
   namaProyek,
@@ -47,10 +52,63 @@ export default function InvoiceModal({
   dpp,
   tarifPpn,
 }: InvoiceModalProps) {
+  const router = useRouter();
   const [buka, setBuka] = useState(false);
-  const [tabAktif, setTabAktif] = useState<"cetak" | "email">("cetak");
+  const [tabAktif, setTabAktif] = useState<"edit" | "cetak" | "email">("edit");
   const [format, setFormat] = useState<"detail" | "ringkas">("detail");
   const [emailViewMode, setEmailViewMode] = useState<"preview" | "text">("preview");
+
+  // State sinkron nilai invoice aktif
+  const [curNomorInvoice, setCurNomorInvoice] = useState(nomorInvoice);
+  const [curNomorFakturPajak, setCurNomorFakturPajak] = useState(nomorFakturPajak || "");
+  const [curTanggalFakturPajak, setCurTanggalFakturPajak] = useState(tanggalFakturPajak || "");
+  const [curNomorGrSlip, setCurNomorGrSlip] = useState(nomorGrSlip || "");
+  const [curTanggalInvoice, setCurTanggalInvoice] = useState(tanggalInvoice);
+  const [curTanggalJatuhTempo, setCurTanggalJatuhTempo] = useState(tanggalJatuhTempo);
+  const [curTarifPpn, setCurTarifPpn] = useState(String(tarifPpn || 11));
+  const [curDpp, setCurDpp] = useState(dpp);
+
+  // State form edit
+  const [editNomorInvoice, setEditNomorInvoice] = useState(nomorInvoice);
+  const [editNomorFakturPajak, setEditNomorFakturPajak] = useState(nomorFakturPajak || "");
+  const [editTanggalFakturPajak, setEditTanggalFakturPajak] = useState(tanggalFakturPajak || "");
+  const [editNomorGrSlip, setEditNomorGrSlip] = useState(nomorGrSlip || "");
+  const [editTanggalInvoice, setEditTanggalInvoice] = useState(tanggalInvoice);
+  const [editTanggalJatuhTempo, setEditTanggalJatuhTempo] = useState(tanggalJatuhTempo);
+  const [editTarifPpn, setEditTarifPpn] = useState(String(tarifPpn || 11));
+  const [editDpp, setEditDpp] = useState(dpp);
+
+  const [sedangSimpanInvoice, setSedangSimpanInvoice] = useState(false);
+  const [errorSimpanInvoice, setErrorSimpanInvoice] = useState<string | null>(null);
+  const [suksesSimpanInvoice, setSuksesSimpanInvoice] = useState<string | null>(null);
+
+  // Perhitungan dinamis
+  const curPpn = Math.round((curDpp * Number(curTarifPpn || 0)) / 100);
+  const curTotalTagihan = curDpp + curPpn;
+
+  const editPpn = Math.round((Number(editDpp || 0) * Number(editTarifPpn || 0)) / 100);
+  const editTotalTagihan = Number(editDpp || 0) + editPpn;
+
+  // Sinkronisasi prop awal saat modal dibuka
+  useEffect(() => {
+    setCurNomorInvoice(nomorInvoice);
+    setCurNomorFakturPajak(nomorFakturPajak || "");
+    setCurTanggalFakturPajak(tanggalFakturPajak || "");
+    setCurNomorGrSlip(nomorGrSlip || "");
+    setCurTanggalInvoice(tanggalInvoice);
+    setCurTanggalJatuhTempo(tanggalJatuhTempo);
+    setCurTarifPpn(String(tarifPpn || 11));
+    setCurDpp(dpp);
+
+    setEditNomorInvoice(nomorInvoice);
+    setEditNomorFakturPajak(nomorFakturPajak || "");
+    setEditTanggalFakturPajak(tanggalFakturPajak || "");
+    setEditNomorGrSlip(nomorGrSlip || "");
+    setEditTanggalInvoice(tanggalInvoice);
+    setEditTanggalJatuhTempo(tanggalJatuhTempo);
+    setEditTarifPpn(String(tarifPpn || 11));
+    setEditDpp(dpp);
+  }, [buka, nomorInvoice, nomorFakturPajak, tanggalFakturPajak, nomorGrSlip, tanggalInvoice, tanggalJatuhTempo, dpp, tarifPpn]);
 
   // State untuk Kirim Email
   const emailPicDefault = extractEmailFromKontak(kontakPic);
@@ -69,31 +127,78 @@ export default function InvoiceModal({
   };
 
   // Pre-calculate formatted values for email
-  const dueMonthYear = formatDueMonthYear(tanggalJatuhTempo);
+  const dueMonthYear = formatDueMonthYear(curTanggalJatuhTempo);
   const periodeShort = formatPeriodeShort(periode);
-  const invoiceDateEnglish = formatInvoiceDateEnglish(tanggalInvoice);
-  const dueDateShort = formatDueDateShort(tanggalJatuhTempo);
-  const statusDue = determineDueStatus(tanggalJatuhTempo);
-  const amountStr = formatAmountNumber(totalTagihan);
+  const invoiceDateEnglish = formatInvoiceDateEnglish(curTanggalInvoice);
+  const dueDateShort = formatDueDateShort(curTanggalJatuhTempo);
+  const statusDue = determineDueStatus(curTanggalJatuhTempo);
+  const amountStr = formatAmountNumber(curTotalTagihan);
 
   // Generate IDStar standard email template
   const generatedEmail = generateIdstarEmailTemplate({
     klien,
     periode,
-    nomorInvoice,
-    tanggalInvoice,
-    tanggalJatuhTempo,
-    netAmount: totalTagihan,
+    nomorInvoice: curNomorInvoice,
+    tanggalInvoice: curTanggalInvoice,
+    tanggalJatuhTempo: curTanggalJatuhTempo,
+    netAmount: curTotalTagihan,
     monthYear: dueMonthYear,
     dueStatus: statusDue,
     baseUrl: typeof window !== "undefined" ? window.location.origin : undefined,
   });
 
-  // Sinkronisasi saat modal dibuka
+  // Sinkronisasi template email
   useEffect(() => {
     setSubjekEmail(generatedEmail.subject);
     setPesanEmail(generatedEmail.plainText);
-  }, [buka, klien, nomorInvoice, totalTagihan, tanggalJatuhTempo]);
+  }, [buka, klien, curNomorInvoice, curTotalTagihan, curTanggalJatuhTempo, curTanggalInvoice]);
+
+  // Handler Simpan Perubahan Invoice
+  async function handleSimpanInvoice(e: React.FormEvent) {
+    e.preventDefault();
+    setSedangSimpanInvoice(true);
+    setErrorSimpanInvoice(null);
+    setSuksesSimpanInvoice(null);
+
+    try {
+      const res = await fetch(`/api/pengajuan/${pengajuanId}/status-proses`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nomorInvoice: editNomorInvoice,
+          tanggalInvoice: editTanggalInvoice,
+          tanggalSubmitInvoice: editTanggalInvoice,
+          nomorFakturPajak: editNomorFakturPajak,
+          tanggalFakturPajak: editTanggalFakturPajak,
+          nomorGrSlip: editNomorGrSlip,
+          tarifPpn: editTarifPpn,
+          nilaiGrDisetujui: editDpp,
+          isEditInvoice: true,
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Gagal menyimpan perubahan invoice");
+      }
+
+      setCurNomorInvoice(editNomorInvoice);
+      setCurTanggalInvoice(editTanggalInvoice);
+      setCurTanggalJatuhTempo(editTanggalJatuhTempo);
+      setCurNomorFakturPajak(editNomorFakturPajak);
+      setCurTanggalFakturPajak(editTanggalFakturPajak);
+      setCurNomorGrSlip(editNomorGrSlip);
+      setCurTarifPpn(editTarifPpn);
+      setCurDpp(editDpp);
+
+      setSuksesSimpanInvoice("✓ Perubahan data invoice berhasil disimpan!");
+      router.refresh();
+    } catch (err: unknown) {
+      setErrorSimpanInvoice(err instanceof Error ? err.message : "Terjadi kesalahan saat menyimpan");
+    } finally {
+      setSedangSimpanInvoice(false);
+    }
+  }
 
   // Handler Pratinjau PDF
   const handlePratinjau = () => {
@@ -104,7 +209,7 @@ export default function InvoiceModal({
   const handleUnduh = () => {
     const link = document.createElement("a");
     link.href = buildUrl(true);
-    link.download = `Invoice-${nomorInvoice.replace(/[^a-zA-Z0-9_-]/g, "_")}.pdf`;
+    link.download = `Invoice-${curNomorInvoice.replace(/[^a-zA-Z0-9_-]/g, "_")}.pdf`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -186,24 +291,52 @@ export default function InvoiceModal({
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setBuka(true)}
-        className="btn btn-secondary"
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 6,
-          fontWeight: 600,
-          padding: "8px 14px",
-          borderRadius: 6,
-          cursor: "pointer",
-        }}
-        title="Print or email Official PDF Invoice"
-      >
-        <span>📄 Print &amp; Send Invoice</span>
-        <span style={{ fontSize: 11, opacity: 0.7 }}>▾</span>
-      </button>
+      <div style={{ display: "inline-flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+        <button
+          type="button"
+          onClick={() => {
+            setTabAktif("edit");
+            setBuka(true);
+          }}
+          className="btn"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            fontWeight: 600,
+            padding: "8px 14px",
+            borderRadius: 6,
+            cursor: "pointer",
+            backgroundColor: "#ffffff",
+            borderColor: "#cbd5e1",
+            color: "#0f172a",
+          }}
+          title="Edit invoice number, date, tax invoice, and amount"
+        >
+          <span>✏️ Edit Invoice</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setTabAktif("cetak");
+            setBuka(true);
+          }}
+          className="btn btn-secondary"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            fontWeight: 600,
+            padding: "8px 14px",
+            borderRadius: 6,
+            cursor: "pointer",
+          }}
+          title="Print or email Official PDF Invoice"
+        >
+          <span>📄 Print &amp; Send Invoice</span>
+          <span style={{ fontSize: 11, opacity: 0.7 }}>▾</span>
+        </button>
+      </div>
 
       {buka && (
         <div
@@ -257,7 +390,7 @@ export default function InvoiceModal({
                   Official Invoice &mdash; PT IDStar Cipta Teknologi
                 </h3>
                 <p style={{ margin: "4px 0 0", fontSize: 12, color: "#64748b" }}>
-                  Invoice No: <b style={{ color: "#0f172a" }}>{nomorInvoice}</b> &middot; PO:{" "}
+                  Invoice No: <b style={{ color: "#0f172a" }}>{curNomorInvoice}</b> &middot; PO:{" "}
                   <b style={{ color: "#0f172a" }}>{nomorPo}</b> &middot; Client: <b>{klien}</b>
                 </p>
               </div>
@@ -285,8 +418,28 @@ export default function InvoiceModal({
                 borderBottom: "1px solid #e2e8f0",
                 backgroundColor: "#ffffff",
                 padding: "0 16px",
+                gap: 4,
               }}
             >
+              <button
+                type="button"
+                onClick={() => setTabAktif("edit")}
+                style={{
+                  padding: "10px 16px",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  border: "none",
+                  borderBottom: `2px solid ${tabAktif === "edit" ? "#ea242a" : "transparent"}`,
+                  color: tabAktif === "edit" ? "#ea242a" : "#64748b",
+                  backgroundColor: "transparent",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                <span>✏️ Edit Invoice Details</span>
+              </button>
               <button
                 type="button"
                 onClick={() => setTabAktif("cetak")}
@@ -320,7 +473,7 @@ export default function InvoiceModal({
                   gap: 6,
                 }}
               >
-                <span>✉️ Official Email Template (IDStar Standard)</span>
+                <span>✉️ Official Email Template</span>
                 <span
                   style={{
                     backgroundColor: "#fef2f2",
@@ -360,6 +513,252 @@ export default function InvoiceModal({
                 >
                   {statusPesan.text}
                 </div>
+              )}
+
+              {/* TAB 0: FORM EDIT INVOICE */}
+              {tabAktif === "edit" && (
+                <form onSubmit={handleSimpanInvoice} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  {suksesSimpanInvoice && (
+                    <div
+                      style={{
+                        padding: "10px 14px",
+                        borderRadius: 6,
+                        fontSize: 13,
+                        backgroundColor: "#f0fdf4",
+                        color: "#166534",
+                        border: "1px solid #bbf7d0",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <span>{suksesSimpanInvoice}</span>
+                      <button
+                        type="button"
+                        onClick={() => setTabAktif("cetak")}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: "#166534",
+                          textDecoration: "underline",
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          fontSize: 12,
+                        }}
+                      >
+                        Buka PDF Layout &rarr;
+                      </button>
+                    </div>
+                  )}
+
+                  {errorSimpanInvoice && (
+                    <div
+                      style={{
+                        padding: "10px 14px",
+                        borderRadius: 6,
+                        fontSize: 13,
+                        backgroundColor: "#fef2f2",
+                        color: "#991b1b",
+                        border: "1px solid #fecaca",
+                      }}
+                    >
+                      {errorSimpanInvoice}
+                    </div>
+                  )}
+
+                  <div>
+                    <h4 style={{ margin: "0 0 6px 0", fontSize: 14, color: "#0f172a" }}>
+                      1. Identitas &amp; Penomoran Invoice
+                    </h4>
+                    <p style={{ margin: "0 0 12px 0", fontSize: 12, color: "#64748b" }}>
+                      Atur nomor invoice resmi, tanggal terbit, dan tanggal jatuh tempo pembayaran.
+                    </p>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+                      <div className="field">
+                        <label style={{ fontSize: 12, fontWeight: 600, display: "block", marginBottom: 4 }}>
+                          Nomor Invoice <span style={{ color: "#ea242a" }}>*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={editNomorInvoice}
+                          onChange={(e) => setEditNomorInvoice(e.target.value)}
+                          placeholder="e.g. 798/INV-IDS/IX/2026"
+                          required
+                          style={{ width: "100%", padding: "8px 10px", fontSize: 13, borderRadius: 6, border: "1px solid #cbd5e1" }}
+                        />
+                      </div>
+                      <div className="field">
+                        <label style={{ fontSize: 12, fontWeight: 600, display: "block", marginBottom: 4 }}>
+                          Tanggal Invoice
+                        </label>
+                        <input
+                          type="date"
+                          value={editTanggalInvoice}
+                          onChange={(e) => setEditTanggalInvoice(e.target.value)}
+                          style={{ width: "100%", padding: "8px 10px", fontSize: 13, borderRadius: 6, border: "1px solid #cbd5e1" }}
+                        />
+                      </div>
+                      <div className="field">
+                        <label style={{ fontSize: 12, fontWeight: 600, display: "block", marginBottom: 4 }}>
+                          Tanggal Jatuh Tempo (Due Date)
+                        </label>
+                        <input
+                          type="date"
+                          value={editTanggalJatuhTempo}
+                          onChange={(e) => setEditTanggalJatuhTempo(e.target.value)}
+                          style={{ width: "100%", padding: "8px 10px", fontSize: 13, borderRadius: 6, border: "1px solid #cbd5e1" }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: 14 }}>
+                    <h4 style={{ margin: "0 0 6px 0", fontSize: 14, color: "#0f172a" }}>
+                      2. Perpajakan &amp; Referensi GR
+                    </h4>
+                    <p style={{ margin: "0 0 12px 0", fontSize: 12, color: "#64748b" }}>
+                      Nomor Faktur Pajak Elektronik (e-Faktur DJP) dan nomor referensi Good Receipt (GR Slip).
+                    </p>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+                      <div className="field">
+                        <label style={{ fontSize: 12, fontWeight: 600, display: "block", marginBottom: 4 }}>
+                          Nomor Faktur Pajak
+                        </label>
+                        <input
+                          type="text"
+                          value={editNomorFakturPajak}
+                          onChange={(e) => setEditNomorFakturPajak(e.target.value)}
+                          placeholder="e.g. 010.002-26.12345678"
+                          style={{ width: "100%", padding: "8px 10px", fontSize: 13, borderRadius: 6, border: "1px solid #cbd5e1" }}
+                        />
+                      </div>
+                      <div className="field">
+                        <label style={{ fontSize: 12, fontWeight: 600, display: "block", marginBottom: 4 }}>
+                          Tanggal Faktur Pajak
+                        </label>
+                        <input
+                          type="date"
+                          value={editTanggalFakturPajak}
+                          onChange={(e) => setEditTanggalFakturPajak(e.target.value)}
+                          style={{ width: "100%", padding: "8px 10px", fontSize: 13, borderRadius: 6, border: "1px solid #cbd5e1" }}
+                        />
+                      </div>
+                      <div className="field">
+                        <label style={{ fontSize: 12, fontWeight: 600, display: "block", marginBottom: 4 }}>
+                          Nomor GR Slip / ES Slip
+                        </label>
+                        <input
+                          type="text"
+                          value={editNomorGrSlip}
+                          onChange={(e) => setEditNomorGrSlip(e.target.value)}
+                          placeholder="e.g. 2000565039"
+                          style={{ width: "100%", padding: "8px 10px", fontSize: 13, borderRadius: 6, border: "1px solid #cbd5e1" }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: 14 }}>
+                    <h4 style={{ margin: "0 0 6px 0", fontSize: 14, color: "#0f172a" }}>
+                      3. Nilai Tagihan (DPP &amp; PPN)
+                    </h4>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+                      <div className="field">
+                        <label style={{ fontSize: 12, fontWeight: 600, display: "block", marginBottom: 4 }}>
+                          Dasar Pengenaan Pajak (DPP / Nilai GR)
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={editDpp}
+                          onChange={(e) => setEditDpp(Number(e.target.value))}
+                          style={{ width: "100%", padding: "8px 10px", fontSize: 13, borderRadius: 6, border: "1px solid #cbd5e1" }}
+                        />
+                      </div>
+                      <div className="field">
+                        <label style={{ fontSize: 12, fontWeight: 600, display: "block", marginBottom: 4 }}>
+                          Tarif PPN
+                        </label>
+                        <select
+                          value={editTarifPpn}
+                          onChange={(e) => setEditTarifPpn(e.target.value)}
+                          style={{ width: "100%", padding: "8px 10px", fontSize: 13, borderRadius: 6, border: "1px solid #cbd5e1" }}
+                        >
+                          <option value="11.00">11% (Standard UU HPP)</option>
+                          <option value="12.00">12% (Penyesuaian PPN)</option>
+                          <option value="0.00">0% (Bebas PPN / Non-PKP)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Live Calculation Preview Card */}
+                    <div
+                      style={{
+                        marginTop: 14,
+                        padding: "12px 16px",
+                        backgroundColor: "#f8fafc",
+                        border: "1px dashed #cbd5e1",
+                        borderRadius: 8,
+                        fontSize: 13,
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                        <span style={{ color: "#64748b" }}>DPP (Dasar Pengenaan Pajak):</span>
+                        <b>{formatRp(Number(editDpp || 0))}</b>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                        <span style={{ color: "#64748b" }}>PPN ({editTarifPpn}%):</span>
+                        <b>{formatRp(editPpn)}</b>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          paddingTop: 8,
+                          borderTop: "1px solid #e2e8f0",
+                          fontSize: 14,
+                        }}
+                      >
+                        <span style={{ fontWeight: 700, color: "#0f172a" }}>Total Nilai Tagihan Invoice:</span>
+                        <span style={{ fontWeight: 800, color: "#ea242a", fontSize: 15 }}>
+                          {formatRp(editTotalTagihan)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Submit Button */}
+                  <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 10 }}>
+                    <button
+                      type="button"
+                      onClick={() => setBuka(false)}
+                      className="btn"
+                      disabled={sedangSimpanInvoice}
+                    >
+                      Tutup
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={sedangSimpanInvoice}
+                      style={{
+                        backgroundColor: "#ea242a",
+                        color: "#ffffff",
+                        border: "none",
+                        padding: "9px 18px",
+                        borderRadius: 6,
+                        fontWeight: 600,
+                        fontSize: 13,
+                        cursor: sedangSimpanInvoice ? "not-allowed" : "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                      }}
+                    >
+                      {sedangSimpanInvoice ? "Menyimpan Perubahan..." : "💾 Simpan Perubahan Invoice"}
+                    </button>
+                  </div>
+                </form>
               )}
 
               {/* TAB 1: FORMAT & UNDUH PDF */}
@@ -445,13 +844,13 @@ export default function InvoiceModal({
                   >
                     <div>
                       <span style={{ color: "#64748b" }}>DPP: </span>
-                      <b style={{ color: "#0f172a" }}>{formatRp(dpp)}</b> &middot;{" "}
-                      <span style={{ color: "#64748b" }}>PPN ({tarifPpn}%): </span>
-                      <b style={{ color: "#0f172a" }}>{formatRp((dpp * tarifPpn) / 100)}</b>
+                      <b style={{ color: "#0f172a" }}>{formatRp(curDpp)}</b> &middot;{" "}
+                      <span style={{ color: "#64748b" }}>PPN ({curTarifPpn}%): </span>
+                      <b style={{ color: "#0f172a" }}>{formatRp(curPpn)}</b>
                     </div>
                     <div>
                       <span style={{ color: "#64748b" }}>Total: </span>
-                      <b style={{ color: "#ea242a", fontSize: 13 }}>{formatRp(totalTagihan)}</b>
+                      <b style={{ color: "#ea242a", fontSize: 13 }}>{formatRp(curTotalTagihan)}</b>
                     </div>
                   </div>
                 </>

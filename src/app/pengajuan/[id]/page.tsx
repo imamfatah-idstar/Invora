@@ -227,6 +227,8 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
               pengajuanId={header.id}
               nomorInvoice={header.nomorInvoice || `DRAF-INV-${header.id}`}
               nomorFakturPajak={header.nomorFakturPajak}
+              tanggalFakturPajak={header.tanggalFakturPajak}
+              nomorGrSlip={header.nomorGrSlip}
               nomorPo={header.nomorPo}
               klien={header.klien || "XL Axiata"}
               namaProyek={header.namaProyek}
