@@ -104,77 +104,79 @@ export default function FormStatusProses({
         </div>
       )}
 
-      {/* Bagian 1: Realisasi GR & Deficiency GR (MVP 4) */}
-      <div style={{ background: "var(--color-bg-alt, #f8fafc)", padding: "14px 16px", borderRadius: 8, border: "1px solid var(--color-border, #e2e8f0)" }}>
-        <h4 style={{ margin: "0 0 10px 0", fontSize: 14, color: "var(--color-primary, #0f172a)" }}>
-          1. Actual GR Realization &amp; Deficiency GR (Variance)
-        </h4>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
-          <div className="field">
-            <label>Official GR Slip Number</label>
-            <input
-              type="text"
-              placeholder="e.g. GR-2026-09-00123 / PO-SLIP-45"
-              value={nomorGrSlip}
-              onChange={(e) => setNomorGrSlip(e.target.value)}
-            />
-            <p className="subtitle" style={{ margin: "4px 0 0", fontSize: 11.5 }}>
-              Official Goods Receipt document number from client portal / COUPA.
-            </p>
+      {/* Bagian 1: Realisasi GR & Deficiency GR (MVP 4) — Khusus Klien XL */}
+      {isKlienXl && (
+        <div style={{ background: "var(--color-bg-alt, #f8fafc)", padding: "14px 16px", borderRadius: 8, border: "1px solid var(--color-border, #e2e8f0)" }}>
+          <h4 style={{ margin: "0 0 10px 0", fontSize: 14, color: "var(--color-primary, #0f172a)" }}>
+            1. Actual GR Realization &amp; Deficiency GR (Variance)
+          </h4>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+            <div className="field">
+              <label>Official GR Slip Number</label>
+              <input
+                type="text"
+                placeholder="e.g. GR-2026-09-00123 / PO-SLIP-45"
+                value={nomorGrSlip}
+                onChange={(e) => setNomorGrSlip(e.target.value)}
+              />
+              <p className="subtitle" style={{ margin: "4px 0 0", fontSize: 11.5 }}>
+                Official Goods Receipt document number from client portal / COUPA.
+              </p>
+            </div>
+            <div className="field">
+              <label>Client Approved GR Value (before VAT)</label>
+              <input
+                type="number"
+                step="any"
+                placeholder={`e.g. ${totalPengajuan.toFixed(2)}`}
+                value={nilaiGrDisetujui}
+                onChange={(e) => setNilaiGrDisetujui(e.target.value)}
+              />
+              <p className="subtitle" style={{ margin: "4px 0 0", fontSize: 11.5 }}>
+                Total submitted: <b>Rp{Number(totalPengajuan).toLocaleString("id-ID", { minimumFractionDigits: 2 })}</b>
+              </p>
+            </div>
           </div>
-          <div className="field">
-            <label>Client Approved GR Value (before VAT)</label>
-            <input
-              type="number"
-              step="any"
-              placeholder={`e.g. ${totalPengajuan.toFixed(2)}`}
-              value={nilaiGrDisetujui}
-              onChange={(e) => setNilaiGrDisetujui(e.target.value)}
-            />
-            <p className="subtitle" style={{ margin: "4px 0 0", fontSize: 11.5 }}>
-              Total submitted: <b>Rp{Number(totalPengajuan).toLocaleString("id-ID", { minimumFractionDigits: 2 })}</b>
-            </p>
-          </div>
-        </div>
 
-        {/* Live Deficiency Badge */}
-        {statusDeficiency.kategori !== "belum_dicatat" && (
-          <div
-            style={{
-              marginTop: 12,
-              padding: "10px 14px",
-              borderRadius: 6,
-              fontSize: 13,
-              background:
-                statusDeficiency.kategori === "impas"
-                  ? "rgba(34, 197, 94, 0.1)"
-                  : statusDeficiency.kategori === "kekurangan_gr"
-                  ? "rgba(234, 179, 8, 0.1)"
-                  : "rgba(59, 130, 246, 0.1)",
-              border: `1px solid ${
-                statusDeficiency.kategori === "impas"
-                  ? "rgba(34, 197, 94, 0.3)"
-                  : statusDeficiency.kategori === "kekurangan_gr"
-                  ? "rgba(234, 179, 8, 0.3)"
-                  : "rgba(59, 130, 246, 0.3)"
-              }`,
-              color:
-                statusDeficiency.kategori === "impas"
-                  ? "#15803d"
-                  : statusDeficiency.kategori === "kekurangan_gr"
-                  ? "#b45309"
-                  : "#1d4ed8",
-            }}
-          >
-            <b>Deficiency GR ({statusDeficiency.kategori === "impas" ? "Balanced" : statusDeficiency.kategori === "kekurangan_gr" ? "GR Under-delivery" : "GR Surplus"}):</b> {statusDeficiency.keterangan}
-            {statusDeficiency.selisih && (
-              <div style={{ marginTop: 4, fontWeight: "bold" }}>
-                Variance: {Number(statusDeficiency.selisih) >= 0 ? "+" : ""}Rp{Number(statusDeficiency.selisih).toLocaleString("id-ID", { minimumFractionDigits: 2 })}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+          {/* Live Deficiency Badge */}
+          {statusDeficiency.kategori !== "belum_dicatat" && (
+            <div
+              style={{
+                marginTop: 12,
+                padding: "10px 14px",
+                borderRadius: 6,
+                fontSize: 13,
+                background:
+                  statusDeficiency.kategori === "impas"
+                    ? "rgba(34, 197, 94, 0.1)"
+                    : statusDeficiency.kategori === "kekurangan_gr"
+                    ? "rgba(234, 179, 8, 0.1)"
+                    : "rgba(59, 130, 246, 0.1)",
+                border: `1px solid ${
+                  statusDeficiency.kategori === "impas"
+                    ? "rgba(34, 197, 94, 0.3)"
+                    : statusDeficiency.kategori === "kekurangan_gr"
+                    ? "rgba(234, 179, 8, 0.3)"
+                    : "rgba(59, 130, 246, 0.3)"
+                }`,
+                color:
+                  statusDeficiency.kategori === "impas"
+                    ? "#15803d"
+                    : statusDeficiency.kategori === "kekurangan_gr"
+                    ? "#b45309"
+                    : "#1d4ed8",
+              }}
+            >
+              <b>Deficiency GR ({statusDeficiency.kategori === "impas" ? "Balanced" : statusDeficiency.kategori === "kekurangan_gr" ? "GR Under-delivery" : "GR Surplus"}):</b> {statusDeficiency.keterangan}
+              {statusDeficiency.selisih && (
+                <div style={{ marginTop: 4, fontWeight: "bold" }}>
+                  Variance: {Number(statusDeficiency.selisih) >= 0 ? "+" : ""}Rp{Number(statusDeficiency.selisih).toLocaleString("id-ID", { minimumFractionDigits: 2 })}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Bagian 2: Invoice & Faktur Pajak Resmi */}
       <div style={{ background: "var(--color-bg-alt, #f8fafc)", padding: "14px 16px", borderRadius: 8, border: "1px solid var(--color-border, #e2e8f0)" }}>
@@ -254,12 +256,20 @@ export default function FormStatusProses({
       {/* Bagian 3: Urutan Tanggal Status Proses */}
       <div>
         <h4 style={{ margin: "0 0 10px 0", fontSize: 14, color: "var(--color-primary, #0f172a)" }}>
-          3. Process Lifecycle Dates (CAC &rarr; GR &rarr; Invoice)
+          {isKlienXl
+            ? "3. Process Lifecycle Dates (CAC → GR → Invoice)"
+            : "2. Process Lifecycle Dates (Invoice Submission & Approval)"}
         </h4>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
-          {URUTAN.map((field) => (
+          {URUTAN.filter((field) => isKlienXl || (field === "tanggalSubmitInvoice" || field === "tanggalApproveInvoice")).map((field) => (
             <div className="field" key={field}>
-              <label>{LABEL[field]}</label>
+              <label>
+                {!isKlienXl && field === "tanggalSubmitInvoice"
+                  ? "Invoice Submission Date"
+                  : !isKlienXl && field === "tanggalApproveInvoice"
+                  ? "Invoice Approval Date"
+                  : LABEL[field]}
+              </label>
               <input
                 type="date"
                 value={nilai[field] ?? ""}

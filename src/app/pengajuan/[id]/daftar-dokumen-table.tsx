@@ -27,6 +27,7 @@ type Props = {
   initialDokumen: DokumenItem[];
   userRole: string;
   userNama: string;
+  isKlienXl?: boolean;
 };
 
 export default function DaftarDokumenTable({
@@ -34,6 +35,7 @@ export default function DaftarDokumenTable({
   initialDokumen,
   userRole,
   userNama,
+  isKlienXl = true,
 }: Props) {
   const router = useRouter();
   const [daftar, setDaftar] = useState<DokumenItem[]>(initialDokumen);
@@ -199,7 +201,11 @@ export default function DaftarDokumenTable({
               cursor: bulkLoading ? "not-allowed" : "pointer",
             }}
           >
-            {bulkLoading ? "Memproses..." : "✓ Approve Semua Dokumen (CAC, BAST, GR)"}
+            {bulkLoading
+              ? "Memproses..."
+              : isKlienXl
+                ? "✓ Approve Semua Dokumen (CAC, BAST, GR)"
+                : "✓ Approve Dokumen BAST"}
           </button>
         </div>
       )}

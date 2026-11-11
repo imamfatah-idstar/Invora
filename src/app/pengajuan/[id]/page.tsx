@@ -386,9 +386,10 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
             {daftarDokumen.length > 0 && (
               <DaftarDokumenTable
                 pengajuanId={header.id}
-                initialDokumen={daftarDokumen}
+                initialDokumen={isKlienXl ? daftarDokumen : daftarDokumen.filter((d) => d.jenis === "BAST")}
                 userRole={userLogin.role}
                 userNama={userLogin.nama}
+                isKlienXl={isKlienXl}
               />
             )}
           </div>
@@ -396,9 +397,15 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
 
         {bisaKelengkapan && (
           <div className="card" style={{ marginTop: 20 }}>
-            <h3 style={{ marginTop: 0 }}>Processing Milestones: CAC &rarr; Approved GR &rarr; Official Invoice</h3>
+            <h3 style={{ marginTop: 0 }}>
+              {isKlienXl
+                ? "Processing Milestones: CAC → Approved GR → Official Invoice"
+                : "Processing Milestones: Official Invoice & Payment"}
+            </h3>
             <p className="subtitle">
-              End-to-end milestone tracking, official GR Slip recording, approved GR amount, automatic Deficiency GR calculation, and Tax Invoice &amp; Official Invoice issuance.
+              {isKlienXl
+                ? "End-to-end milestone tracking, official GR Slip recording, approved GR amount, automatic Deficiency GR calculation, and Tax Invoice & Official Invoice issuance."
+                : "End-to-end milestone tracking, Tax Invoice & Official Invoice issuance, and payment settlement for Non-XL client."}
             </p>
             {header.penyesuaianSelisihGrMasuk && Number(header.penyesuaianSelisihGrMasuk) !== 0 && (
               <div className="alert alert-info" style={{ marginTop: 8, marginBottom: 12 }}>
@@ -407,13 +414,19 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
               </div>
             )}
             <p style={{ margin: "0 0 4px", fontSize: 14 }}>
-              CAC Submitted Date: <b>{header.tanggalSubmitCac ?? "Pending Checker Review"}</b>
-              {header.tanggalSubmitCac && header.tanggalApproveInvoice && (
-                <> &middot; total turnaround to approved invoice: <b>{Math.round((new Date(header.tanggalApproveInvoice + "T00:00:00Z").getTime() - new Date(header.tanggalSubmitCac + "T00:00:00Z").getTime()) / 86400000)} days</b></>
+              {isKlienXl && (
+                <>
+                  CAC Submitted Date: <b>{header.tanggalSubmitCac ?? "Pending Checker Review"}</b>
+                  {header.tanggalSubmitCac && header.tanggalApproveInvoice && (
+                    <> &middot; total turnaround to approved invoice: <b>{Math.round((new Date(header.tanggalApproveInvoice + "T00:00:00Z").getTime() - new Date(header.tanggalSubmitCac + "T00:00:00Z").getTime()) / 86400000)} days</b></>
+                  )}
+                  {" "}&middot;{" "}
+                </>
               )}
-              {header.nomorInvoice && <> &middot; Invoice No.: <b>{header.nomorInvoice}</b></>}
-              {header.nomorGrSlip && <> &middot; GR Slip: <b>{header.nomorGrSlip}</b></>}
-              {header.nilaiGrDisetujui && <> &middot; Approved GR: <b>{formatRupiah(header.nilaiGrDisetujui)}</b></>}
+              {header.nomorInvoice && <>Invoice No.: <b>{header.nomorInvoice}</b> &middot; </>}
+              {isKlienXl && header.nomorGrSlip && <>GR Slip: <b>{header.nomorGrSlip}</b> &middot; </>}
+              {isKlienXl && header.nilaiGrDisetujui && <>Approved GR: <b>{formatRupiah(header.nilaiGrDisetujui)}</b></>}
+              {!isKlienXl && <>Total Billing: <b>{formatRupiah(String(total))}</b></>}
             </p>
             <FormStatusProses
               pengajuanId={header.id}
@@ -462,9 +475,15 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
 
         {bisaKelengkapan && (
           <div className="card" style={{ marginTop: 20 }}>
-            <h3 style={{ marginTop: 0 }}>Document Readiness Checklist — prior to submission to Get Approve/COUPA</h3>
+            <h3 style={{ marginTop: 0 }}>
+              {isKlienXl
+                ? "Document Readiness Checklist — prior to submission to Get Approve/COUPA"
+                : "Document Readiness Checklist — Non-XL Billing Documents"}
+            </h3>
             <p className="subtitle">
-              Prepare all required billing documents here — CAC, BAST, PO tracking spreadsheets, and any client-specific attachments.
+              {isKlienXl
+                ? "Prepare all required billing documents here — CAC, BAST, PO tracking spreadsheets, and any client-specific attachments."
+                : "Prepare all required formal billing documents — BAST 2-pihak, timesheets, and supporting attachments."}
             </p>
             <ul style={{ margin: "0 0 16px 0", paddingLeft: 18, fontSize: 14 }}>
               {isKlienXl ? (
