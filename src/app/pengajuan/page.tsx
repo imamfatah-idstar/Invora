@@ -44,7 +44,7 @@ export default async function DaftarPengajuan() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
           <h1>Invoicing Submissions</h1>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <a href="/dashboard/outstanding" className="btn">💰 Outstanding &amp; Aging</a>
+            {/* Fitur Outstanding & Aging sementara disembunyikan */}
             <a href="/api/rekon-invoice" className="btn">⬇ Download Invoice Recon (.xlsx)</a>
             {userLogin.role === "petugas" && (
               <a href="/pengajuan/baru" className="btn btn-primary">+ New Submission</a>

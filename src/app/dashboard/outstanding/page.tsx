@@ -1,4 +1,5 @@
 import { wajibRole } from "@/lib/require-role";
+import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { pengajuan, po, userXl, pengajuanDetail, pembayaran } from "@/db/schema";
 import { eq, or, isNotNull, desc } from "drizzle-orm";
@@ -13,6 +14,10 @@ export const metadata = {
 
 export default async function HalamanOutstanding() {
   const user = await wajibRole(["petugas", "checker", "admin"]);
+  const FITUR_OUTSTANDING_DISEMBUNYIKAN = process.env.NEXT_PUBLIC_ENABLE_OUTSTANDING !== "true";
+  if (FITUR_OUTSTANDING_DISEMBUNYIKAN) {
+    redirect("/dashboard");
+  }
 
   // Ambil semua pengajuan yang sudah masuk tahap invoicing
   // (punya nomor invoice ATAU tanggal submit invoice ATAU tanggal approve invoice)

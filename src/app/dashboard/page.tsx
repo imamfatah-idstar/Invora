@@ -25,12 +25,7 @@ export default async function Dashboard() {
       deskripsi: "Summary of PO value, GR value, and remaining balance per year.",
       icon: "📊"
     }] : []),
-    ...(canPetugas || canChecker ? [{
-      href: "/dashboard/outstanding",
-      label: "Outstanding & Aging",
-      deskripsi: "Monitor outstanding receivables, due dates, and aging schedule.",
-      icon: "💰"
-    }] : []),
+    // Outstanding & Aging temporarily disabled / hidden
     // Cash-in Forecasting temporarily disabled
     ...(canPetugas ? [{
       href: "/data-referensi/personel",
