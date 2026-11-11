@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { mkdir, writeFile } from "fs/promises";
+import { mkdir, writeFile, unlink } from "fs/promises";
 import path from "path";
 import { db } from "@/db";
 import { lampiranPengajuan, pengajuan } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { wajibRoleApi } from "@/lib/require-role-api";
 import { userSaatIni } from "@/lib/session-server";
 import { catatAudit } from "@/lib/audit";
+import { LABEL_LAMPIRAN_BALANCE } from "@/lib/lampiran-label";
 
 const DIR_UPLOAD = path.join(process.cwd(), "uploads", "lampiran");
 const UKURAN_MAKS = 30 * 1024 * 1024; // 30MB, sama dengan batas Get Approve/COUPA
@@ -57,6 +58,19 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
   if (file.size > UKURAN_MAKS) {
     return NextResponse.json({ error: "Ukuran file maksimal 30MB." }, { status: 400 });
+  }
+
+  // Jika ini lampiran balance / lampiran CAC, bersihkan lampiran lama agar langsung terganti
+  if (label.trim() === LABEL_LAMPIRAN_BALANCE) {
+    const existingOld = await db
+      .select()
+      .from(lampiranPengajuan)
+      .where(and(eq(lampiranPengajuan.pengajuanId, pengajuanId), eq(lampiranPengajuan.label, LABEL_LAMPIRAN_BALANCE)));
+    for (const old of existingOld) {
+      const subPathOld = old.pathFile.replace(/^[/\\]*uploads[/\\]*/, "");
+      await unlink(path.join(process.cwd(), "uploads", subPathOld)).catch(() => {});
+      await db.delete(lampiranPengajuan).where(eq(lampiranPengajuan.id, old.id)).catch(() => {});
+    }
   }
 
   await mkdir(DIR_UPLOAD, { recursive: true });

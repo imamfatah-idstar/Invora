@@ -77,7 +77,11 @@ export default async function HalamanDokumen({ params }: { params: Promise<{ id:
 
   const [poRow] = await db.select({ pathFilePoAsli: po.pathFilePoAsli }).from(po).where(eq(po.nomorPo, header.nomorPo));
   const [lampiranBalance] = await db
-    .select({ id: lampiranPengajuan.id })
+    .select({
+      id: lampiranPengajuan.id,
+      namaFile: lampiranPengajuan.namaFile,
+      pathFile: lampiranPengajuan.pathFile,
+    })
     .from(lampiranPengajuan)
     .where(and(eq(lampiranPengajuan.pengajuanId, pengajuanId), eq(lampiranPengajuan.label, LABEL_LAMPIRAN_BALANCE)))
     .limit(1);
@@ -133,7 +137,7 @@ export default async function HalamanDokumen({ params }: { params: Promise<{ id:
     );
   }
 
-  // Jika klien XL dan dokumen adalah CAC, gunakan format CAC XL resmi (sesuai CAC_PO.pdf)
+  // Jika klien XL dan dokumen adalah CAC, gunakan format CAC XL resmi (sesuai contoh_cac.pdf)
   if (isKlienXl && dok.jenis === "CAC") {
     return (
       <CacXlView
@@ -146,11 +150,20 @@ export default async function HalamanDokumen({ params }: { params: Promise<{ id:
         poValue={header.nilaiItem}
         grValue={header.nilaiGrDisetujui || total}
         defaultUserXlNama={header.namaUserXl}
-        defaultUserXlJabatan={header.kontakUserXl || "GM Integration & AI Orchestration"}
+        defaultUserXlJabatan={header.kontakUserXl || "GM Integration Service & Ai Orchestration"}
         defaultFinanceNama="Dewi Ani Mulyakarti"
         defaultFinanceJabatan="Finance Manager"
         dibuatPada={dok.dibuatPada}
         approvalData={approvalData}
+        lampiranBalance={
+          lampiranBalance
+            ? {
+                id: lampiranBalance.id,
+                namaFile: lampiranBalance.namaFile,
+                url: `/api/pengajuan/${pengajuanId}/lampiran/${lampiranBalance.id}`,
+              }
+            : null
+        }
       />
     );
   }

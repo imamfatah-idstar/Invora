@@ -770,21 +770,128 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     hal1.drawText("Date:", { x: xLine, y, size: 8.5, font });
 
     // Footer
-    hal1.drawText("Confidential and Proprietary to PT XL AXIATA Tbk.", {
+    hal1.drawText("Confidential and Proprietary to PT XLSMART Telecom Sejahtera Tbk", {
       x: marginX, y: 48, size: 7.5, font, color: rgb(0.35, 0.35, 0.35),
     });
-    hal1.drawText("This slip can be used as supporting document for invoice submission to XL.", {
+    hal1.drawText("This script can be used as supporting document for invoice submission to XL", {
       x: marginX, y: 38, size: 7.5, font, color: rgb(0.35, 0.35, 0.35),
     });
 
-    // Lampiran Balance PO (Halaman 2)
+    // Lampiran Balance PO (Halaman 2) mengikuti contoh_cac.pdf
     if (lampiranBalance?.pathFile) {
-      await tempelFile(gabungan, lampiranBalance.pathFile).catch(() => {});
+      const hal2 = gabungan.addPage(PageSizes.A4);
+      const { width: pw2, height: ph2 } = hal2.getSize();
+      let y2 = ph2 - 50;
+
+      // Logo XLSMART di kanan atas
+      if (xlLogoImg) {
+        hal2.drawImage(xlLogoImg, {
+          x: pw2 - marginX - 115,
+          y: y2 - 10,
+          width: 115,
+          height: 26,
+        });
+      }
+
+      // Judul Dokumen (Tengah)
+      y2 -= 36;
+      hal2.drawText(judulCac, { x: (pw2 - judulCacW) / 2, y: y2, size: 13.5, font: fontBold });
+
+      // Subtitle "Lampiran:"
+      y2 -= 28;
+      hal2.drawText("Lampiran:", { x: marginX, y: y2, size: 10, font: fontBold });
+
+      // Embed Gambar / Dokumen Lampiran
+      try {
+        const subPath = lampiranBalance.pathFile.replace(/^[/\\]*uploads[/\\]*/, "");
+        const lampiranBytes = await readFile(path.join(process.cwd(), "uploads", subPath));
+        const ext = path.extname(lampiranBalance.pathFile).toLowerCase();
+        let lampiranImg = null;
+        if (ext === ".png") {
+          lampiranImg = await gabungan.embedPng(lampiranBytes);
+        } else if (ext === ".jpg" || ext === ".jpeg") {
+          lampiranImg = await gabungan.embedJpg(lampiranBytes);
+        }
+
+        if (lampiranImg) {
+          const maxImgW = pw2 - marginX * 2;
+          const maxImgH = y2 - 100;
+          const skala = Math.min(maxImgW / lampiranImg.width, maxImgH / lampiranImg.height, 1);
+          const imgW = lampiranImg.width * skala;
+          const imgH = lampiranImg.height * skala;
+          hal2.drawImage(lampiranImg, {
+            x: (pw2 - imgW) / 2,
+            y: y2 - 25 - imgH,
+            width: imgW,
+            height: imgH,
+          });
+        } else if (ext === ".pdf") {
+          const pdfSub = await PDFDocument.load(lampiranBytes);
+          const halSub = await gabungan.copyPages(pdfSub, pdfSub.getPageIndices());
+          halSub.forEach((h) => gabungan.addPage(h));
+        }
+      } catch (err) {
+        console.error("Gagal menempel lampiran CAC:", err);
+      }
+
+      // Footer Halaman 2
+      hal2.drawText("Confidential and Proprietary to PT XLSMART Telecom Sejahtera Tbk", {
+        x: marginX, y: 48, size: 7.5, font, color: rgb(0.35, 0.35, 0.35),
+      });
+      hal2.drawText("This script can be used as supporting document for invoice submission to XL", {
+        x: marginX, y: 38, size: 7.5, font, color: rgb(0.35, 0.35, 0.35),
+      });
     }
 
-    // Dokumen PO Asli (Halaman 3+)
+    // Dokumen PO Asli (Halaman 3+) mengikuti contoh_cac.pdf
     if (header.pathFilePoAsli) {
-      await tempelFile(gabungan, header.pathFilePoAsli).catch(() => {});
+      const subPathPo = header.pathFilePoAsli.replace(/^[/\\]*uploads[/\\]*/, "");
+      const extPo = path.extname(header.pathFilePoAsli).toLowerCase();
+      let handledAsImage = false;
+      try {
+        const poBytes = await readFile(path.join(process.cwd(), "uploads", subPathPo));
+        if (extPo === ".jpg" || extPo === ".jpeg" || extPo === ".png") {
+          const hal3 = gabungan.addPage(PageSizes.A4);
+          const { width: pw3, height: ph3 } = hal3.getSize();
+          let y3 = ph3 - 50;
+          if (xlLogoImg) {
+            hal3.drawImage(xlLogoImg, {
+              x: pw3 - marginX - 115,
+              y: y3 - 10,
+              width: 115,
+              height: 26,
+            });
+          }
+          y3 -= 36;
+          hal3.drawText(judulCac, { x: (pw3 - judulCacW) / 2, y: y3, size: 13.5, font: fontBold });
+
+          const poImg = extPo === ".png" ? await gabungan.embedPng(poBytes) : await gabungan.embedJpg(poBytes);
+          const maxPoW = pw3 - marginX * 2;
+          const maxPoH = y3 - 75;
+          const skalaPo = Math.min(maxPoW / poImg.width, maxPoH / poImg.height, 1);
+          const wPo = poImg.width * skalaPo;
+          const hPo = poImg.height * skalaPo;
+          hal3.drawImage(poImg, {
+            x: (pw3 - wPo) / 2,
+            y: y3 - 20 - hPo,
+            width: wPo,
+            height: hPo,
+          });
+
+          hal3.drawText("Confidential and Proprietary to PT XLSMART Telecom Sejahtera Tbk", {
+            x: marginX, y: 48, size: 7.5, font, color: rgb(0.35, 0.35, 0.35),
+          });
+          hal3.drawText("This script can be used as supporting document for invoice submission to XL", {
+            x: marginX, y: 38, size: 7.5, font, color: rgb(0.35, 0.35, 0.35),
+          });
+          handledAsImage = true;
+        }
+      } catch {
+        handledAsImage = false;
+      }
+      if (!handledAsImage) {
+        await tempelFile(gabungan, header.pathFilePoAsli).catch(() => {});
+      }
     }
 
     const pdfBytes = await gabungan.save();
