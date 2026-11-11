@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import UnggahTimesheetModal from "./unggah-timesheet-modal";
 import ComboSelect from "@/components/combo-select";
 import InputTagihanTahap, { BarisTahapUi, nilaiManualTerisi, totalNilaiTahap } from "@/components/input-tagihan-tahap";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import UnggahTimesheetModal from "./unggah-timesheet-modal";
 
 type Opsi = { id: number; label: string };
 type BarisHitung = {
@@ -129,7 +129,7 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
           />
         </div>
         <div className="field">
-          <label>Client Approver (User XL)</label>
+          <label>Client Approver</label>
           <select value={userXlId} onChange={(e) => setUserXlId(Number(e.target.value))}>
             {daftarUserXl.map((u) => <option key={u.id} value={u.id}>{u.label}</option>)}
           </select>
