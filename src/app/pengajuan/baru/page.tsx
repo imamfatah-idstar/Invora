@@ -24,7 +24,7 @@ export default async function HalamanBuatPengajuan() {
         </p>
         <FormBuatPengajuan
           daftarPo={daftarPo.map((p) => ({ id: p.id, label: `${p.nomorPo} — ${p.namaProyek}` }))}
-          daftarUserXl={daftarUserXl.map((u) => ({ id: u.id, label: u.nama }))}
+          daftarUserXl={daftarUserXl.map((u) => ({ id: u.id, label: u.nama, poId: u.poId }))}
         />
       </main>
     </>

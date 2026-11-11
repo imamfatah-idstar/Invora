@@ -17,6 +17,7 @@ export async function POST(request: NextRequest) {
   const [row] = await db.insert(userXl).values({
     nama: String(body.nama).trim(),
     kontak: body.kontak ? String(body.kontak).trim() : null,
+    poId: body.poId ? Number(body.poId) : null,
   }).returning();
 
   await catatAudit({ entitas: "user_xl", entitasId: row.id, perubahan: `Tambah User XL "${row.nama}"`, userId: user!.id });

@@ -7,12 +7,21 @@ type Opsi = { id: number; label: string };
 type OpsiLine = { id: number; poId: number; label: string };
 
 export default function FormTambahPemetaan({
-  daftarPersonel, daftarPo, daftarLine,
-}: { daftarPersonel: Opsi[]; daftarPo: Opsi[]; daftarLine: OpsiLine[] }) {
+  daftarPersonel,
+  daftarPo,
+  daftarLine,
+  daftarUserXl = [],
+}: {
+  daftarPersonel: Opsi[];
+  daftarPo: Opsi[];
+  daftarLine: OpsiLine[];
+  daftarUserXl?: Opsi[];
+}) {
   const router = useRouter();
   const [personelId, setPersonelId] = useState(daftarPersonel[0]?.id ?? "");
   const [poId, setPoId] = useState(daftarPo[0]?.id ?? "");
   const [poLineItemId, setPoLineItemId] = useState<string>("");
+  const [userXlId, setUserXlId] = useState<string | number>("");
   const [berlakuDari, setBerlakuDari] = useState("");
   const [berlakuSampai, setBerlakuSampai] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -22,15 +31,30 @@ export default function FormTambahPemetaan({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null); setLoading(true);
+    setError(null);
+    setLoading(true);
     const res = await fetch("/api/pemetaan", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ personelId, poId, poLineItemId: poLineItemId || null, berlakuDari, berlakuSampai }),
+      body: JSON.stringify({
+        personelId,
+        poId,
+        poLineItemId: poLineItemId || null,
+        userXlId: userXlId ? Number(userXlId) : null,
+        berlakuDari,
+        berlakuSampai,
+      }),
     });
     setLoading(false);
-    if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Failed to add mapping."); return; }
-    setBerlakuDari(""); setBerlakuSampai(""); setPoLineItemId("");
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      setError(d.error ?? "Failed to add mapping.");
+      return;
+    }
+    setBerlakuDari("");
+    setBerlakuSampai("");
+    setPoLineItemId("");
+    setUserXlId("");
     router.refresh();
   }
 
@@ -39,7 +63,7 @@ export default function FormTambahPemetaan({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="toolbar">
+    <form onSubmit={handleSubmit} className="toolbar" style={{ flexWrap: "wrap", alignItems: "flex-end" }}>
       <div className="field">
         <label>Personnel</label>
         <ComboSelect
@@ -63,6 +87,16 @@ export default function FormTambahPemetaan({
           <option value="">- not selected -</option>
           {lineUntukPo.map((l) => <option key={l.id} value={l.id}>{l.label}</option>)}
         </select>
+      </div>
+      <div className="field" style={{ minWidth: 200 }}>
+        <label>Client Approver / User XL (optional)</label>
+        <ComboSelect
+          value={userXlId}
+          onChange={(v) => setUserXlId(v)}
+          opsi={daftarUserXl.map((u) => ({ value: u.id, label: u.label }))}
+          kosongLabel="- Not selected -"
+          placeholderCari="Search User XL..."
+        />
       </div>
       <div className="field"><label>Effective from</label><input type="date" value={berlakuDari} onChange={(e) => setBerlakuDari(e.target.value)} required /></div>
       <div className="field"><label>Effective until (optional)</label><input type="date" value={berlakuSampai} onChange={(e) => setBerlakuSampai(e.target.value)} /></div>

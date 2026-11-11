@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { userXl } from "@/db/schema";
+import { userXl, po } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { wajibRoleApi } from "@/lib/require-role-api";
 import { userSaatIni } from "@/lib/session-server";
@@ -11,11 +11,11 @@ const UKURAN_MAKS = 5 * 1024 * 1024; // 5MB
 
 // Impor massal User XL (bagian 48) — alternatif dari isi manual satu-satu.
 // Kolom fleksibel: "nama"/"name" wajib, "kontak"/"contact"/"email"/"telepon"/
-// "phone" opsional. Dedupe per nama (baris terakhir menang), upsert: nama
-// yang sudah ada kontaknya diperbarui, nama baru ditambahkan.
+// "phone" opsional, "po"/"nomor po"/"po number" opsional.
 const ALIAS_HEADER: Record<string, string> = {
   "nama": "nama", "name": "nama",
   "kontak": "kontak", "contact": "kontak", "email": "kontak", "telepon": "kontak", "phone": "kontak", "no telepon": "kontak", "no hp": "kontak",
+  "po": "po", "nomor po": "po", "nomor_po": "po", "po number": "po", "po_number": "po", "no po": "po",
 };
 
 function normalisasiHeader(h: string): string {
@@ -75,21 +75,31 @@ export async function POST(request: NextRequest) {
 
   const daftarAda = await db.select().from(userXl);
   const petaAda = new Map(daftarAda.map((u) => [u.nama.trim().toLowerCase(), u]));
+  const daftarPo = await db.select().from(po);
+  const petaPo = new Map(daftarPo.map((p) => [p.nomorPo.trim().toLowerCase(), p.id]));
 
   let userXlBaru = 0, kontakDiperbarui = 0, tidakBerubah = 0;
 
   for (const [namaLower, r] of perNama) {
     const nama = r.nama.trim();
     const kontak = r.kontak?.trim() || null;
+    const poNomor = r.po?.trim().toLowerCase();
+    const poId = poNomor ? (petaPo.get(poNomor) ?? null) : null;
     const existing = petaAda.get(namaLower);
     if (!existing) {
-      await db.insert(userXl).values({ nama, kontak });
+      await db.insert(userXl).values({ nama, kontak, poId });
       userXlBaru++;
-    } else if (kontak && existing.kontak !== kontak) {
-      await db.update(userXl).set({ kontak }).where(eq(userXl.id, existing.id));
-      kontakDiperbarui++;
     } else {
-      tidakBerubah++;
+      const dataUpdate: { kontak?: string | null; poId?: number | null } = {};
+      if (kontak && existing.kontak !== kontak) dataUpdate.kontak = kontak;
+      if (poId && existing.poId !== poId) dataUpdate.poId = poId;
+
+      if (Object.keys(dataUpdate).length > 0) {
+        await db.update(userXl).set(dataUpdate).where(eq(userXl.id, existing.id));
+        kontakDiperbarui++;
+      } else {
+        tidakBerubah++;
+      }
     }
   }
 

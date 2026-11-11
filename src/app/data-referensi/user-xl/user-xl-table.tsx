@@ -3,8 +3,15 @@ import { useMemo, useState } from "react";
 import TombolHapus from "./hapus-button";
 import HapusTerpilih from "@/components/hapus-terpilih";
 
-type BarisUserXl = { id: number; nama: string; kontak: string | null };
-type KolomSort = "nama" | "kontak";
+type BarisUserXl = {
+  id: number;
+  nama: string;
+  kontak: string | null;
+  poId?: number | null;
+  nomorPo?: string | null;
+  namaProyek?: string | null;
+};
+type KolomSort = "nama" | "nomorPo" | "kontak";
 type ArahSort = "asc" | "desc";
 
 export default function TabelUserXl({ daftar }: { daftar: BarisUserXl[] }) {
@@ -20,7 +27,9 @@ export default function TabelUserXl({ daftar }: { daftar: BarisUserXl[] }) {
   const daftarUrut = useMemo(() => {
     const salinan = [...daftar];
     salinan.sort((a, b) => {
-      const hasil = String(a[kolom] ?? "").localeCompare(String(b[kolom] ?? ""), "id");
+      const valA = String(a[kolom] ?? "");
+      const valB = String(b[kolom] ?? "");
+      const hasil = valA.localeCompare(valB, "id");
       return arah === "asc" ? hasil : -hasil;
     });
     return salinan;
@@ -58,21 +67,34 @@ export default function TabelUserXl({ daftar }: { daftar: BarisUserXl[] }) {
             <th style={{ width: 28 }}>
               <input type="checkbox" checked={terpilih.size === daftarUrut.length && daftarUrut.length > 0} onChange={toggleSemua} />
             </th>
-            <Th label="Name" k="nama" /><Th label="Contact" k="kontak" /><th></th>
+            <Th label="Name (Nama)" k="nama" />
+            <Th label="PO" k="nomorPo" />
+            <Th label="Contact (Kontak)" k="kontak" />
+            <th></th>
           </tr></thead>
           <tbody>
             {daftarUrut.map((u) => (
               <tr key={u.id}>
                 <td><input type="checkbox" checked={terpilih.has(u.id)} onChange={() => toggle(u.id)} /></td>
-                <td>{u.nama}</td>
+                <td style={{ fontWeight: 600 }}>{u.nama}</td>
+                <td>
+                  {u.nomorPo ? (
+                    <div>
+                      <span className="badge badge-info" style={{ fontFamily: "monospace" }}>{u.nomorPo}</span>
+                      {u.namaProyek && <div style={{ fontSize: "0.82rem", color: "var(--muted)" }}>{u.namaProyek}</div>}
+                    </div>
+                  ) : (
+                    <span style={{ color: "var(--muted)" }}>-</span>
+                  )}
+                </td>
                 <td>{u.kontak ?? "-"}</td>
                 <td style={{ display: "flex", gap: 8 }}>
                   <a href={`/data-referensi/user-xl/${u.id}/edit`} className="btn-text">Edit</a>
-                  <TombolHapus url={`/api/user-xl/${u.id}`} konfirmasi={`Delete Client Approver "${u.nama}"?`} />
+                  <TombolHapus url={`/api/user-xl/${u.id}`} konfirmasi={`Delete User XL "${u.nama}"?`} />
                 </td>
               </tr>
             ))}
-            {daftarUrut.length === 0 && <tr><td colSpan={4} className="table-empty">No records found.</td></tr>}
+            {daftarUrut.length === 0 && <tr><td colSpan={5} className="table-empty">No records found.</td></tr>}
           </tbody>
         </table>
       </div>

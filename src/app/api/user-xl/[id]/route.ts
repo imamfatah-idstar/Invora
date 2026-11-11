@@ -18,6 +18,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   await db.update(userXl).set({
     nama: String(body.nama).trim(),
     kontak: body.kontak ? String(body.kontak).trim() : null,
+    poId: body.poId ? Number(body.poId) : null,
   }).where(eq(userXl.id, Number(id)));
 
   await catatAudit({ entitas: "user_xl", entitasId: Number(id), perubahan: `Ubah User XL menjadi nama="${body.nama}"`, userId: user!.id });

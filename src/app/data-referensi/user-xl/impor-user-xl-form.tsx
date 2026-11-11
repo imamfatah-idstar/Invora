@@ -30,11 +30,10 @@ export default function FormImporUserXl() {
 
   return (
     <div className="card" style={{ marginBottom: 16 }}>
-      <h3 style={{ marginTop: 0 }}>Impor User dari File</h3>
+      <h3 style={{ marginTop: 0 }}>Import User XL from CSV</h3>
       <p className="subtitle" style={{ fontSize: 13 }}>
-        Unggah file CSV dengan kolom <code>nama</code> (wajib) dan <code>kontak</code> (opsional, boleh juga
-        diberi nama email/telepon/no hp) — supaya tidak perlu isi satu-satu manual. Nama baru ditambahkan;
-        nama yang sudah ada kontaknya diperbarui kalau berbeda.
+        Upload a CSV file with columns <code>nama</code> (required), <code>po</code> (optional, PO number), and <code>kontak</code> (optional, email/phone).
+        New entries are added; existing records are updated.
       </p>
       <form onSubmit={handleSubmit} className="toolbar">
         <div className="field">

@@ -22,6 +22,7 @@ export async function POST(request: NextRequest) {
     personelId: Number(body.personelId),
     poId: Number(body.poId),
     poLineItemId: body.poLineItemId ? Number(body.poLineItemId) : null,
+    userXlId: body.userXlId ? Number(body.userXlId) : null,
     berlakuDari: body.berlakuDari,
     berlakuSampai: body.berlakuSampai || null,
   }).returning();

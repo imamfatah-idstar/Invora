@@ -10,7 +10,7 @@ import Topbar from "@/components/topbar";
 const MENU = [
   { href: "/data-referensi/personel", label: "Personnel" },
   { href: "/data-referensi/rate-card", label: "Rate Card" },
-  { href: "/data-referensi/user-xl", label: "Client PICs" },
+  { href: "/data-referensi/user-xl", label: "User XL" },
   { href: "/data-referensi/po", label: "PO / Line Items" },
   { href: "/data-referensi/pemetaan", label: "Personnel ↔ PO Mapping" },
   { href: "/data-referensi/kalender", label: "Working Calendar" },

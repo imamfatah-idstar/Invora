@@ -67,13 +67,6 @@ export const rateCard = pgTable("rate_card", {
   berlakuSampai: text("berlaku_sampai"), // null = masih berlaku
 });
 
-// User XL — pemberi keputusan/approval di luar aplikasi (dicatat internal).
-export const userXl = pgTable("user_xl", {
-  id: serial("id").primaryKey(),
-  nama: text("nama").notNull(),
-  kontak: text("kontak"),
-});
-
 // PO (Purchase Order) — bundling, tidak mencantumkan nama personel.
 export const po = pgTable("po", {
   id: serial("id").primaryKey(),
@@ -114,6 +107,14 @@ export const po = pgTable("po", {
   statusPo: text("status_po").notNull().default("aktif"),
 });
 
+// User XL — pemberi keputusan/approval di luar aplikasi (dicatat internal).
+export const userXl = pgTable("user_xl", {
+  id: serial("id").primaryKey(),
+  nama: text("nama").notNull(),
+  kontak: text("kontak"),
+  poId: integer("po_id").references(() => po.id),
+});
+
 // Baris/line item PO — PO bersifat bundling banyak baris (per role/jenis
 // layanan, mis. "SVC | FrontEnd", "SVC | Tester"), masing-masing punya qty &
 // harga satuan sendiri. Dipakai untuk mengisi form GR Request per baris
@@ -146,6 +147,8 @@ export const pemetaanPersonelPo = pgTable("pemetaan_personel_po", {
   // GR Request per baris secara otomatis (bagian 33): setiap pengajuan_detail
   // mewarisi poLineItemId dari sini saat pengajuan dibuat.
   poLineItemId: integer("po_line_item_id").references(() => poLineItem.id),
+  // Client Approver / User XL yang memverifikasi atau menyetujui penugasan/dokumen
+  userXlId: integer("user_xl_id").references(() => userXl.id),
 });
 
 // Kalender kerja — dipakai untuk menghitung hari kerja acuan bulan & hari

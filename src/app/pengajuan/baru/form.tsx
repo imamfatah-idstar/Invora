@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import UnggahTimesheetModal from "./unggah-timesheet-modal";
 
-type Opsi = { id: number; label: string };
+type Opsi = { id: number; label: string; poId?: number | null };
 type BarisHitung = {
   personelId: number; namaPersonel: string;
   nilaiRateDipakai: string | null; hariKerjaDapatDitagihkan: number | null;
@@ -123,13 +123,22 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
           <label>PO</label>
           <ComboSelect
             value={poId}
-            onChange={(v) => { setPoId(Number(v)); setBaris(null); setBarisTahap(null); }}
+            onChange={(v) => {
+              const nextPoId = Number(v);
+              setPoId(nextPoId);
+              setBaris(null);
+              setBarisTahap(null);
+              const matchedUser = daftarUserXl.find((u) => u.poId === nextPoId);
+              if (matchedUser) {
+                setUserXlId(matchedUser.id);
+              }
+            }}
             opsi={daftarPo.map((p) => ({ value: p.id, label: p.label }))}
             placeholderCari="Search PO number or project name..."
           />
         </div>
         <div className="field">
-          <label>Client Approver</label>
+          <label>User XL (Client Approver)</label>
           <select value={userXlId} onChange={(e) => setUserXlId(Number(e.target.value))}>
             {daftarUserXl.map((u) => <option key={u.id} value={u.id}>{u.label}</option>)}
           </select>

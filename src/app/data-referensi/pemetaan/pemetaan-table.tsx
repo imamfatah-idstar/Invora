@@ -9,11 +9,12 @@ type BarisPemetaan = {
   nomorPo: string;
   poLineText: string | null;
   poLineNomor: number | null;
+  userXlNama: string | null;
   berlakuDari: string;
   berlakuSampai: string | null;
 };
 
-type KolomSort = "namaPersonel" | "nomorPo" | "berlakuDari" | "berlakuSampai";
+type KolomSort = "namaPersonel" | "nomorPo" | "userXlNama" | "berlakuDari" | "berlakuSampai";
 type ArahSort = "asc" | "desc";
 
 export default function TabelPemetaan({ daftar }: { daftar: BarisPemetaan[] }) {
@@ -77,6 +78,7 @@ export default function TabelPemetaan({ daftar }: { daftar: BarisPemetaan[] }) {
             <Th label="Personnel" k="namaPersonel" />
             <Th label="PO No." k="nomorPo" />
             <th>PO Line</th>
+            <Th label="Client Approver / User XL" k="userXlNama" />
             <Th label="Valid From" k="berlakuDari" />
             <Th label="Valid Until" k="berlakuSampai" />
             <th></th>
@@ -85,15 +87,22 @@ export default function TabelPemetaan({ daftar }: { daftar: BarisPemetaan[] }) {
             {daftarUrut.map((m) => (
               <tr key={m.id}>
                 <td><input type="checkbox" checked={terpilih.has(m.id)} onChange={() => toggle(m.id)} /></td>
-                <td>{m.namaPersonel}</td>
-                <td>{m.nomorPo}</td>
+                <td style={{ fontWeight: 600 }}>{m.namaPersonel}</td>
+                <td><span className="badge badge-info" style={{ fontFamily: "monospace" }}>{m.nomorPo}</span></td>
                 <td>{m.poLineText ? `Line ${m.poLineNomor} — ${m.poLineText}` : "-"}</td>
+                <td>
+                  {m.userXlNama ? (
+                    <span className="badge badge-success">{m.userXlNama}</span>
+                  ) : (
+                    <span style={{ color: "var(--muted)" }}>-</span>
+                  )}
+                </td>
                 <td>{m.berlakuDari}</td>
                 <td>{m.berlakuSampai ?? "Ongoing"}</td>
                 <td><TombolHapus url={`/api/pemetaan/${m.id}`} konfirmasi="Delete this mapping?" /></td>
               </tr>
             ))}
-            {daftarUrut.length === 0 && <tr><td colSpan={7} className="table-empty">No records found.</td></tr>}
+            {daftarUrut.length === 0 && <tr><td colSpan={8} className="table-empty">No records found.</td></tr>}
           </tbody>
         </table>
       </div>
