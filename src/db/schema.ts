@@ -238,6 +238,8 @@ export const pengajuan = pgTable("pengajuan", {
   // Data Faktur Pajak Resmi
   nomorFakturPajak: text("nomor_faktur_pajak"),
   tanggalFakturPajak: text("tanggal_faktur_pajak"), // "YYYY-MM-DD"
+  namaFileFakturPajak: text("nama_file_faktur_pajak"),
+  pathFileFakturPajak: text("path_file_faktur_pajak"),
   tarifPpn: text("tarif_ppn").notNull().default("11.00"), // persentase PPN (default 11, bisa 12)
 });
 

@@ -106,6 +106,7 @@ export async function GET(
       nilaiGrDisetujui: pengajuan.nilaiGrDisetujui,
       nomorFakturPajak: pengajuan.nomorFakturPajak,
       tanggalFakturPajak: pengajuan.tanggalFakturPajak,
+      pathFileFakturPajak: pengajuan.pathFileFakturPajak,
       tarifPpn: pengajuan.tarifPpn,
       tanggalSubmitInvoice: pengajuan.tanggalSubmitInvoice,
       tanggalApproveInvoice: pengajuan.tanggalApproveInvoice,
@@ -703,6 +704,41 @@ export async function GET(
   });
 
   // --- 14. GENERATE DAN RETURN RESPONSE ---
+  // Jika terdapat berkas Faktur Pajak Resmi yang diunggah, lakukan merge ke halaman berikutnya
+  if (header.pathFileFakturPajak) {
+    try {
+      const subPath = header.pathFileFakturPajak.replace(/^[/\\]*uploads[/\\]*/, "");
+      const fullFpPath = path.join(process.cwd(), "uploads", subPath);
+      if (fs.existsSync(fullFpPath)) {
+        const fpBytes = fs.readFileSync(fullFpPath);
+        const ext = path.extname(header.pathFileFakturPajak).toLowerCase();
+        if (ext === ".pdf") {
+          const fpPdf = await PDFDocument.load(fpBytes);
+          const copiedPages = await pdfDoc.copyPages(fpPdf, fpPdf.getPageIndices());
+          copiedPages.forEach((cp) => pdfDoc.addPage(cp));
+        } else if (ext === ".jpg" || ext === ".jpeg" || ext === ".png") {
+          const img = ext === ".png" ? await pdfDoc.embedPng(fpBytes) : await pdfDoc.embedJpg(fpBytes);
+          const fpPage = pdfDoc.addPage(PageSizes.A4);
+          const { width: fpW, height: fpH } = fpPage.getSize();
+          const margin = 24;
+          const maxW = fpW - margin * 2;
+          const maxH = fpH - margin * 2;
+          const skala = Math.min(maxW / img.width, maxH / img.height, 1);
+          const w = img.width * skala;
+          const h = img.height * skala;
+          fpPage.drawImage(img, {
+            x: (fpW - w) / 2,
+            y: (fpH - h) / 2,
+            width: w,
+            height: h,
+          });
+        }
+      }
+    } catch (e) {
+      console.error("Gagal melakukan merge Faktur Pajak ke Invoice:", e);
+    }
+  }
+
   const pdfBytes = await pdfDoc.save();
 
   const namaFile = `Invoice-${nomorInv.replace(/[^a-zA-Z0-9_-]/g, "_")}.pdf`;

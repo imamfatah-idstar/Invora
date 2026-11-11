@@ -61,6 +61,8 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
       penyesuaianSelisihGrMasuk: pengajuan.penyesuaianSelisihGrMasuk,
       nomorFakturPajak: pengajuan.nomorFakturPajak,
       tanggalFakturPajak: pengajuan.tanggalFakturPajak,
+      namaFileFakturPajak: pengajuan.namaFileFakturPajak,
+      pathFileFakturPajak: pengajuan.pathFileFakturPajak,
       tarifPpn: pengajuan.tarifPpn,
     })
     .from(pengajuan)
@@ -228,6 +230,8 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
               nomorInvoice={header.nomorInvoice || `DRAF-INV-${header.id}`}
               nomorFakturPajak={header.nomorFakturPajak}
               tanggalFakturPajak={header.tanggalFakturPajak}
+              namaFileFakturPajak={header.namaFileFakturPajak}
+              pathFileFakturPajak={header.pathFileFakturPajak}
               nomorGrSlip={header.nomorGrSlip}
               nomorPo={header.nomorPo}
               klien={header.klien || "XL Axiata"}
@@ -506,6 +510,14 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
               )}
               <li>{poAsliAda ? "✓" : "○"} Original PO Document — {poAsliAda ? header.namaFilePoAsli : <>not yet uploaded, <a href="/data-referensi/po">upload under Reference Data · PO / Line Items</a></>}</li>
               <li>{lampiranBalanceAda ? "✓" : "○"} PO Balance Attachment (tracking spreadsheet excerpt) {lampiranBalanceAda ? "uploaded" : "not yet uploaded"}</li>
+              <li>
+                {header.pathFileFakturPajak ? "✓" : "○"} Faktur Pajak Resmi (e-Faktur DJP){" "}
+                {header.pathFileFakturPajak ? (
+                  <>— <b>{header.namaFileFakturPajak || "uploaded"}</b> (auto-merged with Invoice)</>
+                ) : (
+                  <>— <span className="badge badge-warning" style={{ fontSize: 11 }}>Wajib Diunggah Saat Terbit Invoice</span></>
+                )}
+              </li>
               <li>{lampiranLain.length > 0 ? "✓" : "○"} Additional attachments (spreadsheets, supporting docs) — {lampiranLain.length} file(s) uploaded</li>
             </ul>
             <p className="subtitle" style={{ fontSize: 12, marginBottom: 4 }}>

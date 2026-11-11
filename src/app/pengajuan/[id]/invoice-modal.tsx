@@ -18,6 +18,8 @@ interface InvoiceModalProps {
   nomorInvoice: string;
   nomorFakturPajak?: string | null;
   tanggalFakturPajak?: string | null;
+  namaFileFakturPajak?: string | null;
+  pathFileFakturPajak?: string | null;
   nomorGrSlip?: string | null;
   nomorPo: string;
   klien: string;
@@ -38,6 +40,8 @@ export default function InvoiceModal({
   nomorInvoice,
   nomorFakturPajak,
   tanggalFakturPajak,
+  namaFileFakturPajak,
+  pathFileFakturPajak,
   nomorGrSlip,
   nomorPo,
   klien,
@@ -62,6 +66,8 @@ export default function InvoiceModal({
   const [curNomorInvoice, setCurNomorInvoice] = useState(nomorInvoice);
   const [curNomorFakturPajak, setCurNomorFakturPajak] = useState(nomorFakturPajak || "");
   const [curTanggalFakturPajak, setCurTanggalFakturPajak] = useState(tanggalFakturPajak || "");
+  const [curNamaFileFakturPajak, setCurNamaFileFakturPajak] = useState(namaFileFakturPajak || "");
+  const [curPathFileFakturPajak, setCurPathFileFakturPajak] = useState(pathFileFakturPajak || "");
   const [curNomorGrSlip, setCurNomorGrSlip] = useState(nomorGrSlip || "");
   const [curTanggalInvoice, setCurTanggalInvoice] = useState(tanggalInvoice);
   const [curTanggalJatuhTempo, setCurTanggalJatuhTempo] = useState(tanggalJatuhTempo);
@@ -77,6 +83,12 @@ export default function InvoiceModal({
   const [editTanggalJatuhTempo, setEditTanggalJatuhTempo] = useState(tanggalJatuhTempo);
   const [editTarifPpn, setEditTarifPpn] = useState(String(tarifPpn || 11));
   const [editDpp, setEditDpp] = useState(dpp);
+
+  // State upload faktur pajak
+  const [fileFakturPajak, setFileFakturPajak] = useState<File | null>(null);
+  const [sedangUploadFp, setSedangUploadFp] = useState(false);
+  const [errorUploadFp, setErrorUploadFp] = useState<string | null>(null);
+  const [suksesUploadFp, setSuksesUploadFp] = useState<string | null>(null);
 
   const [sedangSimpanInvoice, setSedangSimpanInvoice] = useState(false);
   const [errorSimpanInvoice, setErrorSimpanInvoice] = useState<string | null>(null);
@@ -94,6 +106,8 @@ export default function InvoiceModal({
     setCurNomorInvoice(nomorInvoice);
     setCurNomorFakturPajak(nomorFakturPajak || "");
     setCurTanggalFakturPajak(tanggalFakturPajak || "");
+    setCurNamaFileFakturPajak(namaFileFakturPajak || "");
+    setCurPathFileFakturPajak(pathFileFakturPajak || "");
     setCurNomorGrSlip(nomorGrSlip || "");
     setCurTanggalInvoice(tanggalInvoice);
     setCurTanggalJatuhTempo(tanggalJatuhTempo);
@@ -108,7 +122,10 @@ export default function InvoiceModal({
     setEditTanggalJatuhTempo(tanggalJatuhTempo);
     setEditTarifPpn(String(tarifPpn || 11));
     setEditDpp(dpp);
-  }, [buka, nomorInvoice, nomorFakturPajak, tanggalFakturPajak, nomorGrSlip, tanggalInvoice, tanggalJatuhTempo, dpp, tarifPpn]);
+    setFileFakturPajak(null);
+    setErrorUploadFp(null);
+    setSuksesUploadFp(null);
+  }, [buka, nomorInvoice, nomorFakturPajak, tanggalFakturPajak, namaFileFakturPajak, pathFileFakturPajak, nomorGrSlip, tanggalInvoice, tanggalJatuhTempo, dpp, tarifPpn]);
 
   // State untuk Kirim Email
   const emailPicDefault = extractEmailFromKontak(kontakPic);
@@ -153,9 +170,71 @@ export default function InvoiceModal({
     setPesanEmail(generatedEmail.plainText);
   }, [buka, klien, curNomorInvoice, curTotalTagihan, curTanggalJatuhTempo, curTanggalInvoice]);
 
+  // Handler Upload Faktur Pajak
+  async function handleUploadFakturPajak(e: React.FormEvent) {
+    e.preventDefault();
+    if (!fileFakturPajak) {
+      setErrorUploadFp("Pilih file Faktur Pajak (PDF/JPG/PNG) terlebih dahulu.");
+      return;
+    }
+    setSedangUploadFp(true);
+    setErrorUploadFp(null);
+    setSuksesUploadFp(null);
+
+    const fd = new FormData();
+    fd.append("file", fileFakturPajak);
+
+    try {
+      const res = await fetch(`/api/pengajuan/${pengajuanId}/faktur-pajak`, {
+        method: "POST",
+        body: fd,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Gagal mengunggah file Faktur Pajak");
+      }
+      setCurNamaFileFakturPajak(data.namaFile);
+      setCurPathFileFakturPajak(data.pathFile);
+      setSuksesUploadFp("✓ Berkas Faktur Pajak berhasil diunggah dan otomatis dimerge ke Invoice!");
+      setFileFakturPajak(null);
+      router.refresh();
+    } catch (err: unknown) {
+      setErrorUploadFp(err instanceof Error ? err.message : "Terjadi kesalahan upload");
+    } finally {
+      setSedangUploadFp(false);
+    }
+  }
+
+  // Handler Hapus Faktur Pajak
+  async function handleHapusFakturPajak() {
+    if (!confirm("Hapus berkas Faktur Pajak yang tersimpan?")) return;
+    setSedangUploadFp(true);
+    setErrorUploadFp(null);
+    setSuksesUploadFp(null);
+
+    try {
+      const res = await fetch(`/api/pengajuan/${pengajuanId}/faktur-pajak`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Gagal menghapus berkas Faktur Pajak");
+      setCurNamaFileFakturPajak("");
+      setCurPathFileFakturPajak("");
+      setSuksesUploadFp("Berkas Faktur Pajak berhasil dihapus.");
+      router.refresh();
+    } catch (err: unknown) {
+      setErrorUploadFp(err instanceof Error ? err.message : "Gagal menghapus");
+    } finally {
+      setSedangUploadFp(false);
+    }
+  }
+
   // Handler Simpan Perubahan Invoice
   async function handleSimpanInvoice(e: React.FormEvent) {
     e.preventDefault();
+    if (!curPathFileFakturPajak && !fileFakturPajak) {
+      setErrorSimpanInvoice("⚠️ Faktur Pajak wajib diunggah sebelum menyimpan dan menerbitkan invoice resmi.");
+      return;
+    }
     setSedangSimpanInvoice(true);
     setErrorSimpanInvoice(null);
     setSuksesSimpanInvoice(null);
@@ -613,12 +692,113 @@ export default function InvoiceModal({
                   </div>
 
                   <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: 14 }}>
-                    <h4 style={{ margin: "0 0 6px 0", fontSize: 14, color: "#0f172a" }}>
-                      2. Perpajakan &amp; Referensi GR
-                    </h4>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                      <h4 style={{ margin: 0, fontSize: 14, color: "#0f172a" }}>
+                        2. Upload Faktur Pajak Resmi (Wajib) &amp; Referensi GR
+                      </h4>
+                      <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 4, backgroundColor: curPathFileFakturPajak ? "#dcfce7" : "#fee2e2", color: curPathFileFakturPajak ? "#166534" : "#991b1b" }}>
+                        {curPathFileFakturPajak ? "✓ Faktur Pajak Terunggah" : "⚠️ Wajib Upload"}
+                      </span>
+                    </div>
                     <p style={{ margin: "0 0 12px 0", fontSize: 12, color: "#64748b" }}>
-                      Nomor Faktur Pajak Elektronik (e-Faktur DJP) dan nomor referensi Good Receipt (GR Slip).
+                      Upload dokumen Faktur Pajak resmi (PDF atau gambar). Berkas ini akan <b>otomatis digabungkan (merge)</b> sebagai lampiran resmi di belakang lembar invoice.
                     </p>
+
+                    {/* Area Unggah Berkas Faktur Pajak */}
+                    <div
+                      style={{
+                        padding: "14px",
+                        backgroundColor: curPathFileFakturPajak ? "#f0fdf4" : "#fff7ed",
+                        border: `1.5px dashed ${curPathFileFakturPajak ? "#86efac" : "#fdba74"}`,
+                        borderRadius: 8,
+                        marginBottom: 14,
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: "#0f172a" }}>
+                            📄 Berkas Faktur Pajak (e-Faktur DJP)
+                          </div>
+                          {curPathFileFakturPajak ? (
+                            <div style={{ fontSize: 12, color: "#15803d", marginTop: 2, display: "flex", alignItems: "center", gap: 6 }}>
+                              <span>✓ File aktif: <b>{curNamaFileFakturPajak || "Faktur_Pajak.pdf"}</b></span>
+                              <span style={{ color: "#94a3b8" }}>&middot;</span>
+                              <a
+                                href={`/${curPathFileFakturPajak}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ color: "#2563eb", textDecoration: "underline", fontWeight: 600 }}
+                              >
+                                Lihat File ↗
+                              </a>
+                            </div>
+                          ) : (
+                            <div style={{ fontSize: 12, color: "#c2410c", marginTop: 2 }}>
+                              Belum ada berkas Faktur Pajak yang diunggah. Silakan pilih file di bawah ini.
+                            </div>
+                          )}
+                        </div>
+
+                        {curPathFileFakturPajak && (
+                          <button
+                            type="button"
+                            onClick={handleHapusFakturPajak}
+                            disabled={sedangUploadFp}
+                            style={{
+                              backgroundColor: "#fee2e2",
+                              color: "#991b1b",
+                              border: "1px solid #fecaca",
+                              borderRadius: 4,
+                              padding: "4px 10px",
+                              fontSize: 12,
+                              fontWeight: 600,
+                              cursor: sedangUploadFp ? "not-allowed" : "pointer",
+                            }}
+                          >
+                            Hapus File
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Form / Input Upload File */}
+                      <div style={{ marginTop: 12, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                        <input
+                          type="file"
+                          accept=".pdf,image/png,image/jpeg,image/jpg"
+                          onChange={(e) => setFileFakturPajak(e.target.files?.[0] || null)}
+                          style={{ fontSize: 12.5 }}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleUploadFakturPajak}
+                          disabled={!fileFakturPajak || sedangUploadFp}
+                          style={{
+                            backgroundColor: fileFakturPajak ? "#16a34a" : "#94a3b8",
+                            color: "#ffffff",
+                            border: "none",
+                            borderRadius: 6,
+                            padding: "6px 14px",
+                            fontSize: 12.5,
+                            fontWeight: 600,
+                            cursor: !fileFakturPajak || sedangUploadFp ? "not-allowed" : "pointer",
+                          }}
+                        >
+                          {sedangUploadFp ? "Mengunggah..." : "⬆️ Upload & Merge Faktur Pajak"}
+                        </button>
+                      </div>
+
+                      {errorUploadFp && (
+                        <div style={{ color: "#dc2626", fontSize: 12, marginTop: 8, fontWeight: 600 }}>
+                          ❌ {errorUploadFp}
+                        </div>
+                      )}
+                      {suksesUploadFp && (
+                        <div style={{ color: "#16a34a", fontSize: 12, marginTop: 8, fontWeight: 600 }}>
+                          {suksesUploadFp}
+                        </div>
+                      )}
+                    </div>
+
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
                       <div className="field">
                         <label style={{ fontSize: 12, fontWeight: 600, display: "block", marginBottom: 4 }}>
@@ -852,6 +1032,52 @@ export default function InvoiceModal({
                       <span style={{ color: "#64748b" }}>Total: </span>
                       <b style={{ color: "#ea242a", fontSize: 13 }}>{formatRp(curTotalTagihan)}</b>
                     </div>
+                  </div>
+
+                  {/* Status Merge Faktur Pajak */}
+                  <div
+                    style={{
+                      padding: "10px 14px",
+                      borderRadius: 8,
+                      fontSize: 12.5,
+                      backgroundColor: curPathFileFakturPajak ? "#f0fdf4" : "#fff7ed",
+                      border: `1px solid ${curPathFileFakturPajak ? "#bbf7d0" : "#fed7aa"}`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 10,
+                    }}
+                  >
+                    <div>
+                      {curPathFileFakturPajak ? (
+                        <span style={{ color: "#166534", fontWeight: 600 }}>
+                          ✓ Faktur Pajak Terlampir: <b>{curNamaFileFakturPajak || "Faktur Pajak"}</b> akan otomatis dimerge sebagai halaman berikutnya pada PDF Invoice.
+                        </span>
+                      ) : (
+                        <span style={{ color: "#c2410c", fontWeight: 600 }}>
+                          ⚠️ Faktur Pajak belum diunggah. Silakan buka tab <b>Edit Invoice Details</b> untuk mengunggah Faktur Pajak.
+                        </span>
+                      )}
+                    </div>
+                    {!curPathFileFakturPajak && (
+                      <button
+                        type="button"
+                        onClick={() => setTabAktif("edit")}
+                        style={{
+                          backgroundColor: "#ea242a",
+                          color: "#ffffff",
+                          border: "none",
+                          padding: "4px 10px",
+                          borderRadius: 4,
+                          fontSize: 11.5,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        Upload Sekarang &rarr;
+                      </button>
+                    )}
                   </div>
                 </>
               )}

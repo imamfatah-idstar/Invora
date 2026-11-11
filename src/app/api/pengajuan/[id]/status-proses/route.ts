@@ -134,6 +134,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const raw = typeof body.tarifPpn === "string" ? body.tarifPpn.trim() : String(body.tarifPpn || "");
     patch.tarifPpn = raw || "11.00";
   }
+  if ("namaFileFakturPajak" in body) {
+    const raw = typeof body.namaFileFakturPajak === "string" ? body.namaFileFakturPajak.trim() : "";
+    patch.namaFileFakturPajak = raw === "" ? null : raw;
+  }
+  if ("pathFileFakturPajak" in body) {
+    const raw = typeof body.pathFileFakturPajak === "string" ? body.pathFileFakturPajak.trim() : "";
+    patch.pathFileFakturPajak = raw === "" ? null : raw;
+  }
 
   if (Object.keys(patch).length === 0) {
     return NextResponse.json({ error: "Tidak ada field yang dikirim." }, { status: 400 });
