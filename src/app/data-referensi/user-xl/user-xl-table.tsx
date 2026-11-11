@@ -1,7 +1,7 @@
 "use client";
+import HapusTerpilih from "@/components/hapus-terpilih";
 import { useMemo, useState } from "react";
 import TombolHapus from "./hapus-button";
-import HapusTerpilih from "@/components/hapus-terpilih";
 
 type BarisUserXl = {
   id: number;
@@ -90,7 +90,7 @@ export default function TabelUserXl({ daftar }: { daftar: BarisUserXl[] }) {
                 <td>{u.kontak ?? "-"}</td>
                 <td style={{ display: "flex", gap: 8 }}>
                   <a href={`/data-referensi/user-xl/${u.id}/edit`} className="btn-text">Edit</a>
-                  <TombolHapus url={`/api/user-xl/${u.id}`} konfirmasi={`Delete User XL "${u.nama}"?`} />
+                  <TombolHapus url={`/api/user-xl/${u.id}`} konfirmasi={`Delete User "${u.nama}"?`} />
                 </td>
               </tr>
             ))}

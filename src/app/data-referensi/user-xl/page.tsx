@@ -1,8 +1,8 @@
 import { db } from "@/db";
-import { userXl, po } from "@/db/schema";
+import { po, userXl } from "@/db/schema";
 import { desc, eq } from "drizzle-orm";
-import FormTambahUserXl from "./user-xl-form";
 import FormImporUserXl from "./impor-user-xl-form";
+import FormTambahUserXl from "./user-xl-form";
 import TabelUserXl from "./user-xl-table";
 
 export default async function HalamanUserXl() {
@@ -26,7 +26,7 @@ export default async function HalamanUserXl() {
 
   return (
     <div>
-      <h1>User XL (Client Approvers)</h1>
+      <h1>User (Client Approvers)</h1>
       <p className="subtitle">Client decision-makers / approvers & designated PO — approvals are tracked internally.</p>
       <FormImporUserXl />
       <FormTambahUserXl daftarPo={daftarPo.map((p) => ({ id: p.id, label: `${p.nomorPo} — ${p.namaProyek}` }))} />

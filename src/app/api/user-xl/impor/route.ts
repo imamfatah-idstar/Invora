@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { userXl, po } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { po, userXl } from "@/db/schema";
+import { catatAudit } from "@/lib/audit";
+import { csvKeObjek, parseCsv } from "@/lib/csv";
 import { wajibRoleApi } from "@/lib/require-role-api";
 import { userSaatIni } from "@/lib/session-server";
-import { catatAudit } from "@/lib/audit";
-import { parseCsv, csvKeObjek } from "@/lib/csv";
+import { eq } from "drizzle-orm";
+import { NextRequest, NextResponse } from "next/server";
 
 const UKURAN_MAKS = 5 * 1024 * 1024; // 5MB
 
@@ -104,8 +104,8 @@ export async function POST(request: NextRequest) {
   }
 
   await catatAudit({
-    entitas: "user_xl", entitasId: 0, userId: user!.id,
-    perubahan: `Impor User XL: ${userXlBaru} baru, ${kontakDiperbarui} kontak diperbarui, ${tidakBerubah} tidak berubah (dari ${perNama.size} baris, file "${file.name}")`,
+    entitas: "user", entitasId: 0, userId: user!.id,
+    perubahan: `Impor User: ${userXlBaru} baru, ${kontakDiperbarui} kontak diperbarui, ${tidakBerubah} tidak berubah (dari ${perNama.size} baris, file "${file.name}")`,
   });
 
   return NextResponse.json({ ok: true, totalDiproses: perNama.size, userXlBaru, kontakDiperbarui, tidakBerubah });

@@ -1,7 +1,7 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import ComboSelect from "@/components/combo-select";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 type Opsi = { id: number; label: string };
 type OpsiLine = { id: number; poId: number; label: string };
@@ -89,13 +89,13 @@ export default function FormTambahPemetaan({
         </select>
       </div>
       <div className="field" style={{ minWidth: 200 }}>
-        <label>Client Approver / User XL (optional)</label>
+        <label>Client Approver / User (optional)</label>
         <ComboSelect
           value={userXlId}
           onChange={(v) => setUserXlId(v)}
           opsi={daftarUserXl.map((u) => ({ value: u.id, label: u.label }))}
           kosongLabel="- Not selected -"
-          placeholderCari="Search User XL..."
+          placeholderCari="Search User..."
         />
       </div>
       <div className="field"><label>Effective from</label><input type="date" value={berlakuDari} onChange={(e) => setBerlakuDari(e.target.value)} required /></div>

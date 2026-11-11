@@ -1,115 +1,121 @@
 import { db } from "@/db";
 import { pengajuan, userXl, po } from "@/db/schema";
-import { eq, isNotNull, and } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { wajibRole } from "@/lib/require-role";
 import Topbar from "@/components/topbar";
+import AnalisaDurasiClient, { BarisDurasi } from "./analisa-durasi-client";
 
 function hariAntara(dariISO: string, sampaiISO: string) {
   const dari = new Date(dariISO + "T00:00:00Z").getTime();
   const sampai = new Date(sampaiISO + "T00:00:00Z").getTime();
-  return Math.round((sampai - dari) / 86400000);
+  const selisih = Math.round((sampai - dari) / 86400000);
+  return selisih >= 0 ? selisih : 0;
 }
 
 export default async function AnalisaDurasi() {
   const userLogin = await wajibRole(["petugas", "checker"]);
 
-  const baris = await db
+  const hariIniISO = new Date().toISOString().slice(0, 10);
+
+  const rawRows = await db
     .select({
-      id: pengajuan.id, periode: pengajuan.periode,
-      nomorPo: po.nomorPo, namaUserXl: userXl.nama,
+      id: pengajuan.id,
+      periode: pengajuan.periode,
+      status: pengajuan.status,
+      nomorInvoice: pengajuan.nomorInvoice,
+      nomorPo: po.nomorPo,
+      namaProyek: po.namaProyek,
+      klien: po.klien,
+      namaUserXl: userXl.nama,
       tanggalSubmitCac: pengajuan.tanggalSubmitCac,
+      tanggalCacApproved: pengajuan.tanggalCacApproved,
+      tanggalRequestGr: pengajuan.tanggalRequestGr,
+      tanggalGrDisetujui: pengajuan.tanggalGrDisetujui,
+      tanggalSubmitInvoice: pengajuan.tanggalSubmitInvoice,
       tanggalApproveInvoice: pengajuan.tanggalApproveInvoice,
     })
     .from(pengajuan)
     .innerJoin(po, eq(pengajuan.poId, po.id))
     .innerJoin(userXl, eq(pengajuan.userXlId, userXl.id))
-    .where(and(isNotNull(pengajuan.tanggalSubmitCac), isNotNull(pengajuan.tanggalApproveInvoice)));
+    .orderBy(desc(pengajuan.id));
 
-  const rincian = baris.map((b) => ({
-    ...b,
-    hari: hariAntara(b.tanggalSubmitCac!, b.tanggalApproveInvoice!),
-  }));
+  const daftar: BarisDurasi[] = rawRows.map((r) => {
+    // 1. Durasi CAC ke GR / CAC Approval
+    const titikAwalCac = r.tanggalSubmitCac;
+    const titikSelesaiGr = r.tanggalGrDisetujui || r.tanggalCacApproved;
+    const hariCacKeGr = titikAwalCac && titikSelesaiGr ? hariAntara(titikAwalCac, titikSelesaiGr) : null;
 
-  // Rata-rata hari proses (submit CAC -> invoice disetujui) per User XL —
-  // dipakai untuk menganalisa User XL mana yang prosesnya paling lama/cepat.
-  // Lihat PROJECT_INSTRUCTIONS.md bagian 26.
-  const perUser = new Map<string, { total: number; jumlah: number }>();
-  for (const r of rincian) {
-    const acc = perUser.get(r.namaUserXl) ?? { total: 0, jumlah: 0 };
-    acc.total += r.hari; acc.jumlah += 1;
-    perUser.set(r.namaUserXl, acc);
-  }
-  const dataChart = Array.from(perUser.entries())
-    .map(([nama, v]) => ({ nama, rataRata: Math.round((v.total / v.jumlah) * 10) / 10, jumlah: v.jumlah }))
-    .sort((a, b) => b.rataRata - a.rataRata);
+    // 2. Durasi dari GR Approval ke Submit Invoice (Kapan submit invoice)
+    const titikAwalInvoice = titikSelesaiGr || titikAwalCac;
+    const titikSubmitInvoice = r.tanggalSubmitInvoice;
+    const hariGrKeInvoiceSubmit = titikAwalInvoice && titikSubmitInvoice ? hariAntara(titikAwalInvoice, titikSubmitInvoice) : null;
 
-  const maxHari = Math.max(1, ...dataChart.map((d) => d.rataRata));
+    // 3. Durasi dari Submit Invoice ke Approve Customer (Kapan diterima / approve customer)
+    const titikApproveCustomer = r.tanggalApproveInvoice;
+    const hariInvoiceKeCustomerApprove = titikSubmitInvoice && titikApproveCustomer ? hariAntara(titikSubmitInvoice, titikApproveCustomer) : null;
+
+    // 4. Total lead time end-to-end
+    const titikAwalTotal = titikAwalCac || titikSubmitInvoice;
+    const hariTotal = titikAwalTotal && titikApproveCustomer ? hariAntara(titikAwalTotal, titikApproveCustomer) : null;
+
+    // 5. Hari berjalan jika belum selesai
+    const acuanHariBerjalan = titikSubmitInvoice || titikAwalCac;
+    const hariBerjalan = acuanHariBerjalan ? hariAntara(acuanHariBerjalan, hariIniISO) : 0;
+
+    // 6. Tahap & status tracking
+    let tahapStatus: BarisDurasi["tahapStatus"] = "draft";
+    let tahapLabel = "Draft";
+
+    if (titikApproveCustomer) {
+      tahapStatus = "completed";
+      tahapLabel = "Customer Approved";
+    } else if (titikSubmitInvoice) {
+      tahapStatus = "waiting_customer";
+      tahapLabel = "Waiting Customer Approval";
+    } else if (titikSelesaiGr) {
+      tahapStatus = "ready_invoice";
+      tahapLabel = "GR Approved / Ready to Submit Invoice";
+    } else if (titikAwalCac) {
+      tahapStatus = "cac_in_review";
+      tahapLabel = "CAC In Review";
+    }
+
+    return {
+      id: r.id,
+      periode: r.periode,
+      nomorPo: r.nomorPo,
+      namaProyek: r.namaProyek,
+      klien: r.klien,
+      namaUserXl: r.namaUserXl,
+      nomorInvoice: r.nomorInvoice,
+      statusPengajuan: r.status,
+      tanggalSubmitCac: r.tanggalSubmitCac,
+      tanggalCacApproved: r.tanggalCacApproved,
+      tanggalRequestGr: r.tanggalRequestGr,
+      tanggalGrDisetujui: r.tanggalGrDisetujui,
+      tanggalSubmitInvoice: r.tanggalSubmitInvoice,
+      tanggalApproveInvoice: r.tanggalApproveInvoice,
+      hariCacKeGr,
+      hariGrKeInvoiceSubmit,
+      hariInvoiceKeCustomerApprove,
+      hariTotal,
+      hariBerjalan,
+      tahapStatus,
+      tahapLabel,
+    };
+  });
 
   return (
     <>
       <Topbar nama={userLogin.nama} role={userLogin.role} email={userLogin.email} roles={userLogin.roles} />
-      <main className="page">
+      <main className="page" style={{ maxWidth: 1200 }}>
         <a href="/dashboard" className="back-link">&larr; Dashboard</a>
-        <h1>Process Duration Analytics: CAC &rarr; Invoice</h1>
+        <h1>Process Duration Analytics &amp; Tracking: CAC &rarr; Invoice</h1>
         <p className="subtitle">
-          Average turnaround time in days from <b>CAC submission date</b> (Checker approval) until
-          <b> invoice approval date</b> in COUPA, grouped by Client Approver — submissions missing either date are excluded.
+          Comprehensive lead-time tracking: <b>CAC Submission</b> &rarr; <b>GR Approval</b> &rarr; <b>Invoice Submission</b> &rarr; <b>Customer Acceptance / Approval</b>.
         </p>
 
-        {dataChart.length === 0 ? (
-          <div className="card" style={{ marginTop: 16 }}>
-            <p className="subtitle" style={{ margin: 0 }}>
-              No data available yet — please ensure CAC Submission Date and Invoice Approval Date are recorded in submission details.
-            </p>
-          </div>
-        ) : (
-          <div className="card" style={{ marginTop: 16 }}>
-            <h3 style={{ marginTop: 0, marginBottom: 16 }}>Average Days by Client Approver</h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {dataChart.map((d) => (
-                <div key={d.nama}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, marginBottom: 4 }}>
-                    <span style={{ color: "var(--color-text)" }}>{d.nama}</span>
-                    <span style={{ color: "var(--color-text-muted)" }}>
-                      <b style={{ color: "var(--color-text)" }}>{d.rataRata}</b> days &middot; {d.jumlah} submission(s)
-                    </span>
-                  </div>
-                  <div style={{ background: "var(--color-bg)", borderRadius: 4, height: 10, overflow: "hidden" }}>
-                    <div
-                      title={`${d.nama}: average ${d.rataRata} days across ${d.jumlah} submission(s)`}
-                      style={{
-                        width: `${Math.max(3, (d.rataRata / maxHari) * 100)}%`,
-                        height: "100%",
-                        background: "var(--color-primary)",
-                        borderRadius: 4,
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {rincian.length > 0 && (
-          <div className="table-wrap" style={{ marginTop: 20 }}>
-            <table>
-              <thead><tr><th>Period</th><th>PO No.</th><th>Client Approver</th><th>CAC Submitted</th><th>Invoice Approved</th><th>Days</th></tr></thead>
-              <tbody>
-                {rincian.sort((a, b) => b.hari - a.hari).map((r) => (
-                  <tr key={r.id}>
-                    <td>{r.periode}</td>
-                    <td>{r.nomorPo}</td>
-                    <td>{r.namaUserXl}</td>
-                    <td>{r.tanggalSubmitCac}</td>
-                    <td>{r.tanggalApproveInvoice}</td>
-                    <td>{r.hari}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <AnalisaDurasiClient daftar={daftar} />
       </main>
     </>
   );

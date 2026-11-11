@@ -1,5 +1,5 @@
-import { wajibRole } from "@/lib/require-role";
 import Topbar from "@/components/topbar";
+import { wajibRole } from "@/lib/require-role";
 
 // Data referensi (Personel, Rate Card, PO/Item, User XL, Pemetaan, Kalender
 // Kerja) dikelola oleh peran "Input Data" (nilai DB tetap "petugas" — lihat
@@ -10,7 +10,7 @@ import Topbar from "@/components/topbar";
 const MENU = [
   { href: "/data-referensi/personel", label: "Personnel" },
   { href: "/data-referensi/rate-card", label: "Rate Card" },
-  { href: "/data-referensi/user-xl", label: "User XL" },
+  { href: "/data-referensi/user-xl", label: "User" },
   { href: "/data-referensi/po", label: "PO / Line Items" },
   { href: "/data-referensi/pemetaan", label: "Personnel ↔ PO Mapping" },
   { href: "/data-referensi/kalender", label: "Working Calendar" },

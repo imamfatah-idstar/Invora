@@ -1,7 +1,7 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import ComboSelect from "@/components/combo-select";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 type OpsiPo = { id: number; label: string };
 
@@ -29,7 +29,7 @@ export default function FormTambahUserXl({ daftarPo = [] }: { daftarPo?: OpsiPo[
     setLoading(false);
     if (!res.ok) {
       const d = await res.json().catch(() => ({}));
-      setError(d.error ?? "Failed to add User XL.");
+      setError(d.error ?? "Failed to add User.");
       return;
     }
     setNama("");
@@ -41,7 +41,7 @@ export default function FormTambahUserXl({ daftarPo = [] }: { daftarPo?: OpsiPo[
   return (
     <form onSubmit={handleSubmit} className="toolbar" style={{ flexWrap: "wrap", alignItems: "flex-end" }}>
       <div className="field">
-        <label>User XL / Approver Name</label>
+        <label>User / Approver Name</label>
         <input
           value={nama}
           onChange={(e) => setNama(e.target.value)}
@@ -68,7 +68,7 @@ export default function FormTambahUserXl({ daftarPo = [] }: { daftarPo?: OpsiPo[
         />
       </div>
       <button type="submit" disabled={loading} className="btn btn-primary">
-        {loading ? "Saving..." : "Add User XL"}
+        {loading ? "Saving..." : "Add User"}
       </button>
       {error && <div className="alert alert-danger" style={{ margin: 0 }}>{error}</div>}
     </form>

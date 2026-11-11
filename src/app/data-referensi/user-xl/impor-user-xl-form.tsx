@@ -30,7 +30,7 @@ export default function FormImporUserXl() {
 
   return (
     <div className="card" style={{ marginBottom: 16 }}>
-      <h3 style={{ marginTop: 0 }}>Import User XL from CSV</h3>
+      <h3 style={{ marginTop: 0 }}>Import User  from CSV</h3>
       <p className="subtitle" style={{ fontSize: 13 }}>
         Upload a CSV file with columns <code>nama</code> (required), <code>po</code> (optional, PO number), and <code>kontak</code> (optional, email/phone).
         New entries are added; existing records are updated.
@@ -45,7 +45,7 @@ export default function FormImporUserXl() {
       </form>
       {hasil && (
         <div className="alert alert-success" style={{ marginTop: 12 }}>
-          Selesai — {hasil.totalDiproses} baris diproses: <b>{hasil.userXlBaru}</b> User XL baru,{" "}
+          Selesai — {hasil.totalDiproses} baris diproses: <b>{hasil.userXlBaru}</b> User baru,{" "}
           <b>{hasil.kontakDiperbarui}</b> kontak diperbarui, {hasil.tidakBerubah} tidak berubah.
         </div>
       )}

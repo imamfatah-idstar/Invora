@@ -1,21 +1,27 @@
+import Logo from "@/components/logo";
 import { db } from "@/db";
 import {
-  dokumen, pengajuan, pengajuanDetail, personel, po, poLineItem, userXl,
-  konfirmasi, checkerReview, users, lampiranPengajuan, grRequest,
+  checkerReview,
+  dokumen,
+  grRequest,
+  konfirmasi,
+  lampiranPengajuan,
+  pengajuan, pengajuanDetail, personel, po, poLineItem,
+  users,
+  userXl,
 } from "@/db/schema";
-import { eq, desc, and } from "drizzle-orm";
-import { notFound } from "next/navigation";
-import Link from "next/link";
-import TombolCetak from "./tombol-cetak";
-import Logo from "@/components/logo";
-import { LABEL_LAMPIRAN_BALANCE } from "@/lib/lampiran-label";
 import { apakahKlienXl } from "@/lib/klien";
+import { LABEL_LAMPIRAN_BALANCE } from "@/lib/lampiran-label";
 import { wajibRole } from "@/lib/require-role";
-import CheckerApprovalBar from "./checker-approval-bar";
+import { and, desc, eq } from "drizzle-orm";
+import Link from "next/link";
+import { notFound } from "next/navigation";
 import BastNonXlView from "./bast-non-xl-view";
 import BastXlView from "./bast-xl-view";
 import CacXlView from "./cac-xl-view";
+import CheckerApprovalBar from "./checker-approval-bar";
 import GrXlView from "./gr-xl-view";
+import TombolCetak from "./tombol-cetak";
 
 function formatRupiah(nilai: string) {
   return "Rp" + Number(nilai).toLocaleString("id-ID", { minimumFractionDigits: 2 });
@@ -261,7 +267,7 @@ export default async function HalamanDokumen({ params }: { params: Promise<{ id:
             <tr><td>Nomor PO</td><td>{header.nomorPo}</td></tr>
             <tr><td>Nama Proyek</td><td>{header.namaProyek}</td></tr>
             {header.klien && <tr><td>Klien</td><td>{header.klien}</td></tr>}
-            <tr><td>{isKlienXl ? "User XL" : "User Klien / PIC"}</td><td>{header.namaUserXl}</td></tr>
+            <tr><td>{isKlienXl ? "User" : "User Klien / PIC"}</td><td>{header.namaUserXl}</td></tr>
             <tr><td>Periode</td><td>{header.periode}</td></tr>
             {header.keteranganTahap && <tr><td>Tagihan Tahap</td><td>{header.keteranganTahap}</td></tr>}
             <tr><td>Dikonfirmasi Petugas</td><td>{konfirmasiTerakhir ? `${konfirmasiTerakhir.nama} — ${konfirmasiTerakhir.waktu}` : "-"}</td></tr>
@@ -307,7 +313,7 @@ export default async function HalamanDokumen({ params }: { params: Promise<{ id:
             <p>{checkerTerakhir?.nama ?? "________________"}</p>
           </div>
           <div>
-            <p>Disetujui oleh ({isKlienXl ? "User XL" : (header.klien || "Pihak Pertama / Klien")}),</p>
+            <p>Disetujui oleh ({isKlienXl ? "User" : (header.klien || "Pihak Pertama / Klien")}),</p>
             <div className="doc-ttd-box"></div>
             <p>{header.namaUserXl}</p>
           </div>

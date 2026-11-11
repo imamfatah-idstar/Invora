@@ -1,7 +1,7 @@
 "use client";
+import HapusTerpilih from "@/components/hapus-terpilih";
 import { useMemo, useState } from "react";
 import TombolHapus from "./hapus-button";
-import HapusTerpilih from "@/components/hapus-terpilih";
 
 type BarisPemetaan = {
   id: number;
@@ -78,7 +78,7 @@ export default function TabelPemetaan({ daftar }: { daftar: BarisPemetaan[] }) {
             <Th label="Personnel" k="namaPersonel" />
             <Th label="PO No." k="nomorPo" />
             <th>PO Line</th>
-            <Th label="Client Approver / User XL" k="userXlNama" />
+            <Th label="Client Approver / User" k="userXlNama" />
             <Th label="Valid From" k="berlakuDari" />
             <Th label="Valid Until" k="berlakuSampai" />
             <th></th>
