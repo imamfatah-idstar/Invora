@@ -356,7 +356,7 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
                   }}
                   title="Redirect to official XL Get Approve Portal"
                 >
-                  <span>🚀 Get Approve XL</span>
+                  <span>🚀 Redirect to official XL Get Approve Portal</span>
                   <span style={{ fontSize: 12 }}>↗</span>
                 </a>
               )}

@@ -127,7 +127,7 @@ export default function GrRequestPanel({
           }}
           title="Redirect to official XL Get Approve Portal"
         >
-          <span>🚀 Open Get Approve XL Portal</span>
+          <span>🚀 Redirect to official XL Get Approve Portal</span>
           <span style={{ fontSize: 12 }}>↗</span>
         </a>
       </div>
