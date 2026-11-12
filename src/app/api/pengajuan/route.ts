@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { pengajuan, pengajuanDetail, po } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { pengajuan, pengajuanDetail, po, personel, rateCard, pemetaanPersonelPo } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
 import Decimal from "decimal.js";
 import { wajibRoleApi } from "@/lib/require-role-api";
 import { userSaatIni } from "@/lib/session-server";
 import { catatAudit } from "@/lib/audit";
-import { hitungSemuaPersonelUntukPo, terapkanAlokasiLintasPo, siapkanTagihanTahap } from "@/lib/hitung-pengajuan";
+import { hitungSemuaPersonelUntukPo, terapkanAlokasiLintasPo, siapkanTagihanTahap, BarisHitung } from "@/lib/hitung-pengajuan";
 
 export async function POST(request: NextRequest) {
   const gagal = await wajibRoleApi(["petugas"]);
@@ -18,9 +18,92 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "PO, User XL, dan periode wajib diisi." }, { status: 400 });
   }
 
-  const [poRow] = await db.select().from(po).where(eq(po.id, Number(body.poId)));
+  const poId = Number(body.poId);
+  const userXlId = Number(body.userXlId);
+  const periode = body.periode;
+  let personelIds: number[] = Array.isArray(body.personelIds) ? body.personelIds.map(Number) : [];
+
+  const [poRow] = await db.select().from(po).where(eq(po.id, poId));
   if (!poRow) {
     return NextResponse.json({ error: "PO tidak ditemukan." }, { status: 404 });
+  }
+
+  // Proses baris tambahan manual / ad-hoc jika ada
+  const barisTambahanList: Array<{
+    personelId: number;
+    namaPersonel: string;
+    nilaiRateDipakai: string;
+    hariKerjaDapatDitagihkan: number;
+    hariKerjaAcuanBulan: number;
+    hasilHitung: string;
+    nilaiPenuh: string;
+    poLineItemId: number | null;
+    sumberHitung: "timesheet" | "kalender" | "manual";
+    tanggalTimesheet?: string | null;
+  }> = [];
+
+  if (Array.isArray(body.barisTambahan) && body.barisTambahan.length > 0) {
+    const { batasPeriode } = await import("@/lib/kalender");
+    const { awal } = batasPeriode(periode);
+
+    for (const item of body.barisTambahan) {
+      let finalPersonelId = Number(item.personelId);
+      let finalNamaPersonel = item.namaPersonel || "";
+
+      // 1. Jika personel baru (belum ada di master)
+      if (item.namaBaru && typeof item.namaBaru === "string" && item.namaBaru.trim()) {
+        const [personelBaru] = await db.insert(personel).values({
+          nama: item.namaBaru.trim(),
+          status: "aktif",
+        }).returning();
+        finalPersonelId = personelBaru.id;
+        finalNamaPersonel = personelBaru.nama;
+
+        await db.insert(rateCard).values({
+          personelId: finalPersonelId,
+          nilaiRate: new Decimal(item.nilaiRateDipakai || "0").toFixed(2),
+          berlakuDari: awal,
+        });
+
+        const oldId = Number(item.personelId);
+        personelIds = personelIds.map((id) => (id === oldId ? finalPersonelId : id));
+        if (!personelIds.includes(finalPersonelId)) {
+          personelIds.push(finalPersonelId);
+        }
+      }
+
+      // 2. Simpan pemetaan ke PO jika diminta
+      if (item.simpanPemetaan) {
+        const [adaPeta] = await db.select().from(pemetaanPersonelPo).where(
+          and(
+            eq(pemetaanPersonelPo.poId, poId),
+            eq(pemetaanPersonelPo.personelId, finalPersonelId)
+          )
+        );
+        if (!adaPeta) {
+          await db.insert(pemetaanPersonelPo).values({
+            poId,
+            personelId: finalPersonelId,
+            berlakuDari: awal,
+            poLineItemId: item.poLineItemId ? Number(item.poLineItemId) : null,
+            userXlId,
+          });
+        }
+      }
+
+      barisTambahanList.push({
+        personelId: finalPersonelId,
+        namaPersonel: finalNamaPersonel,
+        nilaiRateDipakai: new Decimal(item.nilaiRateDipakai || "0").toFixed(2),
+        hariKerjaDapatDitagihkan: Number(item.hariKerjaDapatDitagihkan) || 0,
+        hariKerjaAcuanBulan: Number(item.hariKerjaAcuanBulan) || 0,
+        hasilHitung: new Decimal(item.hasilHitung || "0").toFixed(2),
+        nilaiPenuh: new Decimal(item.nilaiPenuh || item.hasilHitung || "0").toFixed(2),
+        poLineItemId: item.poLineItemId ? Number(item.poLineItemId) : null,
+        sumberHitung: item.sumberHitung || "manual",
+        tanggalTimesheet: item.tanggalTimesheet || null,
+      });
+    }
   }
 
   // PO "tahap" (bagian 53): nilai tagihan diisi MANUAL per personel + keterangan
@@ -30,13 +113,19 @@ export async function POST(request: NextRequest) {
     if (!keteranganTahap) {
       return NextResponse.json({ error: "Keterangan tahap wajib diisi (mis. \"Tahap I (50%)\")." }, { status: 400 });
     }
-    const siap = await siapkanTagihanTahap(Number(body.poId), body.periode, body.nilaiManual, poRow.saldoSebelumPpn);
+    const nilaiManualGabungan = { ...(body.nilaiManual || {}) };
+    for (const bt of barisTambahanList) {
+      if (personelIds.includes(bt.personelId)) {
+        nilaiManualGabungan[bt.personelId] = bt.hasilHitung;
+      }
+    }
+    const siap = await siapkanTagihanTahap(poId, periode, nilaiManualGabungan, poRow.saldoSebelumPpn);
     if ("error" in siap) return NextResponse.json({ error: siap.error }, { status: 400 });
 
     const [ajuanTahap] = await db.insert(pengajuan).values({
-      periode: body.periode,
-      poId: Number(body.poId),
-      userXlId: Number(body.userXlId),
+      periode,
+      poId,
+      userXlId,
       status: "draft",
       keteranganTahap,
     }).returning();
@@ -61,13 +150,36 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ id: ajuanTahap.id }, { status: 201 });
   }
 
-  const semuaBaris = await hitungSemuaPersonelUntukPo(Number(body.poId), body.periode);
+  const semuaBaris = await hitungSemuaPersonelUntukPo(poId, periode);
+
+  // Gabungkan baris tambahan ke semuaBaris sebelum alokasi lintas-PO
+  for (const bt of barisTambahanList) {
+    const idx = semuaBaris.findIndex((b) => b.personelId === bt.personelId);
+    const barisHitungObj: BarisHitung = {
+      personelId: bt.personelId,
+      namaPersonel: bt.namaPersonel || "Personel",
+      nilaiRateDipakai: bt.nilaiRateDipakai,
+      hariKerjaDapatDitagihkan: bt.hariKerjaDapatDitagihkan,
+      hariKerjaAcuanBulan: bt.hariKerjaAcuanBulan,
+      hasilHitung: bt.hasilHitung,
+      error: null,
+      sumberHitung: bt.sumberHitung,
+      poLineItemId: bt.poLineItemId,
+      tanggalTimesheet: bt.tanggalTimesheet,
+    };
+    if (idx >= 0) {
+      semuaBaris[idx] = barisHitungObj;
+    } else {
+      semuaBaris.push(barisHitungObj);
+    }
+  }
+
   // Alokasi lintas-PO (bagian 35) — dihitung ulang di server, tidak percaya
   // angka akanDitagihkan kiriman client (kalau ada).
   const teralokasi = await terapkanAlokasiLintasPo(
-    semuaBaris, Number(body.poId), body.periode, poRow.saldoSebelumPpn
+    semuaBaris, poId, periode, poRow.saldoSebelumPpn
   );
-  const dipilih = teralokasi.filter((b) => (body.personelIds ?? []).includes(b.personelId));
+  const dipilih = teralokasi.filter((b) => personelIds.includes(b.personelId));
 
   if (dipilih.length === 0) {
     return NextResponse.json({ error: "Pilih minimal 1 personel." }, { status: 400 });

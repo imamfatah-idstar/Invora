@@ -5,13 +5,14 @@ import InputTagihanTahap, { BarisTahapUi, nilaiManualTerisi, totalNilaiTahap } f
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import UnggahTimesheetModal from "./unggah-timesheet-modal";
+import TambahBarisModal, { BarisTambahanInput, PersonelOpsi, LineItemOpsi } from "./tambah-baris-modal";
 
 type Opsi = { id: number; label: string; poId?: number | null };
 type BarisHitung = {
   personelId: number; namaPersonel: string;
   nilaiRateDipakai: string | null; hariKerjaDapatDitagihkan: number | null;
   hariKerjaAcuanBulan: number | null; hasilHitung: string | null; error: string | null;
-  sumberHitung: "timesheet" | "kalender";
+  sumberHitung: "timesheet" | "kalender" | "manual";
   tanggalTimesheet?: string | null;
   // Hasil alokasi lintas-PO (bagian 35) — dari terapkanAlokasiLintasPo di server.
   nilaiPenuh: string | null;
@@ -19,13 +20,25 @@ type BarisHitung = {
   sisaPerluDitagih: string | null;
   akanDitagihkan: string | null;
   sudahLunasBulanIni: boolean;
+  poLineItemId?: number | null;
+  isBarisManual?: boolean;
 };
 
 function formatRupiah(nilai: string) {
   return "Rp" + Number(nilai).toLocaleString("id-ID", { minimumFractionDigits: 2 });
 }
 
-export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo: Opsi[]; daftarUserXl: Opsi[] }) {
+export default function FormBuatPengajuan({
+  daftarPo,
+  daftarUserXl,
+  daftarPersonel = [],
+  daftarPoLineItem = [],
+}: {
+  daftarPo: Opsi[];
+  daftarUserXl: Opsi[];
+  daftarPersonel?: PersonelOpsi[];
+  daftarPoLineItem?: LineItemOpsi[];
+}) {
   const router = useRouter();
   const [poId, setPoId] = useState(daftarPo[0]?.id ?? "");
   const [userXlId, setUserXlId] = useState(daftarUserXl[0]?.id ?? "");
@@ -36,6 +49,10 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
   const [loadingHitung, setLoadingHitung] = useState(false);
   const [loadingSimpan, setLoadingSimpan] = useState(false);
   const [modalPersonel, setModalPersonel] = useState<{ id: number; nama: string; sudahAda: boolean } | null>(null);
+  const [modalTambahBaris, setModalTambahBaris] = useState(false);
+  const [hariKerjaAcuanDefault, setHariKerjaAcuanDefault] = useState(21);
+  const [barisTambahan, setBarisTambahan] = useState<BarisTambahanInput[]>([]);
+
   const [approvalPemberi, setApprovalPemberi] = useState("");
   const [approvalTanggal, setApprovalTanggal] = useState("");
   const [approvalReferensi, setApprovalReferensi] = useState("");
@@ -66,6 +83,9 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
     if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Failed to calculate."); return; }
     const data = await res.json();
     setSelisihMenggantung(data.selisihMenggantung ?? null);
+    if (data.hariKerjaAcuanBulan) {
+      setHariKerjaAcuanDefault(data.hariKerjaAcuanBulan);
+    }
     if (data.jenis === "tahap") {
       setJenis("tahap");
       setBarisTahap(data.baris);
@@ -74,9 +94,35 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
     }
     setJenis("bulanan");
     setBarisTahap(null);
-    setBaris(data.baris);
+
+    // Gabungkan baris hasil kalkulasi dengan baris tambahan yang sudah ditambahkan manual
+    const barisGabungan: BarisHitung[] = [...data.baris];
+    for (const bt of barisTambahan) {
+      if (!barisGabungan.some((b) => b.personelId === bt.personelId)) {
+        barisGabungan.push({
+          personelId: bt.personelId,
+          namaPersonel: bt.namaPersonel,
+          nilaiRateDipakai: bt.nilaiRateDipakai,
+          hariKerjaDapatDitagihkan: bt.hariKerjaDapatDitagihkan,
+          hariKerjaAcuanBulan: bt.hariKerjaAcuanBulan,
+          hasilHitung: bt.hasilHitung,
+          error: null,
+          sumberHitung: bt.sumberHitung,
+          tanggalTimesheet: bt.tanggalTimesheet || null,
+          nilaiPenuh: bt.nilaiPenuh,
+          sudahDialokasikanDiPoLain: "0",
+          sisaPerluDitagih: bt.hasilHitung,
+          akanDitagihkan: bt.hasilHitung,
+          sudahLunasBulanIni: false,
+          poLineItemId: bt.poLineItemId ?? null,
+          isBarisManual: true,
+        });
+      }
+    }
+
+    setBaris(barisGabungan);
     setDipilih(new Set(
-      data.baris
+      barisGabungan
         .filter((b: BarisHitung) => !b.error && !b.sudahLunasBulanIni && b.akanDitagihkan && Number(b.akanDitagihkan) > 0)
         .map((b: BarisHitung) => b.personelId)
     ));
@@ -90,6 +136,55 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
     });
   }
 
+  function bukaModalTambahBaris() {
+    setError(null);
+    if (!periode) {
+      setError("Please select a billing period first.");
+      return;
+    }
+    if (!baris && !barisTahap) {
+      setBaris([]);
+    }
+    setModalTambahBaris(true);
+  }
+
+  function tambahBarisManual(input: BarisTambahanInput) {
+    const rowId = input.personelId;
+    const barisBaru: BarisHitung = {
+      personelId: rowId,
+      namaPersonel: input.namaPersonel,
+      nilaiRateDipakai: input.nilaiRateDipakai,
+      hariKerjaDapatDitagihkan: input.hariKerjaDapatDitagihkan,
+      hariKerjaAcuanBulan: input.hariKerjaAcuanBulan,
+      hasilHitung: input.hasilHitung,
+      error: null,
+      sumberHitung: input.sumberHitung,
+      tanggalTimesheet: input.tanggalTimesheet || null,
+      nilaiPenuh: input.nilaiPenuh,
+      sudahDialokasikanDiPoLain: "0",
+      sisaPerluDitagih: input.hasilHitung,
+      akanDitagihkan: input.hasilHitung,
+      sudahLunasBulanIni: false,
+      poLineItemId: input.poLineItemId ?? null,
+      isBarisManual: true,
+    };
+
+    setBaris((prev) => [...(prev ?? []), barisBaru]);
+    setBarisTambahan((prev) => [...prev, input]);
+    setDipilih((prev) => new Set([...prev, rowId]));
+    setModalTambahBaris(false);
+  }
+
+  function hapusBarisManual(personelId: number) {
+    setBaris((prev) => (prev ? prev.filter((b) => b.personelId !== personelId) : null));
+    setBarisTambahan((prev) => prev.filter((b) => b.personelId !== personelId));
+    setDipilih((prev) => {
+      const next = new Set(prev);
+      next.delete(personelId);
+      return next;
+    });
+  }
+
   async function simpan() {
     setError(null); setLoadingSimpan(true);
     const res = await fetch("/api/pengajuan", {
@@ -97,6 +192,7 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         poId, userXlId, periode, personelIds: Array.from(dipilih),
+        barisTambahan: barisTambahan.filter((bt) => dipilih.has(bt.personelId)),
         ...(jenis === "tahap" ? { nilaiManual: nilaiManualTerisi(nilaiTahap), keteranganTahap } : {}),
         approvalAlokasiUserXlPemberi: approvalPemberi || undefined,
         approvalAlokasiTanggal: approvalTanggal || undefined,
@@ -129,6 +225,7 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
               setPoId(nextPoId);
               setBaris(null);
               setBarisTahap(null);
+              setBarisTambahan([]);
               const matchedUser = daftarUserXl.find((u) => u.poId === nextPoId);
               if (matchedUser) {
                 setUserXlId(matchedUser.id);
@@ -146,9 +243,30 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
         </div>
         <div className="field">
           <label>Billing Period</label>
-          <input type="month" value={periode} onChange={(e) => { setPeriode(e.target.value); setBaris(null); setBarisTahap(null); }} />
+          <input
+            type="month"
+            value={periode}
+            onChange={(e) => {
+              setPeriode(e.target.value);
+              setBaris(null);
+              setBarisTahap(null);
+              setBarisTambahan([]);
+            }}
+          />
         </div>
-        <button onClick={hitungPratinjau} disabled={loadingHitung} className="btn btn-primary">{loadingHitung ? "Calculating..." : "Calculate Preview"}</button>
+        <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+          <button onClick={hitungPratinjau} disabled={loadingHitung} className="btn btn-primary">
+            {loadingHitung ? "Calculating..." : "Calculate Preview"}
+          </button>
+          <button
+            type="button"
+            onClick={bukaModalTambahBaris}
+            className="btn btn-secondary"
+            style={{ display: "flex", alignItems: "center", gap: 6 }}
+          >
+            <span>➕</span> Tambah Baris Baru
+          </button>
+        </div>
       </div>
 
       {error && <div className="alert alert-danger">{error}</div>}
@@ -176,8 +294,18 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
 
       {jenis === "bulanan" && baris && (
         <>
-          <div className="alert alert-info" style={{ marginTop: 12, marginBottom: 12, fontSize: 13 }}>
-            💡 <b>Timesheet &amp; Perhitungan Prorata:</b> Klik tombol <b>Upload Timesheet</b> pada baris personel untuk memasukkan total hari kerja dan kehadiran agar nilai tagihan dihitung secara <b>prorata (pro-rate)</b>. Jika tidak dimasukkan, sistem akan menggunakan hari kerja standar acuan kalender.
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 14, marginBottom: 10, flexWrap: "wrap", gap: 10 }}>
+            <div className="alert alert-info" style={{ margin: 0, fontSize: 13, flex: 1, minWidth: 300 }}>
+              💡 <b>Timesheet &amp; Perhitungan Prorata:</b> Klik tombol <b>Upload Timesheet</b> pada baris personel untuk memasukkan total hari kerja dan kehadiran agar nilai tagihan dihitung secara <b>prorata (pro-rate)</b>. Jika tidak dimasukkan, sistem akan menggunakan hari kerja standar acuan kalender.
+            </div>
+            <button
+              type="button"
+              className="btn btn-primary"
+              style={{ display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}
+              onClick={bukaModalTambahBaris}
+            >
+              <span>➕</span> Tambah Baris Baru
+            </button>
           </div>
           <div className="table-wrap">
             <table>
@@ -201,7 +329,24 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
                     <td>
                       <input type="checkbox" disabled={tidakBisaDipilih} checked={dipilih.has(b.personelId)} onChange={() => toggle(b.personelId)} />
                     </td>
-                    <td style={{ fontWeight: 600 }}>{b.namaPersonel}</td>
+                    <td style={{ fontWeight: 600 }}>
+                      {b.namaPersonel}
+                      {b.isBarisManual && (
+                        <span
+                          className="badge"
+                          style={{
+                            marginLeft: 6,
+                            background: "#e0f2fe",
+                            color: "#0369a1",
+                            fontSize: 10,
+                            verticalAlign: "middle",
+                            fontWeight: "normal",
+                          }}
+                        >
+                          Baris Tambahan
+                        </span>
+                      )}
+                    </td>
                     <td>{b.nilaiRateDipakai ? formatRupiah(b.nilaiRateDipakai) : "-"}</td>
                     <td>{b.hariKerjaDapatDitagihkan ?? "-"} / {b.hariKerjaAcuanBulan ?? "-"}</td>
                     <td>
@@ -215,7 +360,7 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
                     </td>
                     <td>
                       <span className={`badge ${b.sumberHitung === "timesheet" ? "badge-siap_diajukan" : ""}`}>
-                        {b.sumberHitung === "timesheet" ? "Timesheet" : "Working Calendar"}
+                        {b.sumberHitung === "timesheet" ? "Timesheet" : b.sumberHitung === "manual" ? "Manual" : "Working Calendar"}
                       </span>
                     </td>
                     {b.error ? (
@@ -243,19 +388,48 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
                       </>
                     )}
                     <td>
-                      <button
-                        type="button"
-                        className="btn-text"
-                        onClick={() => setModalPersonel({ id: b.personelId, nama: b.namaPersonel, sudahAda: b.sumberHitung === "timesheet" })}
-                        disabled={!periode}
-                      >
-                        {b.sumberHitung === "timesheet" ? "Change Timesheet" : "Upload Timesheet"}
-                      </button>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <button
+                          type="button"
+                          className="btn-text"
+                          onClick={() => setModalPersonel({ id: b.personelId, nama: b.namaPersonel, sudahAda: b.sumberHitung === "timesheet" })}
+                          disabled={!periode}
+                        >
+                          {b.sumberHitung === "timesheet" ? "Change Timesheet" : "Upload Timesheet"}
+                        </button>
+                        {b.isBarisManual && (
+                          <button
+                            type="button"
+                            className="btn-text"
+                            style={{ color: "var(--color-danger, #ef4444)", fontSize: 12 }}
+                            onClick={() => hapusBarisManual(b.personelId)}
+                            title="Hapus baris tambahan ini"
+                          >
+                            🗑️ Hapus
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                   );
                 })}
-                {baris.length === 0 && <tr><td colSpan={10} className="table-empty">No personnel mapped to this PO for the selected period.</td></tr>}
+                {baris.length === 0 && (
+                  <tr>
+                    <td colSpan={10} className="table-empty" style={{ padding: "28px 16px", textAlign: "center" }}>
+                      <p style={{ margin: "0 0 12px 0", color: "var(--muted, #64748b)" }}>
+                        Belum ada personel yang terpetakan ke PO ini untuk periode yang dipilih.
+                      </p>
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+                        onClick={bukaModalTambahBaris}
+                      >
+                        <span>➕</span> Tambah Baris Baru Sekarang
+                      </button>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -339,6 +513,19 @@ export default function FormBuatPengajuan({ daftarPo, daftarUserXl }: { daftarPo
           sudahAda={modalPersonel.sudahAda}
           onTutup={() => setModalPersonel(null)}
           onSelesai={() => { setModalPersonel(null); hitungPratinjau(); }}
+        />
+      )}
+
+      {modalTambahBaris && (
+        <TambahBarisModal
+          poId={Number(poId)}
+          periode={periode}
+          hariKerjaAcuanDefault={hariKerjaAcuanDefault}
+          daftarPersonel={daftarPersonel}
+          daftarPoLineItem={daftarPoLineItem}
+          personelSudahAdaIds={new Set((baris ?? []).map((b) => b.personelId))}
+          onTambah={tambahBarisManual}
+          onTutup={() => setModalTambahBaris(false)}
         />
       )}
     </div>

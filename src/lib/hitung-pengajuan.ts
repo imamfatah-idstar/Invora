@@ -15,8 +15,9 @@ export type BarisHitung = {
   hasilHitung: string | null;
   error: string | null;
   // "timesheet" kalau angka hari kerja/kehadiran dari timesheet yang diunggah,
-  // "kalender" kalau dari hitung kalender kerja (default, saat belum ada timesheet).
-  sumberHitung: "timesheet" | "kalender";
+  // "kalender" kalau dari hitung kalender kerja (default, saat belum ada timesheet),
+  // "manual" kalau baris ditambahkan secara manual atau tagihan tahap.
+  sumberHitung: "timesheet" | "kalender" | "manual";
   // Snapshot poLineItemId dari pemetaan_personel_po (bagian 33) — dibawa ke
   // pengajuan_detail saat pengajuan disimpan, dipakai untuk generate GR Request.
   poLineItemId: number | null;

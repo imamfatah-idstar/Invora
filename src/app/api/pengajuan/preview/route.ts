@@ -39,5 +39,8 @@ export async function POST(request: NextRequest) {
   const { cariSelisihGrMenggantung } = await import("@/lib/deficiency-gr-server");
   const selisihMenggantung = await cariSelisihGrMenggantung(poId);
 
-  return NextResponse.json({ jenis: "bulanan", baris, selisihMenggantung });
+  const { hitungHariKerjaAcuanBulan } = await import("@/lib/kalender");
+  const hariKerjaAcuanBulan = await hitungHariKerjaAcuanBulan(body.periode);
+
+  return NextResponse.json({ jenis: "bulanan", baris, selisihMenggantung, hariKerjaAcuanBulan });
 }
