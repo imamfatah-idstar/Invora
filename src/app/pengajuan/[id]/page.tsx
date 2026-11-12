@@ -180,14 +180,19 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
   const isPetugas = userLogin.role === "petugas";
   const isChecker = userLogin.role === "checker";
 
-  const bisaKonfirmasi = (header.status === "draft" || header.status === "perlu_revisi") && isPetugas;
-  const bisaEdit = header.status === "perlu_revisi" && isPetugas;
-  const bisaDicek = header.status === "menunggu_checker" && isChecker;
-  const bisaBuatDokumen = (header.status === "siap_diajukan" || header.status === "diajukan") && (isPetugas || isChecker);
-  // Kelengkapan dokumen (CAC, BAST, lampiran tambahan) — disiapkan Input Data
-  // ATAU Checker, sebagai prasyarat sebelum otomasi ke Get Approve/COUPA bisa
-  // dijalankan (belum dibangun). Lihat PROJECT_INSTRUCTIONS.md bagian 22-23.
-  const bisaKelengkapan = (header.status === "siap_diajukan" || header.status === "diajukan") &&
+  // Bagian 40-43: klien XL tetap lewat proses CAC seperti sekarang; klien
+  // Non-XL TIDAK lewat CAC, tapi tetap wajib timesheet + BAST sebelum invoice
+  // bisa diajukan. Deteksi HANYA dari po.klien (client_name), lihat src/lib/klien.ts.
+  const isKlienXl = apakahKlienXl(header.klien);
+  const isTagihanTahap = !!header.keteranganTahap || header.jenisTagihan === "tahap";
+  const semuaPakaiTimesheet = rincian.length > 0 && rincian.every((r) => r.sumberHitung === "timesheet");
+
+  const bisaKonfirmasi = isKlienXl && (header.status === "draft" || header.status === "perlu_revisi") && isPetugas;
+  const bisaEdit = (header.status === "perlu_revisi" || (!isKlienXl && header.status === "draft")) && isPetugas;
+  const bisaDicek = isKlienXl && header.status === "menunggu_checker" && isChecker;
+  // Non-XL langsung diarahkan ke sistem dokumen BAST & kelengkapan milestone invoice
+  const bisaBuatDokumen = (!isKlienXl || header.status === "siap_diajukan" || header.status === "diajukan") && (isPetugas || isChecker);
+  const bisaKelengkapan = (!isKlienXl || header.status === "siap_diajukan" || header.status === "diajukan") &&
     (isPetugas || isChecker);
   const cacDoc = daftarDokumen.find((d) => d.jenis === "CAC");
   const bastDoc = daftarDokumen.find((d) => d.jenis === "BAST");
@@ -200,12 +205,6 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
   const lampiranBalanceAda = daftarLampiran.some((l) => l.label === LABEL_LAMPIRAN_BALANCE);
   const lampiranLain = daftarLampiran.filter((l) => l.label !== LABEL_LAMPIRAN_BALANCE);
   const poAsliAda = !!header.namaFilePoAsli;
-  // Bagian 40-43: klien XL tetap lewat proses CAC seperti sekarang; klien
-  // Non-XL TIDAK lewat CAC, tapi tetap wajib timesheet + BAST sebelum invoice
-  // bisa diajukan. Deteksi HANYA dari po.klien (client_name), lihat src/lib/klien.ts.
-  const isKlienXl = apakahKlienXl(header.klien);
-  const isTagihanTahap = !!header.keteranganTahap || header.jenisTagihan === "tahap";
-  const semuaPakaiTimesheet = rincian.length > 0 && rincian.every((r) => r.sumberHitung === "timesheet");
 
   const dppTagihan = header.nilaiGrDisetujui ? Number(header.nilaiGrDisetujui) : total;
   const tarifPpnTagihan = header.tarifPpn ? Number(header.tarifPpn) : 11;
@@ -386,7 +385,7 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
               )}
             </div>
 
-            {daftarDokumen.length > 0 && (
+            {daftarDokumen.filter((d) => isKlienXl || d.jenis === "BAST").length > 0 ? (
               <DaftarDokumenTable
                 pengajuanId={header.id}
                 initialDokumen={isKlienXl ? daftarDokumen : daftarDokumen.filter((d) => d.jenis === "BAST")}
@@ -394,6 +393,15 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
                 userNama={userLogin.nama}
                 isKlienXl={isKlienXl}
               />
+            ) : (
+              <div style={{ marginTop: 14, padding: "16px 20px", background: "var(--color-bg-alt, #f8fafc)", borderRadius: 8, border: "1px dashed var(--color-border, #e2e8f0)", textAlign: "center" }}>
+                <p style={{ margin: "0 0 10px 0", color: "var(--muted, #64748b)", fontSize: 13.5 }}>
+                  {isKlienXl ? "Belum ada dokumen CAC, BAST, atau GR yang dibuat." : "Belum ada dokumen BAST yang dibuat untuk pengajuan Non-XL ini."}
+                </p>
+                {bisaBuatDokumen && (
+                  <TombolBuatDokumen pengajuanId={header.id} jenis="BAST" />
+                )}
+              </div>
             )}
           </div>
         )}
