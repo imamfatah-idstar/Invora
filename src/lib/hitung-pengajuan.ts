@@ -36,7 +36,7 @@ export type BarisHitung = {
 export async function hitungSemuaPersonelUntukPo(poId: number, periode: string): Promise<BarisHitung[]> {
   const { awal, akhir } = batasPeriode(periode);
 
-  const pemetaan = await db
+  const pemetaanPeriode = await db
     .select({
       personelId: pemetaanPersonelPo.personelId,
       berlakuDari: pemetaanPersonelPo.berlakuDari,
@@ -54,6 +54,38 @@ export async function hitungSemuaPersonelUntukPo(poId: number, periode: string):
       )
     );
 
+  // Sertakan juga personel yang sudah memiliki timesheet pada PO + periode ini
+  // (meskipun rentang tanggal SPK di pemetaan berada di luar bulan periode tersebut)
+  const timesheetPoPeriode = await db
+    .select({
+      personelId: timesheet.personelId,
+      namaPersonel: personel.nama,
+    })
+    .from(timesheet)
+    .innerJoin(personel, eq(timesheet.personelId, personel.id))
+    .where(and(eq(timesheet.poId, poId), eq(timesheet.periode, periode)));
+
+  const pemetaan = [...pemetaanPeriode];
+  for (const tsRow of timesheetPoPeriode) {
+    if (!pemetaan.some((p) => p.personelId === tsRow.personelId)) {
+      const [petaLain] = await db
+        .select({
+          berlakuDari: pemetaanPersonelPo.berlakuDari,
+          berlakuSampai: pemetaanPersonelPo.berlakuSampai,
+          poLineItemId: pemetaanPersonelPo.poLineItemId,
+        })
+        .from(pemetaanPersonelPo)
+        .where(and(eq(pemetaanPersonelPo.poId, poId), eq(pemetaanPersonelPo.personelId, tsRow.personelId)));
+      pemetaan.push({
+        personelId: tsRow.personelId,
+        berlakuDari: petaLain?.berlakuDari ?? awal,
+        berlakuSampai: petaLain?.berlakuSampai ?? null,
+        namaPersonel: tsRow.namaPersonel,
+        poLineItemId: petaLain?.poLineItemId ?? null,
+      });
+    }
+  }
+
   const hasil: BarisHitung[] = [];
 
   for (const p of pemetaan) {
@@ -69,7 +101,15 @@ export async function hitungSemuaPersonelUntukPo(poId: number, periode: string):
       )
       .orderBy(rateCard.berlakuDari);
 
-    const rate = rateAktif[rateAktif.length - 1]; // rate paling baru yang berlaku
+    let rate = rateAktif[rateAktif.length - 1]; // rate paling baru yang berlaku
+    if (!rate) {
+      const semuaRatePersonel = await db
+        .select()
+        .from(rateCard)
+        .where(eq(rateCard.personelId, p.personelId))
+        .orderBy(rateCard.berlakuDari);
+      rate = semuaRatePersonel[semuaRatePersonel.length - 1];
+    }
 
     if (!rate) {
       hasil.push({

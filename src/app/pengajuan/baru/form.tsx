@@ -4,8 +4,9 @@ import ComboSelect from "@/components/combo-select";
 import InputTagihanTahap, { BarisTahapUi, nilaiManualTerisi, totalNilaiTahap } from "@/components/input-tagihan-tahap";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import TambahBarisModal, { BarisTambahanInput, LineItemOpsi, PersonelOpsi } from "./tambah-baris-modal";
 import UnggahTimesheetModal from "./unggah-timesheet-modal";
-import TambahBarisModal, { BarisTambahanInput, PersonelOpsi, LineItemOpsi } from "./tambah-baris-modal";
+import InputTimesheetPoModal from "./input-timesheet-po-modal";
 
 type Opsi = { id: number; label: string; poId?: number | null };
 type BarisHitung = {
@@ -50,6 +51,7 @@ export default function FormBuatPengajuan({
   const [loadingSimpan, setLoadingSimpan] = useState(false);
   const [modalPersonel, setModalPersonel] = useState<{ id: number; nama: string; sudahAda: boolean } | null>(null);
   const [modalTambahBaris, setModalTambahBaris] = useState(false);
+  const [modalTimesheetPo, setModalTimesheetPo] = useState(false);
   const [hariKerjaAcuanDefault, setHariKerjaAcuanDefault] = useState(21);
   const [barisTambahan, setBarisTambahan] = useState<BarisTambahanInput[]>([]);
 
@@ -70,14 +72,15 @@ export default function FormBuatPengajuan({
     isKekurangan: boolean;
   } | null>(null);
 
-  async function hitungPratinjau() {
+  async function hitungPratinjau(periodeOverride?: string) {
     setError(null);
-    if (!periode) { setError("Please select a billing period first."); return; }
+    const targetPeriode = typeof periodeOverride === "string" ? periodeOverride : periode;
+    if (!targetPeriode) { setError("Please select a billing period first."); return; }
     setLoadingHitung(true);
     const res = await fetch("/api/pengajuan/preview", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ poId, periode }),
+      body: JSON.stringify({ poId, periode: targetPeriode }),
     });
     setLoadingHitung(false);
     if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Failed to calculate."); return; }
@@ -236,7 +239,7 @@ export default function FormBuatPengajuan({
           />
         </div>
         <div className="field">
-          <label>User XL (Client Approver)</label>
+          <label>User(Client Approver)</label>
           <select value={userXlId} onChange={(e) => setUserXlId(Number(e.target.value))}>
             {daftarUserXl.map((u) => <option key={u.id} value={u.id}>{u.label}</option>)}
           </select>
@@ -254,9 +257,20 @@ export default function FormBuatPengajuan({
             }}
           />
         </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
-          <button onClick={hitungPratinjau} disabled={loadingHitung} className="btn btn-primary">
+        <div style={{ display: "flex", gap: 8, alignItems: "flex-end", flexWrap: "wrap" }}>
+          <button type="button" onClick={() => hitungPratinjau()} disabled={loadingHitung} className="btn btn-primary">
             {loadingHitung ? "Calculating..." : "Calculate Preview"}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setError(null);
+              setModalTimesheetPo(true);
+            }}
+            className="btn btn-secondary"
+            style={{ display: "flex", alignItems: "center", gap: 6 }}
+          >
+            <span>📄</span> Masukkan Timesheet
           </button>
           <button
             type="button"
@@ -526,6 +540,22 @@ export default function FormBuatPengajuan({
           personelSudahAdaIds={new Set((baris ?? []).map((b) => b.personelId))}
           onTambah={tambahBarisManual}
           onTutup={() => setModalTambahBaris(false)}
+        />
+      )}
+
+      {modalTimesheetPo && (
+        <InputTimesheetPoModal
+          poId={poId}
+          poLabel={daftarPo.find((p) => p.id === Number(poId))?.label ?? String(poId)}
+          userXlId={userXlId}
+          periodeAwal={periode}
+          daftarPersonelMaster={daftarPersonel}
+          onTutup={() => setModalTimesheetPo(false)}
+          onSelesai={(periodeTerpilih) => {
+            setPeriode(periodeTerpilih);
+            setModalTimesheetPo(false);
+            hitungPratinjau(periodeTerpilih);
+          }}
         />
       )}
     </div>

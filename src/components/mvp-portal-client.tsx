@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import Logo from "@/components/logo";
+import { useState } from "react";
 
 type UserProps = {
   id?: number;
@@ -683,7 +683,7 @@ export default function MvpPortalClient({ user, dbStatus = "connected", dbErrorM
                   </div>
                   <h3 style={{ fontSize: 16, marginBottom: 6 }}>Master Data &amp; Multi-Klien</h3>
                   <p style={{ fontSize: 13, color: "var(--color-text-muted)", lineHeight: 1.5 }}>
-                    Pengelolaan Personel, Penempatan, Rate Card, PO, User XL, Pemetaan Personel-PO, dan Kalender Kerja. Dilengkapi fitur Impor Massal Integral.
+                    Pengelolaan Personel, Penempatan, Rate Card, PO, User , Pemetaan Personel-PO, dan Kalender Kerja. Dilengkapi fitur Impor Massal Integral.
                   </p>
                 </div>
                 <div style={{ marginTop: 16, display: "flex", gap: 6, flexWrap: "wrap" }}>
