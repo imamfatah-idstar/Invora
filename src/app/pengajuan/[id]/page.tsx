@@ -188,12 +188,11 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
   const semuaPakaiTimesheet = rincian.length > 0 && rincian.every((r) => r.sumberHitung === "timesheet");
 
   const bisaKonfirmasi = isKlienXl && (header.status === "draft" || header.status === "perlu_revisi") && isPetugas;
-  const bisaEdit = (header.status === "perlu_revisi" || (!isKlienXl && header.status === "draft")) && isPetugas;
+  const bisaEdit = (header.status === "perlu_revisi" || header.status === "draft") && isPetugas;
   const bisaDicek = isKlienXl && header.status === "menunggu_checker" && isChecker;
-  // Non-XL langsung diarahkan ke sistem dokumen BAST & kelengkapan milestone invoice
-  const bisaBuatDokumen = (!isKlienXl || header.status === "siap_diajukan" || header.status === "diajukan") && (isPetugas || isChecker);
-  const bisaKelengkapan = (!isKlienXl || header.status === "siap_diajukan" || header.status === "diajukan") &&
-    (isPetugas || isChecker);
+  // Baik XL (CAC, BAST, GR) maupun Non-XL (BAST) langsung dapat membuat & mengelola dokumen sejak pengajuan dibuat
+  const bisaBuatDokumen = isPetugas || isChecker;
+  const bisaKelengkapan = isPetugas || isChecker;
   const cacDoc = daftarDokumen.find((d) => d.jenis === "CAC");
   const bastDoc = daftarDokumen.find((d) => d.jenis === "BAST");
   const grDoc = daftarDokumen.find((d) => d.jenis === "GR");
@@ -202,6 +201,9 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
   const cacDisetujui = cacDoc?.status === "disetujui";
   const bastDisetujui = bastDoc?.status === "disetujui";
   const grDisetujui = grDoc?.status === "disetujui";
+  const siapInvoice = isKlienXl
+    ? (cacDisetujui && bastDisetujui && grDisetujui) || !!header.nomorInvoice
+    : true;
   const lampiranBalanceAda = daftarLampiran.some((l) => l.label === LABEL_LAMPIRAN_BALANCE);
   const lampiranLain = daftarLampiran.filter((l) => l.label !== LABEL_LAMPIRAN_BALANCE);
   const poAsliAda = !!header.namaFilePoAsli;
@@ -223,27 +225,38 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: 12 }}>
           <a href="/pengajuan" className="back-link" style={{ margin: 0 }}>&larr; Submissions</a>
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <InvoiceModal
-              pengajuanId={header.id}
-              nomorInvoice={header.nomorInvoice || `DRAF-INV-${header.id}`}
-              nomorFakturPajak={header.nomorFakturPajak}
-              tanggalFakturPajak={header.tanggalFakturPajak}
-              namaFileFakturPajak={header.namaFileFakturPajak}
-              pathFileFakturPajak={header.pathFileFakturPajak}
-              nomorGrSlip={header.nomorGrSlip}
-              nomorPo={header.nomorPo}
-              klien={header.klien || "XL Axiata"}
-              namaProyek={header.namaProyek}
-              namaPic={header.namaUserXl}
-              kontakPic={header.kontakUserXl}
-              userEmail={userLogin.email}
-              periode={header.periode}
-              tanggalInvoice={tanggalAcuanTagihan}
-              tanggalJatuhTempo={tanggalJatuhTempoTagihan}
-              totalTagihan={totalTagihanFinal}
-              dpp={header.nilaiGrDisetujui ? Number(header.nilaiGrDisetujui) : total}
-              tarifPpn={header.tarifPpn ? Number(header.tarifPpn) : 11}
-            />
+            {siapInvoice ? (
+              <InvoiceModal
+                pengajuanId={header.id}
+                nomorInvoice={header.nomorInvoice || `DRAF-INV-${header.id}`}
+                nomorFakturPajak={header.nomorFakturPajak}
+                tanggalFakturPajak={header.tanggalFakturPajak}
+                namaFileFakturPajak={header.namaFileFakturPajak}
+                pathFileFakturPajak={header.pathFileFakturPajak}
+                nomorGrSlip={header.nomorGrSlip}
+                nomorPo={header.nomorPo}
+                klien={header.klien || "XL Axiata"}
+                namaProyek={header.namaProyek}
+                namaPic={header.namaUserXl}
+                kontakPic={header.kontakUserXl}
+                userEmail={userLogin.email}
+                periode={header.periode}
+                tanggalInvoice={tanggalAcuanTagihan}
+                tanggalJatuhTempo={tanggalJatuhTempoTagihan}
+                totalTagihan={totalTagihanFinal}
+                dpp={header.nilaiGrDisetujui ? Number(header.nilaiGrDisetujui) : total}
+                tarifPpn={header.tarifPpn ? Number(header.tarifPpn) : 11}
+              />
+            ) : (
+              <a
+                href="#dokumen-section"
+                className="btn btn-secondary"
+                style={{ fontSize: 13, display: "inline-flex", alignItems: "center", gap: 6 }}
+                title="Untuk klien XL, selesaikan dan setujui dokumen CAC, BAST, dan GR terlebih dahulu sebelum menerbitkan Invoice"
+              >
+                📋 Tahap Dokumen XL: BAST, CAC &amp; GR ({[cacDisetujui && "CAC ✓", bastDisetujui && "BAST ✓", grDisetujui && "GR ✓"].filter(Boolean).length}/3 Disetujui)
+              </a>
+            )}
           </div>
         </div>
         <h1>Submission {header.periode} — {header.nomorPo}</h1>
@@ -348,7 +361,7 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
         )}
 
         {(bisaBuatDokumen || daftarDokumen.length > 0) && (
-          <div className="card" style={{ marginTop: 20 }}>
+          <div id="dokumen-section" className="card" style={{ marginTop: 20 }}>
             <h3 style={{ marginTop: 0 }}>Documents: {isKlienXl ? "CAC / BAST / GR" : "BAST"}</h3>
             <p className="subtitle">
               {isKlienXl ? (

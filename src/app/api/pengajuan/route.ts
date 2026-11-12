@@ -1,12 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { pengajuan, pengajuanDetail, po, personel, rateCard, pemetaanPersonelPo } from "@/db/schema";
+import { pengajuan, pengajuanDetail, po, personel, rateCard, pemetaanPersonelPo, dokumen } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import Decimal from "decimal.js";
 import { wajibRoleApi } from "@/lib/require-role-api";
 import { userSaatIni } from "@/lib/session-server";
 import { catatAudit } from "@/lib/audit";
+import { apakahKlienXl } from "@/lib/klien";
 import { hitungSemuaPersonelUntukPo, terapkanAlokasiLintasPo, siapkanTagihanTahap, BarisHitung } from "@/lib/hitung-pengajuan";
+
+async function buatDokumenAwalPengajuan(pengajuanId: number, klien: string | null) {
+  const isXl = apakahKlienXl(klien);
+  const jenisList: Array<"CAC" | "BAST" | "GR"> = isXl ? ["CAC", "BAST", "GR"] : ["BAST"];
+  for (const jenis of jenisList) {
+    await db.insert(dokumen).values({
+      pengajuanId,
+      jenis,
+      versi: 1,
+      status: "draft",
+    });
+  }
+}
 
 export async function POST(request: NextRequest) {
   const gagal = await wajibRoleApi(["petugas"]);
@@ -142,6 +156,7 @@ export async function POST(request: NextRequest) {
         sumberHitung: "manual",
       });
     }
+    await buatDokumenAwalPengajuan(ajuanTahap.id, poRow.klien);
     await catatAudit({
       entitas: "pengajuan", entitasId: ajuanTahap.id,
       perubahan: `Buat pengajuan draft TAHAP "${keteranganTahap}" periode=${ajuanTahap.periode} po=${poRow.nomorPo} total=${siap.total.toFixed(2)} (${siap.baris.length} personel, nilai manual)`,
@@ -258,6 +273,8 @@ export async function POST(request: NextRequest) {
       sumberHitung: b.sumberHitung,
     });
   }
+
+  await buatDokumenAwalPengajuan(ajuan.id, poRow.klien);
 
   const ketCarryOver = selisihMenggantung
     ? ` + penyesuaian selisih GR dari pengajuan #${selisihMenggantung.sumberPengajuanId} sebesar Rp${selisihMenggantung.nominal}`

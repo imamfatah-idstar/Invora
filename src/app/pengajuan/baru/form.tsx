@@ -4,11 +4,12 @@ import ComboSelect from "@/components/combo-select";
 import InputTagihanTahap, { BarisTahapUi, nilaiManualTerisi, totalNilaiTahap } from "@/components/input-tagihan-tahap";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { apakahKlienXl } from "@/lib/klien";
 import TambahBarisModal, { BarisTambahanInput, LineItemOpsi, PersonelOpsi } from "./tambah-baris-modal";
 import UnggahTimesheetModal from "./unggah-timesheet-modal";
 import InputTimesheetPoModal from "./input-timesheet-po-modal";
 
-type Opsi = { id: number; label: string; poId?: number | null };
+type Opsi = { id: number; label: string; poId?: number | null; klien?: string | null };
 type BarisHitung = {
   personelId: number; namaPersonel: string;
   nilaiRateDipakai: string | null; hariKerjaDapatDitagihkan: number | null;
@@ -216,11 +217,21 @@ export default function FormBuatPengajuan({
     return <div className="alert alert-danger">At least 1 PO and 1 Client Approver are required (create them first in Reference Data).</div>;
   }
 
+  const poTerpilih = daftarPo.find((p) => p.id === Number(poId));
+  const isPoXl = apakahKlienXl(poTerpilih?.klien);
+
   return (
     <div>
       <div className="toolbar">
-        <div className="field" style={{ minWidth: 280 }}>
-          <label>PO</label>
+        <div className="field" style={{ minWidth: 320 }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "space-between" }}>
+            <span>PO</span>
+            {poTerpilih && (
+              <span className={`badge ${isPoXl ? "badge-siap_diajukan" : "badge-draft"}`} style={{ fontSize: 11 }}>
+                {isPoXl ? "XL — BAST, CAC & GR" : `Non-XL (${poTerpilih.klien || "Direct Invoice"})`}
+              </span>
+            )}
+          </label>
           <ComboSelect
             value={poId}
             onChange={(v) => {

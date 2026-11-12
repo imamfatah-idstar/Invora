@@ -41,13 +41,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const isKlienXl = apakahKlienXl(ajuan.klien);
 
-  if (isKlienXl && ajuan.status !== "siap_diajukan" && ajuan.status !== "diajukan") {
-    return NextResponse.json(
-      { error: `Dokumen hanya bisa dibuat setelah disetujui Checker (status "siap_diajukan"), status saat ini "${ajuan.status}".` },
-      { status: 409 }
-    );
-  }
-
   const body = await request.json().catch(() => null);
   const jenis = body?.jenis;
   if (!isKlienXl && jenis !== "BAST") {

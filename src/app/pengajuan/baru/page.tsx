@@ -59,7 +59,11 @@ export default async function HalamanBuatPengajuan() {
           Select PO, Client Approver, and period — the system automatically calculates prorata for each personnel mapped to this PO.
         </p>
         <FormBuatPengajuan
-          daftarPo={daftarPo.map((p) => ({ id: p.id, label: `${p.nomorPo} — ${p.namaProyek}` }))}
+          daftarPo={daftarPo.map((p) => ({
+            id: p.id,
+            label: `${p.nomorPo} — ${p.namaProyek}${p.klien ? ` [${p.klien}]` : ""}`,
+            klien: p.klien,
+          }))}
           daftarUserXl={daftarUserXl.map((u) => ({ id: u.id, label: u.nama, poId: u.poId }))}
           daftarPersonel={daftarPersonelAktif.map((p) => ({
             id: p.id,
