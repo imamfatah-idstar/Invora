@@ -1,24 +1,23 @@
-import { wajibRole } from "@/lib/require-role";
+import Topbar from "@/components/topbar";
 import { db } from "@/db";
-import { pengajuan, pengajuanDetail, personel, po, poLineItem, userXl, konfirmasi, checkerReview, users, dokumen, lampiranPengajuan, grRequest, grRequestRiwayat, pembayaran } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { checkerReview, dokumen, grRequest, grRequestRiwayat, konfirmasi, lampiranPengajuan, pembayaran, pengajuan, pengajuanDetail, personel, po, poLineItem, users, userXl } from "@/db/schema";
+import { tambahHari } from "@/lib/aging";
+import { apakahKlienXl } from "@/lib/klien";
+import { LABEL_LAMPIRAN_BALANCE } from "@/lib/lampiran-label";
+import { wajibRole } from "@/lib/require-role";
+import { desc, eq } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { notFound } from "next/navigation";
-import TombolKonfirmasi from "./konfirmasi-button";
 import FormChecker from "./checker-form";
-import TombolBuatDokumen from "./tombol-buat-dokumen";
+import DaftarDokumenTable from "./daftar-dokumen-table";
+import GrRequestPanel from "./gr-request-panel";
+import InvoiceModal from "./invoice-modal";
+import TombolKonfirmasi from "./konfirmasi-button";
 import FormLampiran from "./lampiran-form";
 import TombolHapusLampiran from "./lampiran-hapus-button";
-import Topbar from "@/components/topbar";
-import { LABEL_LAMPIRAN_BALANCE } from "@/lib/lampiran-label";
-import FormStatusProses from "./status-proses-form";
-import GrRequestPanel from "./gr-request-panel";
-import { alias } from "drizzle-orm/pg-core";
-import { apakahKlienXl } from "@/lib/klien";
 import PembayaranPanel from "./pembayaran-panel";
-import InvoiceModal from "./invoice-modal";
-import DaftarDokumenTable from "./daftar-dokumen-table";
-import { tambahHari } from "@/lib/aging";
-import { isAuthorizedForRole } from "@/lib/user-roles";
+import FormStatusProses from "./status-proses-form";
+import TombolBuatDokumen from "./tombol-buat-dokumen";
 
 const LABEL_STATUS: Record<string, string> = {
   draft: "Draft",
@@ -399,6 +398,13 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
           </div>
         )}
 
+        {/* Bagian 45: GR Request cuma berlaku untuk klien XL (proses CAC/COUPA) —
+            klien Non-XL skip total, tidak ditampilkan sama sekali.
+            Dipindahkan tepat di bawah card Documents: CAC / BAST / GR */}
+        {bisaKelengkapan && isKlienXl && (
+          <GrRequestPanel pengajuanId={header.id} data={dataGrRequest} role={isChecker ? "checker" : "petugas"} riwayat={riwayatGrRequest} />
+        )}
+
         {bisaKelengkapan && (
           <div className="card" style={{ marginTop: 20 }}>
             <h3 style={{ marginTop: 0 }}>
@@ -455,12 +461,6 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
           </div>
         )}
 
-        {/* Bagian 45: GR Request cuma berlaku untuk klien XL (proses CAC/COUPA) —
-            klien Non-XL skip total, tidak ditampilkan sama sekali. */}
-        {bisaKelengkapan && isKlienXl && (
-          <GrRequestPanel pengajuanId={header.id} data={dataGrRequest} role={isChecker ? "checker" : "petugas"} riwayat={riwayatGrRequest} />
-        )}
-
         {/* MVP 5: Modul Pencatatan Pelunasan Pembayaran (Payment Settlement) */}
         {bisaKelengkapan && (
           <PembayaranPanel
@@ -481,7 +481,7 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
           <div className="card" style={{ marginTop: 20 }}>
             <h3 style={{ marginTop: 0 }}>
               {isKlienXl
-                ? "Document Readiness Checklist — prior to submission to Get Approve/COUPA"
+                ? "Document Readiness Checklist — prior to submission to Get Approve"
                 : "Document Readiness Checklist — Non-XL Billing Documents"}
             </h3>
             <p className="subtitle">

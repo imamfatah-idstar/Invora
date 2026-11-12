@@ -1,16 +1,16 @@
-import { NextRequest, NextResponse } from "next/server";
-import { mkdir, writeFile, unlink } from "fs/promises";
-import path from "path";
 import { db } from "@/db";
 import { lampiranPengajuan, pengajuan } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
-import { wajibRoleApi } from "@/lib/require-role-api";
-import { userSaatIni } from "@/lib/session-server";
 import { catatAudit } from "@/lib/audit";
 import { LABEL_LAMPIRAN_BALANCE } from "@/lib/lampiran-label";
+import { wajibRoleApi } from "@/lib/require-role-api";
+import { userSaatIni } from "@/lib/session-server";
+import { and, eq } from "drizzle-orm";
+import { mkdir, unlink, writeFile } from "fs/promises";
+import { NextRequest, NextResponse } from "next/server";
+import path from "path";
 
 const DIR_UPLOAD = path.join(process.cwd(), "uploads", "lampiran");
-const UKURAN_MAKS = 30 * 1024 * 1024; // 30MB, sama dengan batas Get Approve/COUPA
+const UKURAN_MAKS = 30 * 1024 * 1024; // 30MB, sama dengan batas Get Approve
 
 // GET /api/pengajuan/[id]/lampiran — daftar lampiran tambahan pengajuan ini.
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {

@@ -1,9 +1,9 @@
+import Topbar from "@/components/topbar";
 import { db } from "@/db";
 import { po } from "@/db/schema";
-import { desc } from "drizzle-orm";
-import Decimal from "decimal.js";
 import { wajibRole } from "@/lib/require-role";
-import Topbar from "@/components/topbar";
+import Decimal from "decimal.js";
+import { desc } from "drizzle-orm";
 import FilterTahun from "./filter-tahun";
 import TabelSummaryPo from "./summary-po-table";
 
@@ -40,7 +40,7 @@ export default async function HalamanSummaryPo({ searchParams }: { searchParams:
         <p className="subtitle">
           Overview of PO values, approved GR (Goods Receipt) values, and remaining balance per PO. Read-only view —
           GR values are updated by Data Entry &amp; Confirmation Officers under Reference Data &middot; PO / Line Items, after GR
-          approval in Get Approve CAC/COUPA.
+          approval in Get Approve CAC.
         </p>
 
         <FilterTahun daftarTahun={daftarTahun} tahunDipilih={tahunDipilih} />

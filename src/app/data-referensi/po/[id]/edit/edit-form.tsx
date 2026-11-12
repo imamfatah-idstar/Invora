@@ -1,6 +1,6 @@
 "use client";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function FormEditPo({
   id, nomorPo, namaProyekAwal, saldoAwal, tahunAwal, nilaiGrAwal, tanggalPoAwal, klienAwal, jenisTagihanAwal,
@@ -42,7 +42,7 @@ export default function FormEditPo({
       <div className="field">
         <label>Nilai sudah di-GR (kumulatif)</label>
         <input value={nilaiGr} onChange={(e) => setNilaiGr(e.target.value)} required />
-        <p className="subtitle" style={{ margin: "4px 0 0", fontSize: 12 }}>Diisi manual setelah GR disetujui di Get Approve CAC/COUPA. Dipakai di halaman Summary PO (saldo = nilai item − nilai GR).</p>
+        <p className="subtitle" style={{ margin: "4px 0 0", fontSize: 12 }}>Diisi manual setelah GR disetujui di Get Approve CAC. Dipakai di halaman Summary PO (saldo = nilai item − nilai GR).</p>
       </div>
       <div className="field">
         <label>Klien (nama resmi)</label>

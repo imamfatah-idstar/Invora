@@ -1,6 +1,6 @@
 "use client";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function FormTambahPo() {
   const router = useRouter();
@@ -35,7 +35,7 @@ export default function FormTambahPo() {
   return (
     <form onSubmit={handleSubmit} className="toolbar">
       <div className="field"><label>PO Number</label><input value={nomorPo} onChange={(e) => setNomorPo(e.target.value)} required /></div>
-      <div className="field" style={{ minWidth: 220 }}><label>Project Name (as in PO/COUPA)</label><input value={namaProyek} onChange={(e) => setNamaProyek(e.target.value)} required /></div>
+      <div className="field" style={{ minWidth: 220 }}><label>Project Name (as in PO)</label><input value={namaProyek} onChange={(e) => setNamaProyek(e.target.value)} required /></div>
       <div className="field" style={{ width: 100 }}><label>Year</label><input type="number" value={tahun} onChange={(e) => setTahun(e.target.value)} required /></div>
       <div className="field"><label>PO Item Value</label><input placeholder="e.g. 100000000.00" value={nilaiItem} onChange={(e) => setNilaiItem(e.target.value)} required /></div>
       <div className="field" style={{ minWidth: 220 }}><label>Client (Official name, optional)</label><input value={klien} onChange={(e) => setKlien(e.target.value)} placeholder="e.g. PT Bank CIMB Niaga Tbk" /></div>

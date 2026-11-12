@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useMemo, useState } from "react";
 
 export type BarisDurasi = {
   id: number;
@@ -123,7 +123,7 @@ export default function AnalisaDurasiClient({ daftar }: { daftar: BarisDurasi[] 
         <div className="card" style={{ padding: 16, borderLeft: "4px solid #f59e0b" }}>
           <div style={{ fontSize: 12, color: "var(--muted)", textTransform: "uppercase", fontWeight: 600 }}>Waiting Customer Approval</div>
           <div style={{ fontSize: 26, fontWeight: 700, margin: "6px 0 2px 0", color: "#b45309" }}>{totalWaitingCustomer}</div>
-          <div style={{ fontSize: 12, color: "var(--muted)" }}>Currently with customer/COUPA</div>
+          <div style={{ fontSize: 12, color: "var(--muted)" }}>Currently with customer</div>
         </div>
 
         <div className="card" style={{ padding: 16, borderLeft: "4px solid #059669" }}>
