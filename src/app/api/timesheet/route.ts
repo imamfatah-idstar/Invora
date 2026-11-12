@@ -238,25 +238,38 @@ export async function POST(request: NextRequest) {
     ];
   }
 
-  let infoFile: { namaAsli: string; pathRelatif: string } | null = null;
+  let infoFileGlobal: { namaAsli: string; pathRelatif: string } | null = null;
   if (file) {
     const hasilSimpan = await simpanFileTimesheet(file, `po${poId}-${periode}`);
     if ("error" in hasilSimpan) {
       return NextResponse.json({ error: hasilSimpan.error }, { status: 400 });
     }
-    infoFile = hasilSimpan;
+    infoFileGlobal = hasilSimpan;
   }
 
   const idsTersimpan: number[] = [];
 
   for (const item of daftarInput) {
+    // Cek apakah ada file khusus untuk personel ini (file_<personelId>)
+    const filePersonelRaw = form.get(`file_${item.personelId}`);
+    const filePersonel = filePersonelRaw instanceof File && filePersonelRaw.size > 0 ? filePersonelRaw : null;
+    let infoFileBaris: { namaAsli: string; pathRelatif: string } | null = infoFileGlobal;
+
+    if (filePersonel) {
+      const hasilSimpanBaris = await simpanFileTimesheet(filePersonel, `${item.personelId}-po${poId}-${periode}`);
+      if ("error" in hasilSimpanBaris) {
+        return NextResponse.json({ error: hasilSimpanBaris.error }, { status: 400 });
+      }
+      infoFileBaris = hasilSimpanBaris;
+    }
+
     const existing = await db
       .select({ id: timesheet.id, namaFile: timesheet.namaFile, pathFile: timesheet.pathFile })
       .from(timesheet)
       .where(and(eq(timesheet.personelId, item.personelId), eq(timesheet.poId, poId), eq(timesheet.periode, periode)));
 
-    const namaFileFinal = infoFile?.namaAsli ?? existing[0]?.namaFile ?? "Input Workdays Timesheet";
-    const pathFileFinal = infoFile?.pathRelatif ?? existing[0]?.pathFile ?? "manual-timesheet";
+    const namaFileFinal = infoFileBaris?.namaAsli ?? existing[0]?.namaFile ?? "Input Workdays Timesheet";
+    const pathFileFinal = infoFileBaris?.pathRelatif ?? existing[0]?.pathFile ?? "manual-timesheet";
 
     let id: number;
     if (existing[0]) {
@@ -274,7 +287,7 @@ export async function POST(request: NextRequest) {
         .where(eq(timesheet.id, existing[0].id));
       id = existing[0].id;
 
-      if (infoFile && existing[0].pathFile && existing[0].pathFile !== "manual-timesheet") {
+      if (infoFileBaris && existing[0].pathFile && existing[0].pathFile !== "manual-timesheet") {
         const subPath = existing[0].pathFile.replace(/^[/\\]*uploads[/\\]*/, "");
         const pathFileLama = path.join(/*turbopackIgnore: true*/ process.cwd(), "uploads", subPath);
         await unlink(pathFileLama).catch(() => {});

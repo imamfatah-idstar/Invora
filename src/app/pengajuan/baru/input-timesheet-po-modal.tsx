@@ -14,6 +14,7 @@ type BarisTimesheetPo = {
   totalKehadiran: number;
   tanggalTimesheet: string;
   namaFileAda: string | null;
+  fileBaru: File | null;
   dipilih: boolean;
 };
 
@@ -58,13 +59,11 @@ export default function InputTimesheetPoModal({
   const [tanggalTimesheetGlobal, setTanggalTimesheetGlobal] = useState(hariIni);
   const [workdaysGlobal, setWorkdaysGlobal] = useState<number>(21);
   const [kehadiranGlobal, setKehadiranGlobal] = useState<number>(21);
-  const [file, setFile] = useState<File | null>(null);
   const [baris, setBaris] = useState<BarisTimesheetPo[]>([]);
   const [personelTambahId, setPersonelTambahId] = useState<string>("");
   const [loadingData, setLoadingData] = useState(false);
   const [loadingSimpan, setLoadingSimpan] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [infoCsv, setInfoCsv] = useState<string | null>(null);
 
   useEffect(() => {
     if (!poId || !periode) return;
@@ -100,6 +99,7 @@ export default function InputTimesheetPoModal({
             totalKehadiran: p.timesheet?.totalKehadiran ?? acuan,
             tanggalTimesheet: p.timesheet?.tanggalTimesheet || hariIni,
             namaFileAda: p.timesheet?.namaFile ?? null,
+            fileBaru: null,
             dipilih: true,
           })
         );
@@ -127,53 +127,49 @@ export default function InputTimesheetPoModal({
     );
   }
 
-  async function handlePilihFile(f: File | null) {
-    setFile(f);
-    setInfoCsv(null);
+  async function handlePilihFileBaris(idx: number, f: File | null) {
+    setBaris((prev) =>
+      prev.map((item, i) => (i === idx ? { ...item, fileBaru: f, dipilih: true } : item))
+    );
+
     if (!f || !f.name.toLowerCase().endsWith(".csv")) return;
 
-    // Jika file adalah CSV, coba baca kolom nama + workdays/attendance untuk auto-fill baris
+    // Jika file CSV personel memiliki kolom workdays / attendance, otomatis isikan untuk baris tersebut
     try {
       const teks = (await f.text()).replace(/^\uFEFF/, "");
       const semua = parseCsv(teks);
       if (semua.length < 2) return;
       const header = semua[0].map((h) => h.trim().toLowerCase());
-      const adaKolomNama = header.some((h) => ["name", "nama", "personel", "talent"].includes(h));
-      const adaKolomHari = header.some((h) =>
-        ["workdays", "total_hari_kerja", "hari_kerja", "attendance", "total_kehadiran", "kehadiran", "hadir"].includes(h)
-      );
-      if (!adaKolomNama || !adaKolomHari) return;
-
       const objek = csvKeObjek([header, ...semua.slice(1)]);
-      let terisi = 0;
-      setBaris((prev) =>
-        prev.map((b) => {
-          const cocok = objek.find((r) => {
-            const nm = (r.name || r.nama || r.personel || r.talent || "").trim().toLowerCase();
-            return nm === b.namaPersonel.trim().toLowerCase();
-          });
-          if (!cocok) return b;
-          const hkRaw = cocok.workdays ?? cocok.total_hari_kerja ?? cocok.hari_kerja;
-          const hadirRaw = cocok.attendance ?? cocok.total_kehadiran ?? cocok.kehadiran ?? cocok.hadir ?? hkRaw;
-          const hk = hkRaw !== undefined && hkRaw !== "" ? Number(hkRaw) : b.totalHariKerja;
-          const hadir = hadirRaw !== undefined && hadirRaw !== "" ? Number(hadirRaw) : b.totalKehadiran;
-          if (!isNaN(hk) && !isNaN(hadir)) {
-            terisi++;
-            return {
-              ...b,
-              totalHariKerja: hk,
-              totalKehadiran: hadir,
-              dipilih: true,
-            };
-          }
-          return b;
-        })
-      );
-      if (terisi > 0) {
-        setInfoCsv(`Berhasil mencocokkan workdays otomatis untuk ${terisi} personel dari file CSV.`);
+      if (objek.length === 0) return;
+
+      const targetNama = baris[idx]?.namaPersonel.trim().toLowerCase();
+      const cocok =
+        objek.find((r) => {
+          const nm = (r.name || r.nama || r.personel || r.talent || "").trim().toLowerCase();
+          return nm && nm === targetNama;
+        }) ?? objek[0];
+
+      const hkRaw = cocok.workdays ?? cocok.total_hari_kerja ?? cocok.hari_kerja;
+      const hadirRaw = cocok.attendance ?? cocok.total_kehadiran ?? cocok.kehadiran ?? cocok.hadir;
+      const hk = hkRaw !== undefined && hkRaw !== "" ? Number(hkRaw) : NaN;
+      const hadir = hadirRaw !== undefined && hadirRaw !== "" ? Number(hadirRaw) : NaN;
+
+      if (!isNaN(hk) || !isNaN(hadir)) {
+        setBaris((prev) =>
+          prev.map((item, i) =>
+            i === idx
+              ? {
+                  ...item,
+                  totalHariKerja: !isNaN(hk) && hk > 0 ? hk : item.totalHariKerja,
+                  totalKehadiran: !isNaN(hadir) && hadir >= 0 ? hadir : item.totalKehadiran,
+                }
+              : item
+          )
+        );
       }
     } catch {
-      // Abaikan jika CSV adalah dokumen lampiran biasa
+      // Abaikan jika CSV bukan format workdays
     }
   }
 
@@ -196,6 +192,7 @@ export default function InputTimesheetPoModal({
         totalKehadiran: kehadiranGlobal,
         tanggalTimesheet: tanggalTimesheetGlobal,
         namaFileAda: null,
+        fileBaru: null,
         dipilih: true,
       },
     ]);
@@ -235,9 +232,13 @@ export default function InputTimesheetPoModal({
     fd.append("userXlId", String(userXlId));
     fd.append("periode", periode);
     fd.append("tanggalTimesheet", tanggalTimesheetGlobal);
-    if (file) {
-      fd.append("file", file);
+
+    for (const b of dipilihList) {
+      if (b.fileBaru) {
+        fd.append(`file_${b.personelId}`, b.fileBaru);
+      }
     }
+
     fd.append(
       "items",
       JSON.stringify(
@@ -286,7 +287,7 @@ export default function InputTimesheetPoModal({
       <div
         className="card"
         style={{
-          width: 820,
+          width: 980,
           maxWidth: "96vw",
           maxHeight: "92vh",
           overflowY: "auto",
@@ -297,7 +298,7 @@ export default function InputTimesheetPoModal({
           <div>
             <h3 style={{ margin: 0, fontSize: 18 }}>📄 Masukkan Timesheet &amp; Hitung Workdays</h3>
             <p style={{ margin: "4px 0 0", fontSize: 13, color: "var(--muted, #64748b)" }}>
-              PO: <b>{poLabel}</b> — Masukkan hari kerja (workdays) dan kehadiran dari timesheet. Nilai tagihan akan dihitung otomatis dari workdays timesheet ini.
+              PO: <b>{poLabel}</b> — Unggah file timesheet dan masukkan workdays masing-masing personel ({baris.length} personel).
             </p>
           </div>
           <button
@@ -309,7 +310,7 @@ export default function InputTimesheetPoModal({
           </button>
         </div>
 
-        {/* Pengaturan Global & Upload File */}
+        {/* Pengaturan Global */}
         <div
           style={{
             background: "var(--color-bg-alt, #f8fafc)",
@@ -366,24 +367,6 @@ export default function InputTimesheetPoModal({
               </button>
             </div>
           </div>
-
-          <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 12, flexWrap: "wrap" }}>
-            <div className="field" style={{ margin: 0, flex: 1, minWidth: 260 }}>
-              <label style={{ fontSize: 12.5 }}>
-                Lampiran File Timesheet (PDF / Excel / CSV — Opsional)
-              </label>
-              <input
-                type="file"
-                accept=".pdf,.xlsx,.xls,.csv"
-                onChange={(e) => handlePilihFile(e.target.files?.[0] ?? null)}
-              />
-            </div>
-          </div>
-          {infoCsv && (
-            <div className="alert alert-success" style={{ marginTop: 8, marginBottom: 0, fontSize: 12.5 }}>
-              {infoCsv}
-            </div>
-          )}
         </div>
 
         {/* Tambah personel jika belum terpetakan */}
@@ -408,7 +391,7 @@ export default function InputTimesheetPoModal({
           </button>
         </div>
 
-        {/* Tabel Input Workdays per Personel */}
+        {/* Tabel Input Workdays & Upload Timesheet per Personel */}
         {loadingData ? (
           <p style={{ padding: 20, textAlign: "center", color: "var(--muted)" }}>Memuat daftar personel PO...</p>
         ) : (
@@ -428,8 +411,9 @@ export default function InputTimesheetPoModal({
                   </th>
                   <th>Personnel</th>
                   <th>Rate / Month</th>
-                  <th style={{ width: 135 }}>Attendance Days (Hadir)</th>
-                  <th style={{ width: 135 }}>Total Workdays (Timesheet)</th>
+                  <th style={{ width: 220 }}>Upload File Timesheet</th>
+                  <th style={{ width: 125 }}>Attendance Days (Hadir)</th>
+                  <th style={{ width: 125 }}>Total Workdays (Timesheet)</th>
                   <th>Estimated Prorata</th>
                 </tr>
               </thead>
@@ -452,13 +436,26 @@ export default function InputTimesheetPoModal({
                       </td>
                       <td>
                         <div style={{ fontWeight: 600 }}>{b.namaPersonel}</div>
-                        {b.namaFileAda && (
+                        {b.namaFileAda && !b.fileBaru && (
                           <div style={{ fontSize: 11, color: "var(--muted, #64748b)" }}>
                             Tersimpan: {b.namaFileAda}
                           </div>
                         )}
+                        {b.fileBaru && (
+                          <div style={{ fontSize: 11, color: "#15803d", fontWeight: 500 }}>
+                            📎 File baru: {b.fileBaru.name}
+                          </div>
+                        )}
                       </td>
                       <td>{formatRupiah(b.nilaiRate)}</td>
+                      <td>
+                        <input
+                          type="file"
+                          accept=".pdf,.xlsx,.xls,.csv"
+                          onChange={(e) => handlePilihFileBaris(idx, e.target.files?.[0] ?? null)}
+                          style={{ fontSize: 12, maxWidth: 210 }}
+                        />
+                      </td>
                       <td>
                         <input
                           type="number"
@@ -498,7 +495,7 @@ export default function InputTimesheetPoModal({
                 })}
                 {baris.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="table-empty" style={{ textAlign: "center", padding: 20 }}>
+                    <td colSpan={7} className="table-empty" style={{ textAlign: "center", padding: 20 }}>
                       Belum ada personel yang terpetakan ke PO ini. Gunakan pilihan &quot;Tambah Personel Lain ke PO Ini&quot; di atas untuk menambahkan personel.
                     </td>
                   </tr>
@@ -545,4 +542,3 @@ export default function InputTimesheetPoModal({
     </div>
   );
 }
-
