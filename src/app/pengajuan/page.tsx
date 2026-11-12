@@ -18,7 +18,7 @@ export default async function DaftarPengajuan() {
   const daftar = await db
     .select({
       id: pengajuan.id, periode: pengajuan.periode, status: pengajuan.status,
-      nomorPo: po.nomorPo, namaUserXl: userXl.nama,
+      nomorPo: po.nomorPo, klien: po.klien, namaUserXl: userXl.nama,
     })
     .from(pengajuan)
     .innerJoin(po, eq(pengajuan.poId, po.id))
@@ -68,7 +68,7 @@ export default async function DaftarPengajuan() {
           <table>
             <thead><tr>
               <th>Period</th><th>PO No.</th>
-              <th>Client Approver</th><th>Status</th><th></th>
+              <th>Company</th><th>Status</th><th></th>
             </tr></thead>
             <tbody>
               {daftar.map((a) => {
@@ -78,7 +78,7 @@ export default async function DaftarPengajuan() {
                   <tr key={a.id} style={perluPerhatianChecker ? { background: "var(--color-warning-bg)" } : undefined}>
                     <td>{a.periode}</td>
                     <td>{a.nomorPo}</td>
-                    <td>{a.namaUserXl}</td>
+                    <td>{a.klien || a.namaUserXl}</td>
                     <td>
                       <span className={`badge badge-${a.status}`}>{LABEL_STATUS[a.status] ?? a.status}</span>
                       {perluPerhatianChecker ? " ⏳" : ""}

@@ -261,15 +261,12 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
         </div>
         <h1>Submission {header.periode} — {header.nomorPo}</h1>
         <p className="subtitle">
-          Project: <b>{header.namaProyek}</b> &middot; Client Approver: <b>{header.namaUserXl}</b> &middot;
+          Project: <b>{header.namaProyek}</b> &middot; Company: <b>{header.klien || header.namaUserXl}</b> &middot;
           Status: <span className={`badge badge-${header.status}`}>{LABEL_STATUS[header.status] ?? header.status}</span> &middot; Version: {header.versi}
-          {header.klien && (
-            <> &middot; Client: <b>{header.klien}</b>{" "}
-              <span className={`badge ${isKlienXl ? "badge-siap_diajukan" : "badge-draft"}`}>
-                {isKlienXl ? "XL — CAC Workflow" : "Non-XL — Direct Invoice"}
-              </span>
-            </>
-          )}
+          {" "}
+          <span className={`badge ${isKlienXl ? "badge-siap_diajukan" : "badge-draft"}`}>
+            {isKlienXl ? "XL — CAC Workflow" : "Non-XL — Direct Invoice"}
+          </span>
           {header.keteranganTahap && (
             <> &middot; Milestone billing: <b>{header.keteranganTahap}</b></>
           )}

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { pengajuan, pengajuanDetail, po, personel, rateCard, pemetaanPersonelPo, dokumen } from "@/db/schema";
+import { pengajuan, pengajuanDetail, po, personel, rateCard, pemetaanPersonelPo, dokumen, userXl } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import Decimal from "decimal.js";
 import { wajibRoleApi } from "@/lib/require-role-api";
@@ -28,18 +28,34 @@ export async function POST(request: NextRequest) {
   const user = await userSaatIni();
 
   const body = await request.json().catch(() => null);
-  if (!body?.poId || !body?.userXlId || !body?.periode) {
-    return NextResponse.json({ error: "PO, User XL, dan periode wajib diisi." }, { status: 400 });
+  if (!body?.poId || !body?.periode) {
+    return NextResponse.json({ error: "PO dan periode wajib diisi." }, { status: 400 });
   }
 
   const poId = Number(body.poId);
-  const userXlId = Number(body.userXlId);
   const periode = body.periode;
   let personelIds: number[] = Array.isArray(body.personelIds) ? body.personelIds.map(Number) : [];
 
   const [poRow] = await db.select().from(po).where(eq(po.id, poId));
   if (!poRow) {
     return NextResponse.json({ error: "PO tidak ditemukan." }, { status: 404 });
+  }
+
+  let userXlId = Number(body.userXlId) || 0;
+  const [userByPo] = await db.select().from(userXl).where(eq(userXl.poId, poId));
+  if (userByPo) {
+    userXlId = userByPo.id;
+  } else if (!userXlId) {
+    const [anyUserXl] = await db.select().from(userXl);
+    if (anyUserXl) {
+      userXlId = anyUserXl.id;
+    } else {
+      const [createdUserXl] = await db
+        .insert(userXl)
+        .values({ nama: poRow.klien || "Client", poId })
+        .returning();
+      userXlId = createdUserXl.id;
+    }
   }
 
   // Proses baris tambahan manual / ad-hoc jika ada

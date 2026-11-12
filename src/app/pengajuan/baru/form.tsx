@@ -43,7 +43,12 @@ export default function FormBuatPengajuan({
 }) {
   const router = useRouter();
   const [poId, setPoId] = useState(daftarPo[0]?.id ?? "");
-  const [userXlId, setUserXlId] = useState(daftarUserXl[0]?.id ?? "");
+  const [company, setCompany] = useState((daftarPo[0]?.klien ?? "").trim());
+  const [userXlId, setUserXlId] = useState(() => {
+    const firstPoId = daftarPo[0]?.id;
+    const matched = daftarUserXl.find((u) => u.poId === firstPoId);
+    return matched?.id ?? daftarUserXl[0]?.id ?? "";
+  });
   const [periode, setPeriode] = useState("");
   const [baris, setBaris] = useState<BarisHitung[] | null>(null);
   const [dipilih, setDipilih] = useState<Set<number>>(new Set());
@@ -213,12 +218,16 @@ export default function FormBuatPengajuan({
     .filter((b) => dipilih.has(b.personelId) && b.akanDitagihkan)
     .reduce((acc, b) => acc + Number(b.akanDitagihkan), 0);
 
-  if (daftarPo.length === 0 || daftarUserXl.length === 0) {
-    return <div className="alert alert-danger">At least 1 PO and 1 Client Approver are required (create them first in Reference Data).</div>;
+  if (daftarPo.length === 0) {
+    return <div className="alert alert-danger">At least 1 PO is required (create it first in Reference Data).</div>;
   }
 
+  const daftarCompany = Array.from(
+    new Set(daftarPo.map((p) => (p.klien || "").trim()).filter(Boolean))
+  );
   const poTerpilih = daftarPo.find((p) => p.id === Number(poId));
-  const isPoXl = apakahKlienXl(poTerpilih?.klien);
+  const companyAktif = company || (poTerpilih?.klien ?? "").trim();
+  const isPoXl = apakahKlienXl(poTerpilih?.klien || companyAktif);
 
   return (
     <div>
@@ -228,7 +237,7 @@ export default function FormBuatPengajuan({
             <span>PO</span>
             {poTerpilih && (
               <span className={`badge ${isPoXl ? "badge-siap_diajukan" : "badge-draft"}`} style={{ fontSize: 11 }}>
-                {isPoXl ? "XL — BAST, CAC & GR" : `Non-XL (${poTerpilih.klien || "Direct Invoice"})`}
+                {isPoXl ? "XL — BAST, CAC & GR" : "Non-XL — BAST & Direct Invoice"}
               </span>
             )}
           </label>
@@ -237,6 +246,10 @@ export default function FormBuatPengajuan({
             onChange={(v) => {
               const nextPoId = Number(v);
               setPoId(nextPoId);
+              const nextPo = daftarPo.find((p) => p.id === nextPoId);
+              if (nextPo?.klien) {
+                setCompany(nextPo.klien.trim());
+              }
               setBaris(null);
               setBarisTahap(null);
               setBarisTambahan([]);
@@ -249,10 +262,35 @@ export default function FormBuatPengajuan({
             placeholderCari="Search PO number or project name..."
           />
         </div>
-        <div className="field">
-          <label>User(Client Approver)</label>
-          <select value={userXlId} onChange={(e) => setUserXlId(Number(e.target.value))}>
-            {daftarUserXl.map((u) => <option key={u.id} value={u.id}>{u.label}</option>)}
+        <div className="field" style={{ minWidth: 240 }}>
+          <label>Company</label>
+          <select
+            value={companyAktif}
+            onChange={(e) => {
+              const nextCompany = e.target.value;
+              setCompany(nextCompany);
+              const matchedPo = daftarPo.find((p) => (p.klien || "").trim() === nextCompany);
+              if (matchedPo && matchedPo.id !== Number(poId)) {
+                setPoId(matchedPo.id);
+                setBaris(null);
+                setBarisTahap(null);
+                setBarisTambahan([]);
+                const matchedUser = daftarUserXl.find((u) => u.poId === matchedPo.id);
+                if (matchedUser) {
+                  setUserXlId(matchedUser.id);
+                }
+              }
+            }}
+          >
+            {daftarCompany.length > 0 ? (
+              daftarCompany.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))
+            ) : (
+              <option value="">-</option>
+            )}
           </select>
         </div>
         <div className="field">

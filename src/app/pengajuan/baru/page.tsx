@@ -56,12 +56,12 @@ export default async function HalamanBuatPengajuan() {
         <a href="/pengajuan" className="back-link">&larr; Submissions</a>
         <h1>Create Submission</h1>
         <p className="subtitle">
-          Select PO, Client Approver, and period — the system automatically calculates prorata for each personnel mapped to this PO.
+          Select PO, Company, and period — the system automatically calculates prorata for each personnel mapped to this PO.
         </p>
         <FormBuatPengajuan
           daftarPo={daftarPo.map((p) => ({
             id: p.id,
-            label: `${p.nomorPo} — ${p.namaProyek}${p.klien ? ` [${p.klien}]` : ""}`,
+            label: `${p.nomorPo} — ${p.namaProyek}`,
             klien: p.klien,
           }))}
           daftarUserXl={daftarUserXl.map((u) => ({ id: u.id, label: u.nama, poId: u.poId }))}
