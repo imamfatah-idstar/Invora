@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { rateCard, personel, pemetaanPersonelPo, po } from "@/db/schema";
-import { desc, eq, isNull } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import FormTambahRateCard from "./rate-card-form";
 import TabelRateCard from "./rate-card-table";
 
@@ -22,7 +22,7 @@ export default async function HalamanRateCard() {
     })
     .from(pemetaanPersonelPo)
     .innerJoin(po, eq(pemetaanPersonelPo.poId, po.id))
-    .where(isNull(pemetaanPersonelPo.berlakuSampai));
+    .orderBy(desc(pemetaanPersonelPo.id));
   const klienPerPersonel = new Map<number, string[]>();
   const noPoPerPersonel = new Map<number, string[]>();
   for (const p of pemetaanAktif) {

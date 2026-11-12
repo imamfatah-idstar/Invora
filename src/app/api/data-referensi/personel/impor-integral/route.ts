@@ -100,10 +100,18 @@ export async function POST(request: NextRequest) {
 
   // Petakan alias header umum agar toleran terhadap variasi penamaan
   const ALIAS_HEADER: Record<string, string> = {
+    nik: "nik",
     name: "name",
     nama: "name",
     personel: "name",
     talent: "name",
+    type: "type",
+    tipe: "type",
+    position: "position",
+    posisi: "position",
+    jabatan: "position",
+    status_code: "status_code",
+    status: "status_code",
     rate_card: "rate_card",
     ratecard: "rate_card",
     rate: "rate_card",
@@ -115,10 +123,15 @@ export async function POST(request: NextRequest) {
     klien: "client_name",
     spk_start_date: "spk_start_date",
     start_date: "spk_start_date",
+    spk_actual_end_date: "spk_actual_end_date",
+    end_date: "spk_actual_end_date",
     po_number: "po_number",
     ponumber: "po_number",
     no_po: "po_number",
     nomor_po: "po_number",
+    spk_number: "spk_number",
+    no_spk: "spk_number",
+    nomor_spk: "spk_number",
   };
 
   const headerTerstandar = headerNorm.map((h) => ALIAS_HEADER[h] ?? h);
@@ -162,6 +175,12 @@ export async function POST(request: NextRequest) {
       continue;
     }
 
+    const nik = r.nik?.trim() || null;
+    const tipe = r.type?.trim() || null;
+    const posisi = r.position?.trim() || null;
+    const nomorSpk = r.spk_number?.trim() || null;
+    const statusRaw = (r.status_code ?? "").trim().toLowerCase();
+    const status = ["inactive", "nonaktif", "non-aktif", "tidak aktif"].includes(statusRaw) ? "nonaktif" : "aktif";
     const penempatan = r.placement_name?.trim() || null;
     const namaKlien = r.client_name?.trim() || null;
     const nomorPoBaris = r.po_number?.trim() || null;
@@ -173,15 +192,23 @@ export async function POST(request: NextRequest) {
 
     let existing = petaPersonel.get(namaLower);
     if (!existing) {
-      const [baru] = await db.insert(personel).values({ nama, status: "aktif", penempatan }).returning();
+      const [baru] = await db.insert(personel).values({ nik, nama, tipe, posisi, status, penempatan, nomorSpk }).returning();
       await db.insert(rateCard).values({ personelId: baru.id, nilaiRate: rateMentah, berlakuDari: spkStartDate, berlakuSampai: null });
       petaPersonel.set(namaLower, baru);
       existing = baru;
       personelBaru++;
     } else {
-      if (penempatan && existing.penempatan !== penempatan) {
-        await db.update(personel).set({ penempatan }).where(eq(personel.id, existing.id));
-        existing = { ...existing, penempatan };
+      const perubahan: Partial<typeof personel.$inferInsert> = {};
+      if (penempatan && existing.penempatan !== penempatan) perubahan.penempatan = penempatan;
+      if (nik && existing.nik !== nik) perubahan.nik = nik;
+      if (tipe && existing.tipe !== tipe) perubahan.tipe = tipe;
+      if (posisi && existing.posisi !== posisi) perubahan.posisi = posisi;
+      if (nomorSpk && existing.nomorSpk !== nomorSpk) perubahan.nomorSpk = nomorSpk;
+      if (r.status_code && existing.status !== status) perubahan.status = status;
+
+      if (Object.keys(perubahan).length > 0) {
+        await db.update(personel).set(perubahan).where(eq(personel.id, existing.id));
+        existing = { ...existing, ...perubahan };
         petaPersonel.set(namaLower, existing);
         penempatanDiperbarui++;
       }

@@ -18,7 +18,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   }
 
   await db.update(personel).set({
+    nik: body.nik !== undefined ? (String(body.nik).trim() || null) : undefined,
     nama: String(body.nama).trim(),
+    posisi: body.posisi !== undefined ? (String(body.posisi).trim() || null) : undefined,
+    tipe: body.tipe !== undefined ? (String(body.tipe).trim() || null) : undefined,
+    penempatan: body.penempatan !== undefined ? (String(body.penempatan).trim() || null) : undefined,
+    nomorSpk: body.nomorSpk !== undefined ? (String(body.nomorSpk).trim() || null) : undefined,
     status: body.status === "nonaktif" ? "nonaktif" : "aktif",
   }).where(eq(personel.id, Number(id)));
 

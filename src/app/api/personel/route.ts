@@ -16,7 +16,12 @@ export async function POST(request: NextRequest) {
   }
 
   const [row] = await db.insert(personel).values({
+    nik: body.nik?.trim() || null,
     nama: body.nama.trim(),
+    posisi: body.posisi?.trim() || null,
+    tipe: body.tipe?.trim() || null,
+    penempatan: body.penempatan?.trim() || null,
+    nomorSpk: body.nomorSpk?.trim() || null,
     status: body.status === "nonaktif" ? "nonaktif" : "aktif",
   }).returning();
 

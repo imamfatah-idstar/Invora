@@ -12,7 +12,16 @@ export default async function EditPersonel({ params }: { params: Promise<{ id: s
     <div>
       <a href="/data-referensi/personel" className="back-link">&larr; Personel</a>
       <h1>Edit Personel</h1>
-      <FormEditPersonel id={row.id} namaAwal={row.nama} statusAwal={row.status} />
+      <FormEditPersonel
+        id={row.id}
+        nikAwal={row.nik ?? ""}
+        namaAwal={row.nama}
+        posisiAwal={row.posisi ?? ""}
+        tipeAwal={row.tipe ?? ""}
+        penempatanAwal={row.penempatan ?? ""}
+        nomorSpkAwal={row.nomorSpk ?? ""}
+        statusAwal={row.status}
+      />
     </div>
   );
 }

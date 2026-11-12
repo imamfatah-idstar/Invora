@@ -45,8 +45,11 @@ export const passwordResets = pgTable("password_resets", {
 // Personel — data contoh, bukan data nyata (lihat batasan lingkungan proyek).
 export const personel = pgTable("personel", {
   id: serial("id").primaryKey(),
+  nik: text("nik"), // dari kolom "NIK" di CSV (cth "00001")
   nama: text("nama").notNull(),
-  status: text("status").notNull().default("aktif"), // aktif | nonaktif
+  tipe: text("tipe"), // dari kolom "Type" di CSV (cth "PS_IDSTAR")
+  posisi: text("posisi"), // dari kolom "position" di CSV (cth "Java Developer")
+  status: text("status").notNull().default("aktif"), // aktif | nonaktif (dari status_code ACTIVE/INACTIVE)
   dibuatPada: text("dibuat_pada").notNull().default(sql`now()::text`),
   // Lokasi/site kerja talent, dari kolom "placement_name" di file Invoice Plan
   // Integral (bagian 40-42) — HANYA informasi/referensi lokasi, TIDAK PERNAH
@@ -54,6 +57,7 @@ export const personel = pgTable("personel", {
   // "client_name"). Contoh: "IDS-CIMB Bintaro". Null kalau belum pernah
   // diimpor dari Integral atau diisi manual satu-satu lewat form.
   penempatan: text("penempatan"),
+  nomorSpk: text("nomor_spk"), // dari kolom "spk_number" di CSV (cth "887/SPK 3 - IDS/XII/2025")
 });
 
 // Rate card bulanan personel, dengan masa berlaku.

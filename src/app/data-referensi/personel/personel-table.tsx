@@ -3,8 +3,17 @@ import { useMemo, useState } from "react";
 import TombolHapus from "./hapus-button";
 import HapusTerpilih from "@/components/hapus-terpilih";
 
-type BarisPersonel = { id: number; nama: string; status: string; penempatan: string | null };
-type KolomSort = "nama" | "status";
+type BarisPersonel = {
+  id: number;
+  nik: string | null;
+  nama: string;
+  posisi: string | null;
+  tipe: string | null;
+  penempatan: string | null;
+  nomorSpk: string | null;
+  status: string;
+};
+type KolomSort = "nik" | "nama" | "posisi" | "tipe" | "penempatan" | "nomorSpk" | "status";
 type ArahSort = "asc" | "desc";
 
 export default function TabelPersonel({ daftar }: { daftar: BarisPersonel[] }) {
@@ -20,7 +29,7 @@ export default function TabelPersonel({ daftar }: { daftar: BarisPersonel[] }) {
   const daftarUrut = useMemo(() => {
     const salinan = [...daftar];
     salinan.sort((a, b) => {
-      const hasil = String(a[kolom] ?? "").localeCompare(String(b[kolom] ?? ""), "id");
+      const hasil = String(a[kolom] ?? "").localeCompare(String(b[kolom] ?? ""), "id", { numeric: true });
       return arah === "asc" ? hasil : -hasil;
     });
     return salinan;
@@ -59,7 +68,12 @@ export default function TabelPersonel({ daftar }: { daftar: BarisPersonel[] }) {
               <th style={{ width: 28 }}>
                 <input type="checkbox" checked={terpilih.size === daftarUrut.length && daftarUrut.length > 0} onChange={toggleSemua} />
               </th>
+              <Th label="NIK" k="nik" />
               <Th label="Name" k="nama" />
+              <Th label="Position" k="posisi" />
+              <Th label="Type" k="tipe" />
+              <Th label="Placement" k="penempatan" />
+              <Th label="SPK Number" k="nomorSpk" />
               <Th label="Status" k="status" />
               <th></th>
             </tr>
@@ -68,7 +82,12 @@ export default function TabelPersonel({ daftar }: { daftar: BarisPersonel[] }) {
             {daftarUrut.map((p) => (
               <tr key={p.id}>
                 <td><input type="checkbox" checked={terpilih.has(p.id)} onChange={() => toggle(p.id)} /></td>
-                <td>{p.nama}</td>
+                <td style={{ fontFamily: "monospace", fontSize: 12.5 }}>{p.nik || "-"}</td>
+                <td style={{ fontWeight: 500 }}>{p.nama}</td>
+                <td>{p.posisi || "-"}</td>
+                <td>{p.tipe ? <span className="badge badge-draft">{p.tipe}</span> : "-"}</td>
+                <td>{p.penempatan || "-"}</td>
+                <td style={{ fontSize: 12.5 }}>{p.nomorSpk || "-"}</td>
                 <td><span className={`badge ${p.status === "aktif" ? "badge-siap_diajukan" : "badge-draft"}`}>{p.status === "aktif" ? "Active" : "Inactive"}</span></td>
                 <td style={{ display: "flex", gap: 8 }}>
                   <a href={`/data-referensi/personel/${p.id}/edit`} className="btn-text">Edit</a>
@@ -77,7 +96,7 @@ export default function TabelPersonel({ daftar }: { daftar: BarisPersonel[] }) {
               </tr>
             ))}
             {daftarUrut.length === 0 && (
-              <tr><td colSpan={4} className="table-empty">No records found.</td></tr>
+              <tr><td colSpan={9} className="table-empty">No records found.</td></tr>
             )}
           </tbody>
         </table>
