@@ -249,6 +249,26 @@ export async function POST(request: NextRequest) {
 
   const idsTersimpan: number[] = [];
 
+  // Hapus timesheet personel yang dihapus dari tabel modal (jika ada)
+  const deletedJson = form.get("deletedPersonelIds");
+  if (typeof deletedJson === "string" && deletedJson.trim()) {
+    try {
+      const deletedArr = JSON.parse(deletedJson);
+      if (Array.isArray(deletedArr)) {
+        for (const rawPid of deletedArr) {
+          const delPid = Number(rawPid);
+          if (delPid > 0) {
+            await db
+              .delete(timesheet)
+              .where(and(eq(timesheet.personelId, delPid), eq(timesheet.poId, poId), eq(timesheet.periode, periode)));
+          }
+        }
+      }
+    } catch {
+      // Abaikan jika gagal parse
+    }
+  }
+
   for (const item of daftarInput) {
     // Cek apakah ada file khusus untuk personel ini (file_<personelId>)
     const filePersonelRaw = form.get(`file_${item.personelId}`);

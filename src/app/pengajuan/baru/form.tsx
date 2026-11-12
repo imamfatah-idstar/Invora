@@ -78,7 +78,7 @@ export default function FormBuatPengajuan({
     isKekurangan: boolean;
   } | null>(null);
 
-  async function hitungPratinjau(periodeOverride?: string) {
+  async function hitungPratinjau(periodeOverride?: string, dihapusOverride?: number[]) {
     setError(null);
     const targetPeriode = typeof periodeOverride === "string" ? periodeOverride : periode;
     if (!targetPeriode) { setError("Please select a billing period first."); return; }
@@ -104,10 +104,11 @@ export default function FormBuatPengajuan({
     setJenis("bulanan");
     setBarisTahap(null);
 
+    const setDihapus = new Set(dihapusOverride ?? []);
     // Gabungkan baris hasil kalkulasi dengan baris tambahan yang sudah ditambahkan manual
-    const barisGabungan: BarisHitung[] = [...data.baris];
+    const barisGabungan: BarisHitung[] = [...data.baris].filter((b: BarisHitung) => !setDihapus.has(b.personelId));
     for (const bt of barisTambahan) {
-      if (!barisGabungan.some((b) => b.personelId === bt.personelId)) {
+      if (!setDihapus.has(bt.personelId) && !barisGabungan.some((b) => b.personelId === bt.personelId)) {
         barisGabungan.push({
           personelId: bt.personelId,
           namaPersonel: bt.namaPersonel,
@@ -590,10 +591,10 @@ export default function FormBuatPengajuan({
           periodeAwal={periode}
           daftarPersonelMaster={daftarPersonel}
           onTutup={() => setModalTimesheetPo(false)}
-          onSelesai={(periodeTerpilih) => {
+          onSelesai={(periodeTerpilih, dihapusIds) => {
             setPeriode(periodeTerpilih);
             setModalTimesheetPo(false);
-            hitungPratinjau(periodeTerpilih);
+            hitungPratinjau(periodeTerpilih, dihapusIds);
           }}
         />
       )}

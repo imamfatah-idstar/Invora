@@ -50,7 +50,7 @@ export default function InputTimesheetPoModal({
   periodeAwal: string;
   daftarPersonelMaster: PersonelOpsi[];
   onTutup: () => void;
-  onSelesai: (periodeTerpilih: string) => void;
+  onSelesai: (periodeTerpilih: string, dihapusPersonelIds?: number[]) => void;
 }) {
   const hariIni = new Date().toISOString().slice(0, 10);
   const bulanIni = new Date().toISOString().slice(0, 7);
@@ -60,6 +60,7 @@ export default function InputTimesheetPoModal({
   const [workdaysGlobal, setWorkdaysGlobal] = useState<number>(21);
   const [kehadiranGlobal, setKehadiranGlobal] = useState<number>(21);
   const [baris, setBaris] = useState<BarisTimesheetPo[]>([]);
+  const [dihapusIds, setDihapusIds] = useState<number[]>([]);
   const [personelTambahId, setPersonelTambahId] = useState<string>("");
   const [loadingData, setLoadingData] = useState(false);
   const [loadingSimpan, setLoadingSimpan] = useState(false);
@@ -196,8 +197,14 @@ export default function InputTimesheetPoModal({
         dipilih: true,
       },
     ]);
+    setDihapusIds((prev) => prev.filter((id) => id !== master.id));
     setPersonelTambahId("");
     setError(null);
+  }
+
+  function hapusBarisPersonel(personelId: number) {
+    setBaris((prev) => prev.filter((item) => item.personelId !== personelId));
+    setDihapusIds((prev) => (prev.includes(personelId) ? prev : [...prev, personelId]));
   }
 
   async function simpanDanHitung() {
@@ -251,6 +258,10 @@ export default function InputTimesheetPoModal({
       )
     );
 
+    if (dihapusIds.length > 0) {
+      fd.append("deletedPersonelIds", JSON.stringify(dihapusIds));
+    }
+
     setLoadingSimpan(true);
     const res = await fetch("/api/timesheet", { method: "POST", body: fd });
     const d = await res.json().catch(() => ({}));
@@ -261,7 +272,7 @@ export default function InputTimesheetPoModal({
       return;
     }
 
-    onSelesai(periode);
+    onSelesai(periode, dihapusIds);
   }
 
   const totalEstimasi = baris
@@ -415,6 +426,7 @@ export default function InputTimesheetPoModal({
                   <th style={{ width: 125 }}>Attendance Days (Hadir)</th>
                   <th style={{ width: 125 }}>Total Workdays (Timesheet)</th>
                   <th>Estimated Prorata</th>
+                  <th style={{ width: 80, textAlign: "center" }}>Delete</th>
                 </tr>
               </thead>
               <tbody>
@@ -490,12 +502,23 @@ export default function InputTimesheetPoModal({
                           {b.totalKehadiran} / {b.totalHariKerja} hari
                         </div>
                       </td>
+                      <td style={{ textAlign: "center" }}>
+                        <button
+                          type="button"
+                          onClick={() => hapusBarisPersonel(b.personelId)}
+                          className="btn-text"
+                          style={{ color: "#dc2626", fontWeight: 600, fontSize: 12.5, cursor: "pointer" }}
+                          title={`Delete ${b.namaPersonel}`}
+                        >
+                          🗑️ Delete
+                        </button>
+                      </td>
                     </tr>
                   );
                 })}
                 {baris.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="table-empty" style={{ textAlign: "center", padding: 20 }}>
+                    <td colSpan={8} className="table-empty" style={{ textAlign: "center", padding: 20 }}>
                       Belum ada personel yang terpetakan ke PO ini. Gunakan pilihan &quot;Tambah Personel Lain ke PO Ini&quot; di atas untuk menambahkan personel.
                     </td>
                   </tr>
