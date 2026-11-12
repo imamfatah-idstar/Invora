@@ -49,7 +49,7 @@ export default function FormBuatPengajuan({
     const matched = daftarUserXl.find((u) => u.poId === firstPoId);
     return matched?.id ?? daftarUserXl[0]?.id ?? "";
   });
-  const [periode, setPeriode] = useState("");
+  const [periode, setPeriode] = useState(() => new Date().toISOString().slice(0, 7));
   const [baris, setBaris] = useState<BarisHitung[] | null>(null);
   const [dipilih, setDipilih] = useState<Set<number>>(new Set());
   const [error, setError] = useState<string | null>(null);
@@ -294,22 +294,7 @@ export default function FormBuatPengajuan({
           </select>
         </div>
         <div className="field">
-          <label>Billing Period</label>
-          <input
-            type="month"
-            value={periode}
-            onChange={(e) => {
-              setPeriode(e.target.value);
-              setBaris(null);
-              setBarisTahap(null);
-              setBarisTambahan([]);
-            }}
-          />
-        </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "flex-end", flexWrap: "wrap" }}>
-          <button type="button" onClick={() => hitungPratinjau()} disabled={loadingHitung} className="btn btn-primary">
-            {loadingHitung ? "Calculating..." : "Calculate Preview"}
-          </button>
+          <label>Timesheet {periode ? `(${periode})` : ""}</label>
           <button
             type="button"
             onClick={() => {
@@ -317,9 +302,14 @@ export default function FormBuatPengajuan({
               setModalTimesheetPo(true);
             }}
             className="btn btn-secondary"
-            style={{ display: "flex", alignItems: "center", gap: 6 }}
+            style={{ display: "flex", alignItems: "center", gap: 6, height: 38, whiteSpace: "nowrap" }}
           >
             <span>📄</span> Masukkan Timesheet
+          </button>
+        </div>
+        <div style={{ display: "flex", gap: 8, alignItems: "flex-end", flexWrap: "wrap" }}>
+          <button type="button" onClick={() => hitungPratinjau()} disabled={loadingHitung} className="btn btn-primary">
+            {loadingHitung ? "Calculating..." : "Calculate Preview"}
           </button>
           <button
             type="button"
