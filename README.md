@@ -1,6 +1,5 @@
 # INVORA (Invoice Operations & Revenue Assurance)
 
-[![Next.js](https://img.shields.io/badge/Next.js-16.3.5-black?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.2.8-blue?style=flat-square&logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![Drizzle ORM](https://img.shields.io/badge/Drizzle%20ORM-0.45.2-green?style=flat-square)](https://orm.drizzle.team/)
@@ -337,7 +336,7 @@ Pencatatan pembayaran riil dari rekening koran bank klien di `/pengajuan/[id]`:
 ```
 +-------------------------------------------------------------------------+
 |                               FRONTEND                                  |
-|   Next.js 16 (App Router, Turbopack) + React 19                         |
+|   React 19                         |
 |   Views: GrXlView, BastNonXlView, BastXlView, CacXlView, DashboardView   |
 |   Styling: Modern CSS & Design Tokens                                   |
 +-------------------------------------------------------------------------+
@@ -345,7 +344,7 @@ Pencatatan pembayaran riil dari rekening koran bank klien di `/pengajuan/[id]`:
                                     ▼
 +-------------------------------------------------------------------------+
 |                               BACKEND                                   |
-|   Next.js Server Actions & Route Handlers (TypeScript 5)                |
+|   React.js Server Actions & Route Handlers (TypeScript 5)                |
 |   Business Logic: src/lib/user-roles.ts, deficiency-gr.ts, klien.ts     |
 |   Document Engines: pdf-lib (Vector PDF) + exceljs (Spreadsheet)        |
 |   Financial Precision: decimal.js                                       |
@@ -360,8 +359,7 @@ Pencatatan pembayaran riil dari rekening koran bank klien di `/pengajuan/[id]`:
 ```
 
 ### Rincian Dependensi Utama:
-- **Framework:** Next.js 16.3.5 (App Router, Turbopack)
-- **Library UI:** React 19.2.8
+- **Framework:** React 19.2.8
 - **Database & ORM:** PostgreSQL (Supabase) dengan Drizzle ORM 0.45.2 & driver `postgres`
 - **Kalkulasi Finansial:** `decimal.js` untuk komputasi moneter presisi
 - **Pengolahan Dokumen:**
@@ -391,7 +389,7 @@ proses-invoicing-app/
 │   ├── sync-authorized-users.ts  # Sinkronisasi hak akses email & kredensial resmi
 │   └── seed-users.ts             # Seeding pengguna & peran default
 ├── src/
-│   ├── app/                      # Next.js App Router
+│   ├── app/                      
 │   │   ├── api/                  # REST API Route Handlers
 │   │   │   ├── auth/             # Login, logout, session, demo, & google callback
 │   │   │   ├── pengajuan/        # Workflow pengajuan, CAC, BAST, GR, & pembayaran
