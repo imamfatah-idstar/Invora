@@ -44,7 +44,7 @@ export default function GrRequestPanel({
   const [catatan, setCatatan] = useState("");
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [peringatan, setPeringatan] = useState<string[]>([]);
+  const [, setPeringatan] = useState<string[]>([]);
 
   async function unduhGenerate() {
     setError(null); setLoading("generate");
@@ -133,11 +133,6 @@ export default function GrRequestPanel({
       </div>
 
       {error && <div className="alert alert-danger">{error}</div>}
-      {peringatan.length > 0 && (
-        <div className="alert alert-danger">
-          {peringatan.map((p, i) => <div key={i}>&bull; {p}</div>)}
-        </div>
-      )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div>

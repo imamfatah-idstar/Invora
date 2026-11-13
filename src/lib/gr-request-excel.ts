@@ -79,12 +79,10 @@ export async function siapkanDataVendor(pengajuanId: number) {
     return { line, qty, harga, poValue, valueProposed };
   });
 
+  // Sementara dinonaktifkan: GR Request hanya untuk proses GR (bukan CAC/BAST),
+  // jadi peringatan PO Date / CAC / pemetaan line tidak ditampilkan dulu.
   const peringatan: string[] = [];
-  const adaBarisTerisi = barisLine.some((b) => b.valueProposed && b.valueProposed.greaterThan(0));
-  if (adaTanpaLine) peringatan.push("Ada personel di pengajuan ini yang belum dipetakan ke PO Line — nilainya tidak masuk ke %/Value Proposed GR. Cek Data Referensi > Pemetaan.");
-  if (!poRow.tanggalPo) peringatan.push("PO Date kosong — isi Tanggal PO di Data Referensi > PO > Edit.");
-  if (!ajuan.tanggalCacApproved) peringatan.push("Date approved CAC kosong — isi dulu di kartu Status Proses.");
-  if (!adaBarisTerisi) peringatan.push("Tidak ada baris dengan %/Value Proposed GR terisi — pastikan personel di pengajuan ini sudah dipetakan ke PO Line yang benar.");
+  void adaTanpaLine;
 
   return { ajuan, poRow, barisLine, tanggalRequestGr, peringatan };
 }
