@@ -30,6 +30,9 @@ const LABEL_STATUS: Record<string, string> = {
 
 const LABEL_JENIS_DOKUMEN: Record<string, string> = { CAC: "CAC", BAST: "BAST", GR: "GR (Good Receipt)" };
 
+// Sementara: sembunyikan kartu "Document Readiness Checklist"
+const SEMBUNYIKAN_CHECKLIST: boolean = true;
+
 function formatRupiah(nilai: string) {
   return "Rp" + Number(nilai).toLocaleString("id-ID", { minimumFractionDigits: 2 });
 }
@@ -495,7 +498,8 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
           />
         )}
 
-        {bisaKelengkapan && (
+        {/* Sementara di-hidden: Document Readiness Checklist (ubah SEMBUNYIKAN_CHECKLIST ke false untuk menampilkan lagi) */}
+        {!SEMBUNYIKAN_CHECKLIST && bisaKelengkapan && (
           <div className="card" style={{ marginTop: 20 }}>
             <h3 style={{ marginTop: 0 }}>
               {isKlienXl
