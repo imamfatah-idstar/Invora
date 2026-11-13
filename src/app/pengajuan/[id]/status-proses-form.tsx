@@ -54,8 +54,6 @@ export default function FormStatusProses({
   const [loading, setLoading] = useState(false);
   const [sukses, setSukses] = useState(false);
 
-  const terkunciNomorInvoice = isKlienXl && !grRequestSudahDicek && !nomorInvoiceAwal;
-
   // Live Deficiency GR calculation
   const statusDeficiency = useMemo(() => {
     return evaluasiSelisihGr(totalPengajuan, nilaiGrDisetujui);
@@ -159,24 +157,43 @@ export default function FormStatusProses({
                     ? "rgba(234, 179, 8, 0.3)"
                     : "rgba(59, 130, 246, 0.3)"
                 }`,
-                color:
-                  statusDeficiency.kategori === "impas"
-                    ? "#15803d"
-                    : statusDeficiency.kategori === "kekurangan_gr"
-                    ? "#b45309"
-                    : "#1d4ed8",
               }}
             >
-              <b>Deficiency GR ({statusDeficiency.kategori === "impas" ? "Balanced" : statusDeficiency.kategori === "kekurangan_gr" ? "GR Under-delivery" : "GR Surplus"}):</b> {statusDeficiency.keterangan}
-              {statusDeficiency.selisih && (
-                <div style={{ marginTop: 4, fontWeight: "bold" }}>
-                  Variance: {Number(statusDeficiency.selisih) >= 0 ? "+" : ""}Rp{Number(statusDeficiency.selisih).toLocaleString("id-ID", { minimumFractionDigits: 2 })}
-                </div>
+              <b>Status GR:</b>{" "}
+              {statusDeficiency.kategori === "impas" && (
+                <span style={{ color: "#16a34a" }}>✓ Approved full amount ({statusDeficiency.persentase}%)</span>
+              )}
+              {statusDeficiency.kategori === "kekurangan_gr" && (
+                <span style={{ color: "#d97706" }}>
+                  ⚠️ Under-approved / Deficiency of Rp{Number(statusDeficiency.nominalSelisih.abs()).toLocaleString("id-ID", { minimumFractionDigits: 2 })} ({statusDeficiency.persentase}%)
+                </span>
+              )}
+              {statusDeficiency.kategori === "kelebihan_gr" && (
+                <span style={{ color: "#2563eb" }}>
+                  ℹ️ Over-approved of Rp{Number(statusDeficiency.nominalSelisih).toLocaleString("id-ID", { minimumFractionDigits: 2 })} ({statusDeficiency.persentase}%)
+                </span>
               )}
             </div>
           )}
         </div>
       )}
+              color:
+                statusDeficiency.kategori === "impas"
+                  ? "#15803d"
+                  : statusDeficiency.kategori === "kekurangan_gr"
+                  ? "#b45309"
+                  : "#1d4ed8",
+            }}
+          >
+            <b>Deficiency GR ({statusDeficiency.kategori === "impas" ? "Balanced" : statusDeficiency.kategori === "kekurangan_gr" ? "GR Under-delivery" : "GR Surplus"}):</b> {statusDeficiency.keterangan}
+            {statusDeficiency.selisih && (
+              <div style={{ marginTop: 4, fontWeight: "bold" }}>
+                Variance: {Number(statusDeficiency.selisih) >= 0 ? "+" : ""}Rp{Number(statusDeficiency.selisih).toLocaleString("id-ID", { minimumFractionDigits: 2 })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Bagian 2: Invoice & Faktur Pajak Resmi */}
       <div style={{ background: "var(--color-bg-alt, #f8fafc)", padding: "14px 16px", borderRadius: 8, border: "1px solid var(--color-border, #e2e8f0)" }}>
@@ -191,14 +208,9 @@ export default function FormStatusProses({
               placeholder="e.g. 798/INV-IDS/IX/2026"
               value={nomorInvoice}
               onChange={(e) => setNomorInvoice(e.target.value)}
-              disabled={terkunciNomorInvoice}
             />
             <p className="subtitle" style={{ margin: "4px 0 0", fontSize: 11.5 }}>
-              {!isKlienXl
-                ? "Manual input — shared sequence across all clients."
-                : (grRequestSudahDicek || nomorInvoiceAwal
-                  ? "Manual input — shared sequence across all clients."
-                  : "Locked — GR Request bundle not yet verified by Checker.")}
+              Manual input — shared sequence across all clients.
             </p>
           </div>
           <div className="field">
@@ -263,13 +275,7 @@ export default function FormStatusProses({
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
           {URUTAN.filter((field) => isKlienXl || (field === "tanggalSubmitInvoice" || field === "tanggalApproveInvoice")).map((field) => (
             <div className="field" key={field}>
-              <label>
-                {!isKlienXl && field === "tanggalSubmitInvoice"
-                  ? "Invoice Submission Date"
-                  : !isKlienXl && field === "tanggalApproveInvoice"
-                  ? "Invoice Approval Date"
-                  : LABEL[field]}
-              </label>
+              <label>{!isKlienXl && field === "tanggalSubmitInvoice" ? "Invoice Submission Date" : !isKlienXl && field === "tanggalApproveInvoice" ? "Invoice Approval Date" : LABEL[field]}</label>
               <input
                 type="date"
                 value={nilai[field] ?? ""}

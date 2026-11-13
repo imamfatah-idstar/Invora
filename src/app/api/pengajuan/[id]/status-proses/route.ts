@@ -70,20 +70,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   // aplikasi ini (satu urutan bersama semua customer). Lihat bagian 30.
   if ("nomorInvoice" in body) {
     const nilai = typeof body.nomorInvoice === "string" ? body.nomorInvoice.trim() : "";
-    // Validasi bagian 34 & bagian 45: untuk klien XL baru, nomor invoice tidak boleh diisi sebelum GR Request
-    // dikonfirmasi "sudah dicek" oleh Checker, kecuali saat edit invoice yang sudah ada atau explicit isEditInvoice.
-    if (nilai !== "") {
-      const isKlienXl = apakahKlienXl(ajuan.klien);
-      if (isKlienXl && !ajuan.nomorInvoice && !body.isEditInvoice) {
-        const [grRow] = await db.select({ dicekPada: grRequest.dicekPada }).from(grRequest).where(eq(grRequest.pengajuanId, pengajuanId));
-        if (!grRow || !grRow.dicekPada) {
-          return NextResponse.json(
-            { error: "Nomor invoice belum bisa diisi — GR Request untuk pengajuan ini belum dikonfirmasi 'sudah dicek' oleh Checker." },
-            { status: 409 }
-          );
-        }
-      }
-    }
     patch.nomorInvoice = nilai === "" ? null : nilai;
   }
 
