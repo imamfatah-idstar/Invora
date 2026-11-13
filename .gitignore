@@ -54,6 +54,7 @@ service-account*.json
 **/*.md
 !README.md
 !**/README.md
+!qa.md
 
 # =========================================================================
 # DATABASE & DATA DUMPS
