@@ -77,6 +77,7 @@ dev.db
 *.xlsx
 *.xls
 *.csv
+!/dummy_data/*.csv
 /*.pdf
 IDstar-Group-Mail.png
 
