@@ -14,6 +14,7 @@ import {
 } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { wajibRoleApi } from "@/lib/require-role-api";
+import { formatDefaultNomorInvoice } from "@/lib/idstar-mail-template";
 
 // --- HELPER FORMATTING & TANGGAL (ENGLISH REFERENCE FORMAT) ---
 const SHORT_MONTHS = [
@@ -151,20 +152,31 @@ export async function GET(
   const penyesuaianGr = new Decimal(header.penyesuaianSelisihGrMasuk || 0);
   const totalSetelahPenyesuaian = totalRincian.plus(penyesuaianGr);
 
-  const dpp = header.nilaiGrDisetujui && new Decimal(header.nilaiGrDisetujui).greaterThan(0)
+  const dppDb = header.nilaiGrDisetujui && new Decimal(header.nilaiGrDisetujui).greaterThan(0)
     ? new Decimal(header.nilaiGrDisetujui)
     : totalSetelahPenyesuaian;
 
-  const tarifPpn = header.tarifPpn ? new Decimal(header.tarifPpn) : new Decimal(11);
+  // Override dari modal invoice (agar PDF sinkron 1:1 dengan tampilan modal & email)
+  const qNomor = (searchParams.get("nomorInvoice") || "").trim();
+  const qTglInv = (searchParams.get("tanggalInvoice") || "").trim();
+  const qTglDue = (searchParams.get("tanggalJatuhTempo") || "").trim();
+  const qDpp = searchParams.get("dpp");
+  const qTarif = searchParams.get("tarifPpn");
+
+  const dpp = qDpp && !isNaN(Number(qDpp)) && Number(qDpp) > 0 ? new Decimal(qDpp) : dppDb;
+
+  const tarifPpn = qTarif && !isNaN(Number(qTarif))
+    ? new Decimal(qTarif)
+    : header.tarifPpn ? new Decimal(header.tarifPpn) : new Decimal(11);
   const nilaiPpn = dpp.times(tarifPpn).dividedBy(100).round();
   const grandTotal = dpp.plus(nilaiPpn);
 
-  // 4. Tanggal & Jatuh Tempo
-  const rawTanggal = header.tanggalSubmitInvoice || header.tanggalFakturPajak || `${header.periode}-25`;
+  // 4. Tanggal & Jatuh Tempo (fallback sama dengan halaman detail pengajuan)
+  const rawTanggal = qTglInv || header.tanggalSubmitInvoice || header.tanggalApproveInvoice || header.tanggalFakturPajak || `${header.periode}-25`;
   const tglInvoice = parseDate(rawTanggal);
-  const tglJatuhTempo = tambahHari(tglInvoice, 14); // 14 hari standar
+  const tglJatuhTempo = qTglDue ? parseDate(qTglDue) : tambahHari(tglInvoice, 30);
 
-  const nomorInv = header.nomorInvoice || `${header.id}/INV-IDS/X/${tglInvoice.getFullYear()}`;
+  const nomorInv = qNomor || header.nomorInvoice || formatDefaultNomorInvoice(header.id, header.periode);
 
   // 5. Inisialisasi Dokumen PDF (A4 Portrait 595.92 x 842.88 pt)
   const pdfDoc = await PDFDocument.create();

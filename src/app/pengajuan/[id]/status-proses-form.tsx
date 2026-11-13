@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Decimal from "decimal.js";
 import { evaluasiSelisihGr, hitungTotalInvoice } from "@/lib/deficiency-gr";
@@ -49,6 +49,16 @@ export default function FormStatusProses({
   const [nomorFakturPajak, setNomorFakturPajak] = useState(nomorFakturPajakAwal ?? "");
   const [tanggalFakturPajak, setTanggalFakturPajak] = useState(tanggalFakturPajakAwal ?? "");
   const [tarifPpn, setTarifPpn] = useState(tarifPpnAwal ?? "11.00");
+
+  useEffect(() => {
+    setNilai(nilaiAwal);
+    setNomorInvoice(nomorInvoiceAwal ?? "");
+    setNomorGrSlip(nomorGrSlipAwal ?? "");
+    setNilaiGrDisetujui(nilaiGrDisetujuiAwal ?? "");
+    setNomorFakturPajak(nomorFakturPajakAwal ?? "");
+    setTanggalFakturPajak(tanggalFakturPajakAwal ?? "");
+    setTarifPpn(tarifPpnAwal ?? "11.00");
+  }, [nomorInvoiceAwal, nomorGrSlipAwal, nilaiGrDisetujuiAwal, nomorFakturPajakAwal, tanggalFakturPajakAwal, tarifPpnAwal]);
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);

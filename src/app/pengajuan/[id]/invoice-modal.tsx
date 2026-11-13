@@ -140,7 +140,19 @@ export default function InvoiceModal({
   const formatRp = (val: number) => "Rp " + Math.round(val).toLocaleString("id-ID");
 
   const buildUrl = (download: boolean) => {
-    return `/api/pengajuan/${pengajuanId}/invoice/pdf?format=${format}${download ? "&download=true" : ""}`;
+    // Kirim nilai aktif yang sama dengan tampilan modal & template email
+    // agar PDF (Preview/Download) selalu sinkron: nomor invoice, tanggal, jatuh tempo, DPP & PPN.
+    const qs = new URLSearchParams({
+      format,
+      nomorInvoice: curNomorInvoice,
+      tanggalInvoice: curTanggalInvoice,
+      tanggalJatuhTempo: curTanggalJatuhTempo,
+      dpp: String(Math.round(curDpp)),
+      tarifPpn: String(curTarifPpn),
+      t: String(Date.now()),
+    });
+    if (download) qs.set("download", "true");
+    return `/api/pengajuan/${pengajuanId}/invoice/pdf?${qs.toString()}`;
   };
 
   // Pre-calculate formatted values for email

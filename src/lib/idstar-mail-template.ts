@@ -21,6 +21,26 @@ const MONTH_NAMES_FULL = [
   "July", "August", "September", "October", "November", "December"
 ];
 
+const ROMAN_MONTHS = [
+  "I", "II", "III", "IV", "V", "VI",
+  "VII", "VIII", "IX", "X", "XI", "XII"
+];
+
+/**
+ * Generates a consistent default Invoice Number across UI, Email Template, and PDF
+ * e.g. id=4, periode="2026-10" -> "4/INV-IDS/X/2026"
+ */
+export function formatDefaultNomorInvoice(id: number, periode?: string | null): string {
+  if (periode && periode.includes("-")) {
+    const parts = periode.split("-");
+    const year = parts[0] || String(new Date().getFullYear());
+    const mIdx = parseInt(parts[1], 10) - 1;
+    const roman = mIdx >= 0 && mIdx < 12 ? ROMAN_MONTHS[mIdx] : "X";
+    return `${id}/INV-IDS/${roman}/${year}`;
+  }
+  return `${id}/INV-IDS/X/${new Date().getFullYear()}`;
+}
+
 /**
  * Formats "2026-10" -> "Oct/2026"
  */

@@ -2,6 +2,7 @@ import Topbar from "@/components/topbar";
 import { db } from "@/db";
 import { checkerReview, dokumen, grRequest, grRequestRiwayat, konfirmasi, lampiranPengajuan, pembayaran, pengajuan, pengajuanDetail, personel, po, poLineItem, users, userXl } from "@/db/schema";
 import { tambahHari } from "@/lib/aging";
+import { formatDefaultNomorInvoice } from "@/lib/idstar-mail-template";
 import { apakahKlienXl } from "@/lib/klien";
 import { LABEL_LAMPIRAN_BALANCE } from "@/lib/lampiran-label";
 import { wajibRole } from "@/lib/require-role";
@@ -208,13 +209,14 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
 
   const dppTagihan = header.nilaiGrDisetujui ? Number(header.nilaiGrDisetujui) : total;
   const tarifPpnTagihan = header.tarifPpn ? Number(header.tarifPpn) : 11;
-  const totalTagihanFinal = dppTagihan + (dppTagihan * tarifPpnTagihan) / 100;
+  const totalTagihanFinal = dppTagihan + Math.round((dppTagihan * tarifPpnTagihan) / 100);
   const totalTerbayarVerifikasi = daftarPembayaran
     .filter((p) => p.status === "diverifikasi")
     .reduce((acc, p) => acc + (Number(p.nominalDiterima) || 0) + (Number(p.potonganPph23) || 0) + (Number(p.biayaAdminBank) || 0), 0);
 
-  const tanggalAcuanTagihan = header.tanggalSubmitInvoice || header.tanggalApproveInvoice || header.tanggalFakturPajak || `${header.periode}-28`;
+  const tanggalAcuanTagihan = header.tanggalSubmitInvoice || header.tanggalApproveInvoice || header.tanggalFakturPajak || `${header.periode}-25`;
   const tanggalJatuhTempoTagihan = tambahHari(tanggalAcuanTagihan, 30);
+  const nomorInvoiceAktif = header.nomorInvoice || formatDefaultNomorInvoice(header.id, header.periode);
 
   return (
     <>
@@ -226,7 +228,7 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
             {siapInvoice ? (
               <InvoiceModal
                 pengajuanId={header.id}
-                nomorInvoice={header.nomorInvoice || `DRAF-INV-${header.id}`}
+                nomorInvoice={nomorInvoiceAktif}
                 nomorFakturPajak={header.nomorFakturPajak}
                 tanggalFakturPajak={header.tanggalFakturPajak}
                 namaFileFakturPajak={header.namaFileFakturPajak}
@@ -449,7 +451,7 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
                   {" "}&middot;{" "}
                 </>
               )}
-              {header.nomorInvoice && <>Invoice No.: <b>{header.nomorInvoice}</b> &middot; </>}
+              <>Invoice No.: <b>{nomorInvoiceAktif}</b> &middot; </>
               {isKlienXl && header.nomorGrSlip && <>GR Slip: <b>{header.nomorGrSlip}</b> &middot; </>}
               {isKlienXl && header.nilaiGrDisetujui && <>Approved GR: <b>{formatRupiah(header.nilaiGrDisetujui)}</b></>}
               {!isKlienXl && <>Total Billing: <b>{formatRupiah(String(total))}</b></>}
@@ -457,7 +459,7 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
             <FormStatusProses
               pengajuanId={header.id}
               totalPengajuan={total}
-              nomorInvoiceAwal={header.nomorInvoice}
+              nomorInvoiceAwal={nomorInvoiceAktif}
               nomorGrSlipAwal={header.nomorGrSlip}
               nilaiGrDisetujuiAwal={header.nilaiGrDisetujui}
               nomorFakturPajakAwal={header.nomorFakturPajak}

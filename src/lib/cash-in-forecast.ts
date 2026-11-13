@@ -1,5 +1,6 @@
 import Decimal from "decimal.js";
 import { formatRupiah, selisihHari, tambahHari } from "./aging";
+import { formatDefaultNomorInvoice } from "./idstar-mail-template";
 
 export type ForecastConfidence = "tinggi" | "sedang" | "proyeksi";
 
@@ -175,7 +176,7 @@ export function hitungForecastItem(
     }
   }
 
-  const nomorRef = raw.nomorInvoice || `DRAF-INV-${raw.id} (${raw.periode})`;
+  const nomorRef = raw.nomorInvoice || formatDefaultNomorInvoice(raw.id, raw.periode);
 
   return {
     id: raw.id,
