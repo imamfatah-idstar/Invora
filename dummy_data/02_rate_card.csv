@@ -1,18 +1,11 @@
 NIK,name,rate_card,berlaku_dari,berlaku_sampai,keterangan
-00001,Adhi Nugroho,26250000,2025-11-12,2026-12-31,Java Developer - Bank Digital BCA
-00002,Bertha Lusiana,23625000,2025-11-12,2026-12-31,Quality Assurance - Bank Digital BCA
-00003,Imam Fattah,23625000,2025-11-12,2026-12-31,Quality Assurance - Bank Digital BCA
-00004,Sellvia Anggraini,22312500,2025-11-12,2026-12-31,Quality Assurance - Bank Digital BCA
-00005,Dhimas Putranto,17500000,2026-05-18,2027-01-17,Quality Assurance - Bank Digital BCA
-00006,Anwar Baizuri,17765435,2026-01-24,2027-01-23,Java Developer - Bank Muamalat
-00007,Donny Destianto,17670000,2026-01-24,2027-01-23,Web Developer - Bank Muamalat
-00008,Pritalokasari,22753905,2025-02-12,2026-01-12,Java Developer - PT Bank CIMB Niaga Tbk
-00009,Avendya Prathama,22500000,2026-02-27,2027-02-26,Fullstack Developer - PT Bank CIMB Niaga Tbk
-00010,Vahrunita Zaelani,25200000,2026-05-04,2027-04-04,System Analyst - PT Bank CIMB Niaga Tbk
-00011,Pradnya Pramitha,23400000,2026-01-01,2026-12-31,Java Developer - PT Bank CIMB Niaga Tbk
-00012,Danendra Bagaskara,23400000,2026-01-01,2026-12-31,Mobile Developer - PT Bank CIMB Niaga Tbk
-00013,Aryaduta Swarjono,23400000,2026-01-01,2026-12-31,Mobile Developer - PT XL Smart Sejahtera
-00014,Baizuri Fadhilah,23400000,2026-10-04,2026-12-31,Front End Developer - PT XL Smart Sejahtera
-00015,Fathaniah Alamsyah,18720000,2026-01-01,2026-12-31,Quality Assurance - PT XL Smart Sejahtera
-00016,Martina Christine,23400000,2026-01-01,2026-12-31,Java Developer - PT XL Smart Sejahtera
-
+10001,Raka Mahendra Putra,27500000,2026-01-05,2026-12-31,Backend Golang Engineer - PT XL Smart Sejahtera
+10002,Kirana Larasati Dewi,29000000,2026-01-05,2026-12-31,DevOps & Cloud Architect - PT XL Smart Sejahtera
+10003,Bima Arya Pratama,21500000,2026-02-01,2026-12-31,UI/UX Product Designer - PT XL Smart Sejahtera
+10004,Sekar Ayu Ningrum,26800000,2026-01-12,2026-12-31,Data Engineer - PT Bank Mandiri (Persero) Tbk
+10005,Daffa Rizky Ramadhan,28400000,2026-01-12,2026-12-31,Lead React Native Developer - PT Bank Mandiri (Persero) Tbk
+10006,Tania Maharani Putri,25900000,2026-02-10,2027-02-09,Cybersecurity Analyst - PT Bank Negara Indonesia (Persero) Tbk
+10007,Gilang Dirga Saputra,28000000,2026-02-10,2027-02-09,Microservices Java Lead - PT Bank Negara Indonesia (Persero) Tbk
+10008,Alya Zahra Permata,20500000,2026-03-01,2026-12-31,QA Automation Engineer - PT Telkomsel Ekosistem Digital
+10009,Reyhan Aditya Nugraha,31000000,2026-03-15,2027-03-14,SAP ABAP Consultant - PT Astra Graphia Information Technology
+10010,Nabila Syifa Azzahra,24750000,2026-04-01,2026-12-31,Scrum Master & Agile Coach - PT Bank Permata Tbk

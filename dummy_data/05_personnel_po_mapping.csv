@@ -1,18 +1,11 @@
 NIK,name,po_number,company,user_approver,berlaku_dari,berlaku_sampai,spk_number
-00001,Adhi Nugroho,094A/SPK/OMP/12/2025,Bank Digital BCA,Tiara Hapsari,2025-11-12,2026-12-31,887/SPK 3 - IDS/XII/2025
-00002,Bertha Lusiana,094A/SPK/OMP/12/2025,Bank Digital BCA,Tiara Hapsari,2025-11-12,2026-12-31,028/SPK 2 - IDS/XII/2025
-00003,Imam Fattah,094A/SPK/OMP/12/2025,Bank Digital BCA,Tiara Hapsari,2025-11-12,2026-12-31,886/SPK 3 - IDS/XII/2025
-00004,Sellvia Anggraini,094A/SPK/OMP/12/2025,Bank Digital BCA,Tiara Hapsari,2025-11-12,2026-12-31,891/SPK 3 - IDS/XII/2025
-00005,Dhimas Putranto,040/SPK/OMP/05/2026,Bank Digital BCA,Tiara Hapsari,2026-05-18,2027-01-17,018/SPK 1 - IDS/V/2026
-00006,Anwar Baizuri,024/BMI/PRO/I/2026,Bank Muamalat,Denny Caknan,2026-01-24,2027-01-23,873/SPK 3 - IDS/I/2026
-00007,Donny Destianto,024/BMI/PRO/I/2026,Bank Muamalat,Denny Caknan,2026-01-24,2027-01-23,548/SPK 8 - IDS/I/2026
-00008,Pritalokasari,CN/PO/20260105000005,PT Bank CIMB Niaga Tbk,Putranda Sianipar,2025-02-12,2026-01-12,638/SPK 7 - IDS/XII/2025
-00009,Avendya Prathama,CN/PO/20260204000118,PT Bank CIMB Niaga Tbk,Putranda Sianipar,2026-02-27,2027-02-26,011/SPK 3 - IDS/II/2026
-00010,Vahrunita Zaelani,CN/PO/20260210000133,PT Bank CIMB Niaga Tbk,Putranda Sianipar,2026-05-04,2027-04-04,899/SPK 4 - IDS/IV/2026
-00011,Pradnya Pramitha,CN/PO/20260223000169,PT Bank CIMB Niaga Tbk,Devina Amantya,2026-01-01,2026-12-31,007/SPK 9 - IDS/I/2026_21
-00012,Danendra Bagaskara,CN/PO/20260223000169,PT Bank CIMB Niaga Tbk,Devina Amantya,2026-01-01,2026-12-31,180/SPK 13 - IDS/I/2026_21
-00013,Aryaduta Swarjono,8000017608,PT XL Smart Sejahtera,Alamandasari,2026-01-01,2026-12-31,756/SPK 5 - IDS/I/2026_21
-00014,Baizuri Fadhilah,8000017608,PT XL Smart Sejahtera,Alamandasari,2026-10-04,2026-12-31,022/SPK 1 - IDS/IV/2026_21
-00015,Fathaniah Alamsyah,8000117796,PT XL Smart Sejahtera,Bobby Saputra,2026-01-01,2026-12-31,796/SPK 7 - IDS/I/2026_21
-00016,Martina Christine,8000117796,PT XL Smart Sejahtera,Bobby Saputra,2026-01-01,2026-12-31,026/SPK 2 - IDS/I/2026_21
-
+10001,Raka Mahendra Putra,8000991001,PT XL Smart Sejahtera,Nadia Kusumawardhani,2026-01-05,2026-12-31,101/SPK-XL/IDS/I/2026
+10002,Kirana Larasati Dewi,8000991001,PT XL Smart Sejahtera,Nadia Kusumawardhani,2026-01-05,2026-12-31,102/SPK-XL/IDS/I/2026
+10003,Bima Arya Pratama,8000991002,PT XL Smart Sejahtera,Rendra Wijaya,2026-02-01,2026-12-31,103/SPK-XL/IDS/II/2026
+10004,Sekar Ayu Ningrum,BMRI/PO/IT/2026/0401,PT Bank Mandiri (Persero) Tbk,Hendra Gunawan,2026-01-12,2026-12-31,201/SPK-BMRI/IDS/I/2026
+10005,Daffa Rizky Ramadhan,BMRI/PO/IT/2026/0401,PT Bank Mandiri (Persero) Tbk,Hendra Gunawan,2026-01-12,2026-12-31,202/SPK-BMRI/IDS/I/2026
+10006,Tania Maharani Putri,BNI/SPK/DIV-TI/02/2026,PT Bank Negara Indonesia (Persero) Tbk,Farhan Syahputra,2026-02-10,2027-02-09,301/SPK-BNI/IDS/II/2026
+10007,Gilang Dirga Saputra,BNI/SPK/DIV-TI/02/2026,PT Bank Negara Indonesia (Persero) Tbk,Farhan Syahputra,2026-02-10,2027-02-09,302/SPK-BNI/IDS/II/2026
+10008,Alya Zahra Permata,TSEL/PO-DIGI/2026/088,PT Telkomsel Ekosistem Digital,Yudhistira Pratama,2026-03-01,2026-12-31,401/SPK-TSEL/IDS/III/2026
+10009,Reyhan Aditya Nugraha,AGIT/PO-ERP/2026/019,PT Astra Graphia Information Technology,Clarissa Halim,2026-03-15,2027-03-14,501/SPK-AGIT/IDS/III/2026
+10010,Nabila Syifa Azzahra,PRMT/PO/DIGITAL/2026/072,PT Bank Permata Tbk,Dimas Anggara,2026-04-01,2026-12-31,601/SPK-PRMT/IDS/IV/2026

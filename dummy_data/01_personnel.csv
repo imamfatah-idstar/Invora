@@ -1,18 +1,11 @@
 NIK,name,client_name,Type,position,status_code,placement_name,spk_start_date,spk_actual_end_date,spk_number
-00001,Adhi Nugroho,Bank Digital BCA,PS_IDSTAR,Java Developer,ACTIVE,Bank Digital BCA - Plaza Mutiara,2025-11-12,2026-12-31,887/SPK 3 - IDS/XII/2025
-00002,Bertha Lusiana,Bank Digital BCA,PS_IDSTAR,Quality Assurance,ACTIVE,Bank Digital BCA - Gedung Bank Royal,2025-11-12,2026-12-31,028/SPK 2 - IDS/XII/2025
-00003,Imam Fattah,Bank Digital BCA,PS_IDSTAR,Quality Assurance,ACTIVE,Bank Digital BCA - Gedung Bank Royal,2025-11-12,2026-12-31,886/SPK 3 - IDS/XII/2025
-00004,Sellvia Anggraini,Bank Digital BCA,PS_IDSTAR,Quality Assurance,ACTIVE,Bank Digital BCA - Gedung Bank Royal,2025-11-12,2026-12-31,891/SPK 3 - IDS/XII/2025
-00005,Dhimas Putranto,Bank Digital BCA,PS_IDSTAR,Quality Assurance,ACTIVE,Bank Digital BCA - Plaza Mutiara,2026-05-18,2027-01-17,018/SPK 1 - IDS/V/2026
-00006,Anwar Baizuri,Bank Muamalat,PS_IDSTAR,Java Developer,ACTIVE,Muamalat Tower,2026-01-24,2027-01-23,873/SPK 3 - IDS/I/2026
-00007,Donny Destianto,Bank Muamalat,PS_IDSTAR,Web Developer,ACTIVE,Muamalat Tower,2026-01-24,2027-01-23,548/SPK 8 - IDS/I/2026
-00008,Pritalokasari,PT Bank CIMB Niaga Tbk,PS_IDSTAR,Java Developer,ACTIVE,IDS-CIMB Bintaro,2025-02-12,2026-01-12,638/SPK 7 - IDS/XII/2025
-00009,Avendya Prathama,PT Bank CIMB Niaga Tbk,PS_IDSTAR,Fullstack Developer,ACTIVE,IDS-CIMB Bintaro,2026-02-27,2027-02-26,011/SPK 3 - IDS/II/2026
-00010,Vahrunita Zaelani,PT Bank CIMB Niaga Tbk,PS_IDSTAR,System Analyst,ACTIVE,IDS-CIMB Bintaro,2026-05-04,2027-04-04,899/SPK 4 - IDS/IV/2026
-00011,Pradnya Pramitha,PT Bank CIMB Niaga Tbk,PS_IDSTAR,Java Developer,ACTIVE,IDS-CIMB Synergy Building,2026-01-01,2026-12-31,007/SPK 9 - IDS/I/2026_21
-00012,Danendra Bagaskara,PT Bank CIMB Niaga Tbk,PS_IDSTAR,Mobile Developer,ACTIVE,IDS-CIMB Synergy Building,2026-01-01,2026-12-31,180/SPK 13 - IDS/I/2026_21
-00013,Aryaduta Swarjono,PT XL Smart Sejahtera,PS_IDSTAR,Mobile Developer,ACTIVE,XL SMart,2026-01-01,2026-12-31,756/SPK 5 - IDS/I/2026_21
-00014,Baizuri Fadhilah,PT XL Smart Sejahtera,PS_IDSTAR,Front End Developer,ACTIVE,XL SMart,2026-10-04,2026-12-31,022/SPK 1 - IDS/IV/2026_21
-00015,Fathaniah Alamsyah,PT XL Smart Sejahtera,PS_IDSTAR,Quality Assurance,ACTIVE,XL SMart,2026-01-01,2026-12-31,796/SPK 7 - IDS/I/2026_21
-00016,Martina Christine,PT XL Smart Sejahtera,PS_IDSTAR,Java Developer,ACTIVE,XL SMart,2026-01-01,2026-12-31,026/SPK 2 - IDS/I/2026_21
-
+10001,Raka Mahendra Putra,PT XL Smart Sejahtera,PS_IDSTAR,Backend Golang Engineer,ACTIVE,XL Smart Tower - Kuningan,2026-01-05,2026-12-31,101/SPK-XL/IDS/I/2026
+10002,Kirana Larasati Dewi,PT XL Smart Sejahtera,PS_IDSTAR,DevOps & Cloud Architect,ACTIVE,XL Smart Tower - Kuningan,2026-01-05,2026-12-31,102/SPK-XL/IDS/I/2026
+10003,Bima Arya Pratama,PT XL Smart Sejahtera,PS_IDSTAR,UI/UX Product Designer,ACTIVE,XL Smart Digital Hub,2026-02-01,2026-12-31,103/SPK-XL/IDS/II/2026
+10004,Sekar Ayu Ningrum,PT Bank Mandiri (Persero) Tbk,PS_IDSTAR,Data Engineer,ACTIVE,Plaza Mandiri Gatot Subroto,2026-01-12,2026-12-31,201/SPK-BMRI/IDS/I/2026
+10005,Daffa Rizky Ramadhan,PT Bank Mandiri (Persero) Tbk,PS_IDSTAR,Lead React Native Developer,ACTIVE,Plaza Mandiri Gatot Subroto,2026-01-12,2026-12-31,202/SPK-BMRI/IDS/I/2026
+10006,Tania Maharani Putri,PT Bank Negara Indonesia (Persero) Tbk,PS_IDSTAR,Cybersecurity Analyst,ACTIVE,Grha BNI Sudirman,2026-02-10,2027-02-09,301/SPK-BNI/IDS/II/2026
+10007,Gilang Dirga Saputra,PT Bank Negara Indonesia (Persero) Tbk,PS_IDSTAR,Microservices Java Lead,ACTIVE,Grha BNI Sudirman,2026-02-10,2027-02-09,302/SPK-BNI/IDS/II/2026
+10008,Alya Zahra Permata,PT Telkomsel Ekosistem Digital,PS_IDSTAR,QA Automation Engineer,ACTIVE,Telkomsel Smart Office,2026-03-01,2026-12-31,401/SPK-TSEL/IDS/III/2026
+10009,Reyhan Aditya Nugraha,PT Astra Graphia Information Technology,PS_IDSTAR,SAP ABAP Consultant,ACTIVE,AGIT Kramat Raya,2026-03-15,2027-03-14,501/SPK-AGIT/IDS/III/2026
+10010,Nabila Syifa Azzahra,PT Bank Permata Tbk,PS_IDSTAR,Scrum Master & Agile Coach,ACTIVE,PermataBank Tower Bintaro,2026-04-01,2026-12-31,601/SPK-PRMT/IDS/IV/2026
