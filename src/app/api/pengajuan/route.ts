@@ -102,14 +102,12 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // 2. Simpan pemetaan ke PO jika diminta
+      // 2. Simpan pemetaan ke PO jika diminta (tidak boleh double per personel, update jika sudah ada)
       if (item.simpanPemetaan) {
-        const [adaPeta] = await db.select().from(pemetaanPersonelPo).where(
-          and(
-            eq(pemetaanPersonelPo.poId, poId),
-            eq(pemetaanPersonelPo.personelId, finalPersonelId)
-          )
-        );
+        const [adaPeta] = await db
+          .select()
+          .from(pemetaanPersonelPo)
+          .where(eq(pemetaanPersonelPo.personelId, finalPersonelId));
         if (!adaPeta) {
           await db.insert(pemetaanPersonelPo).values({
             poId,
@@ -118,6 +116,15 @@ export async function POST(request: NextRequest) {
             poLineItemId: item.poLineItemId ? Number(item.poLineItemId) : null,
             userXlId,
           });
+        } else {
+          await db
+            .update(pemetaanPersonelPo)
+            .set({
+              poId,
+              poLineItemId: item.poLineItemId ? Number(item.poLineItemId) : adaPeta.poLineItemId,
+              userXlId,
+            })
+            .where(eq(pemetaanPersonelPo.id, adaPeta.id));
         }
       }
 

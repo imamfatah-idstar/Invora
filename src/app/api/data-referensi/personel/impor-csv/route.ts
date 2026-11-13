@@ -364,19 +364,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 5. Buat atau perbarui Pemetaan Personel <-> PO
+    // 5. Buat atau perbarui Pemetaan Personel <-> PO (1 personel tidak boleh double; jika sudah ada, update datanya)
     if (poMatch) {
       const daftarPemetaan = await db
         .select()
         .from(pemetaanPersonelPo)
-        .where(
-          and(
-            eq(pemetaanPersonelPo.personelId, existing.id),
-            eq(pemetaanPersonelPo.poId, poMatch.id)
-          )
-        );
+        .where(eq(pemetaanPersonelPo.personelId, existing.id));
 
-      const pemetaanAda = daftarPemetaan.find((m) => m.berlakuSampai === null) ?? daftarPemetaan[daftarPemetaan.length - 1];
+      const pemetaanAda = daftarPemetaan[daftarPemetaan.length - 1];
 
       if (!pemetaanAda) {
         await db.insert(pemetaanPersonelPo).values({
@@ -389,6 +384,7 @@ export async function POST(request: NextRequest) {
         pemetaanDibuat++;
       } else {
         const perubahanPemetaan: Partial<typeof pemetaanPersonelPo.$inferInsert> = {};
+        if (pemetaanAda.poId !== poMatch.id) perubahanPemetaan.poId = poMatch.id;
         if (pemetaanAda.berlakuDari !== spkStartDate) perubahanPemetaan.berlakuDari = spkStartDate;
         if (spkEndDate !== null && pemetaanAda.berlakuSampai !== spkEndDate) perubahanPemetaan.berlakuSampai = spkEndDate;
         if (userMatch && pemetaanAda.userXlId !== userMatch.id) perubahanPemetaan.userXlId = userMatch.id;
@@ -399,6 +395,15 @@ export async function POST(request: NextRequest) {
             .set(perubahanPemetaan)
             .where(eq(pemetaanPersonelPo.id, pemetaanAda.id));
           pemetaanDiperbarui++;
+        }
+
+        // Hapus baris pemetaan duplikat jika ada lebih dari 1 untuk personel ini
+        if (daftarPemetaan.length > 1) {
+          for (const dup of daftarPemetaan) {
+            if (dup.id !== pemetaanAda.id) {
+              await db.delete(pemetaanPersonelPo).where(eq(pemetaanPersonelPo.id, dup.id));
+            }
+          }
         }
       }
     }

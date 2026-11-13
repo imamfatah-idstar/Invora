@@ -25,6 +25,7 @@ export default function FormTambahPemetaan({
   const [berlakuDari, setBerlakuDari] = useState("");
   const [berlakuSampai, setBerlakuSampai] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const lineUntukPo = daftarLine.filter((l) => l.poId === Number(poId));
@@ -32,6 +33,7 @@ export default function FormTambahPemetaan({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setInfo(null);
     setLoading(true);
     const res = await fetch("/api/pemetaan", {
       method: "POST",
@@ -45,12 +47,13 @@ export default function FormTambahPemetaan({
         berlakuSampai,
       }),
     });
+    const d = await res.json().catch(() => ({}));
     setLoading(false);
     if (!res.ok) {
-      const d = await res.json().catch(() => ({}));
       setError(d.error ?? "Failed to add mapping.");
       return;
     }
+    setInfo(d.updated ? "✓ Personnel mapping already existed and has been updated." : "✓ New personnel mapping added.");
     setBerlakuDari("");
     setBerlakuSampai("");
     setPoLineItemId("");
@@ -100,8 +103,9 @@ export default function FormTambahPemetaan({
       </div>
       <div className="field"><label>Effective from</label><input type="date" value={berlakuDari} onChange={(e) => setBerlakuDari(e.target.value)} required /></div>
       <div className="field"><label>Effective until (optional)</label><input type="date" value={berlakuSampai} onChange={(e) => setBerlakuSampai(e.target.value)} /></div>
-      <button type="submit" disabled={loading} className="btn btn-primary">{loading ? "Saving..." : "Add Mapping"}</button>
+      <button type="submit" disabled={loading} className="btn btn-primary">{loading ? "Saving..." : "Add / Update Mapping"}</button>
       {error && <div className="alert alert-danger" style={{ margin: 0 }}>{error}</div>}
+      {info && <div className="alert alert-success" style={{ margin: 0 }}>{info}</div>}
     </form>
   );
 }

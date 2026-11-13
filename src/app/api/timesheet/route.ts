@@ -331,11 +331,11 @@ export async function POST(request: NextRequest) {
       id = hasil[0].id;
     }
 
-    // Pastikan personel juga tercatat di pemetaan_personel_po pada PO ini jika belum ada
+    // Pastikan personel juga tercatat di pemetaan_personel_po (tidak boleh double per personel, update jika sudah ada)
     const [adaPeta] = await db
-      .select({ id: pemetaanPersonelPo.id })
+      .select({ id: pemetaanPersonelPo.id, poId: pemetaanPersonelPo.poId })
       .from(pemetaanPersonelPo)
-      .where(and(eq(pemetaanPersonelPo.poId, poId), eq(pemetaanPersonelPo.personelId, item.personelId)));
+      .where(eq(pemetaanPersonelPo.personelId, item.personelId));
 
     if (!adaPeta) {
       await db.insert(pemetaanPersonelPo).values({
@@ -345,6 +345,11 @@ export async function POST(request: NextRequest) {
         berlakuSampai: null,
         userXlId,
       });
+    } else if (adaPeta.poId !== poId) {
+      await db
+        .update(pemetaanPersonelPo)
+        .set({ poId, userXlId })
+        .where(eq(pemetaanPersonelPo.id, adaPeta.id));
     }
 
     idsTersimpan.push(id);
