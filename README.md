@@ -1,10 +1,13 @@
 # INVORA (Invoice Operations & Revenue Assurance)
 
+[![Live App](https://img.shields.io/badge/Live%20App-invora--iota.vercel.app-000000?style=flat-square&logo=vercel)](https://invora-iota.vercel.app/)
 [![React](https://img.shields.io/badge/React-19.2.8-blue?style=flat-square&logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![Drizzle ORM](https://img.shields.io/badge/Drizzle%20ORM-0.45.2-green?style=flat-square)](https://orm.drizzle.team/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-316192?style=flat-square&logo=postgresql)](https://supabase.com/)
 [![License](https://img.shields.io/badge/Proprietary-PT%20IDStar%20Cipta%20Teknologi-red?style=flat-square)]()
+
+> 🌐 **Live Production URL:** [https://invora-iota.vercel.app/](https://invora-iota.vercel.app/)
 
 Sistem enterprise internal **PT IDStar Cipta Teknologi** yang dirancang khusus untuk mengelola seluruh siklus hidup penagihan (*invoicing*), rekonsiliasi hari kerja talenta (*timesheet*), penerbitan dokumen resmi **BAST (XL & Non-XL)**, **CAC XL**, dan **Good Receipt (GR) BAU Approval XL**, pertukaran paket *Goods Receipt (GR) Request* multi-sheet dengan klien via portal resmi getApprove XL, penanganan selisih persetujuan (*Deficiency GR*), hingga penerbitan Faktur Pajak, Invoice Resmi IDStar, dan penutupan *Purchase Order (PO)* otomatis.
 
@@ -264,11 +267,11 @@ Dokumen resmi BAU Approval 2 halaman yang diterbitkan untuk proses persetujuan G
      - **Kartu 1 (Created By):** Tanda tangan asli Ibu Nitia Refa Cahyaningrum (`/gr-sign-created.png`), divisi Finance, tanggal approval.
      - **Kartu 2 (Approved By):** Cap resmi RPA System Integration (`/gr-sign-rpa.jpeg`), `xlrpa-getapprove@xl.co.id`, tanggal approval.
      - **Kartu 3 (Approved By):** Tanda tangan PIC Klien (`/gr-sign-approved.png`), `vads.dnabila@xlsmart.co.id`, tanggal approval.
-3. **Live Web View & PDF:** [`gr-xl-view.tsx`](file:///c:/Users/admin/Downloads/proses-invoicing-app/src/app/pengajuan/[id]/dokumen/[dokumenId]/gr-xl-view.tsx) menyediakan preview interaktif dan tombol unduh PDF vector `pdf-lib`.
+3. **Live Web View & PDF:** [`gr-xl-view.tsx`]
+menyediakan preview interaktif dan tombol unduh PDF vector `pdf-lib`.
 
 #### D. Integrasi Portal Resmi getApprove XL
-Pada setiap tahapan pengajuan klien XL (BAST, CAC, dan GR), sistem menyediakan tombol pintas **🚀 Get Approve XL** yang langsung mengarahkan pengguna ke portal resmi:
-[https://www.getapprove.xlsmart.co.id/auth/login?nexturl=%2Fapproval-document%23id%3Dcc5582a1-9e20-4926-865d-9e7d9c65b73c](https://www.getapprove.xlsmart.co.id/auth/login?nexturl=%252Fapproval-document%2523id%253Dcc5582a1-9e20-4926-865d-9e7d9c65b73c).
+Pada setiap tahapan pengajuan klien XL (BAST, CAC, dan GR), sistem menyediakan tombol pintas **🚀 Get Approve XL** yang langsung mengarahkan pengguna ke portal resmi
 
 ---
 
