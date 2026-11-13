@@ -41,6 +41,8 @@ const ALIAS_HEADER: Record<string, string> = {
 
   "tanggal po": "tanggalPo", "tanggalpo": "tanggalPo", "tanggal": "tanggalPo",
   "date of issued": "tanggalPo", "dateofissued": "tanggalPo",
+
+  "klien": "klien", "client": "klien", "client_name": "klien", "client name": "klien", "company": "klien", "perusahaan": "klien",
 };
 
 export type BarisPoDiimpor = {
@@ -51,6 +53,7 @@ export type BarisPoDiimpor = {
   nilaiGr: string | null; // null = pakai default "0.00" (hanya dipakai untuk PO baru)
   saldoSebelumPpn: string | null; // null = default sama dengan nilaiItem (PO dianggap masih penuh)
   tanggalPo: string | null;
+  klien?: string | null;
 };
 
 export type BarisPoGagal = { baris: number; alasan: string };
@@ -145,7 +148,11 @@ function validasiBaris(objek: Record<string, unknown>, nomorBaris: number): Bari
     return { baris: nomorBaris, alasan: `${nomorPo}: Tanggal PO tidak valid ("${objek.tanggalPo}").` };
   }
 
-  return { nomorPo, namaProyek, tahun, nilaiItem: nilaiItemMentah, nilaiGr, saldoSebelumPpn, tanggalPo };
+  const klien = objek.klien !== undefined && objek.klien !== null && String(objek.klien).trim() !== ""
+    ? String(objek.klien).trim()
+    : null;
+
+  return { nomorPo, namaProyek, tahun, nilaiItem: nilaiItemMentah, nilaiGr, saldoSebelumPpn, tanggalPo, klien };
 }
 
 export function parseCsvPo(teks: string): HasilParsePo {

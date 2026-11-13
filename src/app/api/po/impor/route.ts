@@ -79,6 +79,7 @@ export async function POST(request: NextRequest) {
         saldoSebelumPpn: b.saldoSebelumPpn ?? b.nilaiItem,
         nilaiGr: b.nilaiGr ?? "0.00",
         tanggalPo: b.tanggalPo,
+        klien: b.klien ?? null,
       }).returning();
       petaPo.set(nomorLower, baru);
       poBaru++;
@@ -88,6 +89,7 @@ export async function POST(request: NextRequest) {
         tahun: b.tahun ?? existing.tahun,
         nilaiGr: b.nilaiGr ?? existing.nilaiGr,
         tanggalPo: b.tanggalPo ?? existing.tanggalPo,
+        ...(b.klien ? { klien: b.klien } : {}),
       }).where(eq(po.id, existing.id));
       poDiperbarui++;
     }
