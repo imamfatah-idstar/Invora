@@ -31,10 +31,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const buffer = await workbook.xlsx.writeBuffer();
   const namaFile = namaFileGr(data.poRow.nomorPo, data.ajuan.periode, "vendor");
 
-  await mkdir(DIR_UPLOAD, { recursive: true });
   const namaFileDisimpan = `${pengajuanId}-generate-${Date.now()}.xlsx`;
   const pathDisimpan = path.join(DIR_UPLOAD, namaFileDisimpan);
-  await writeFile(pathDisimpan, Buffer.from(buffer));
+  try {
+    await mkdir(DIR_UPLOAD, { recursive: true });
+    await writeFile(pathDisimpan, Buffer.from(buffer));
+  } catch {
+    // Abaikan error tulis disk pada serverless read-only filesystem (Vercel)
+  }
 
   const [sudahAda] = await db.select().from(grRequest).where(eq(grRequest.pengajuanId, pengajuanId));
   const nilaiUpdate = {

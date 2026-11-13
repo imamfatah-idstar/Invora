@@ -27,27 +27,55 @@ export async function siapkanDataVendor(pengajuanId: number) {
   const [poRow] = await db.select().from(po).where(eq(po.id, ajuan.poId));
   if (!poRow) throw new Error("PO tidak ditemukan.");
 
-  const daftarLine = await db.select().from(poLineItem).where(eq(poLineItem.poId, poRow.id)).orderBy(poLineItem.nomorLine);
+  const detail = await db.select().from(pengajuanDetail).where(eq(pengajuanDetail.pengajuanId, pengajuanId));
+  const totalDetail = detail.reduce((acc, d) => acc.plus(new Decimal(d.hasilHitung || "0")), new Decimal(0));
+
+  let daftarLine = await db.select().from(poLineItem).where(eq(poLineItem.poId, poRow.id)).orderBy(poLineItem.nomorLine);
   if (daftarLine.length === 0) {
-    throw new Error("PO ini belum punya PO Line Item. Isi dulu di Data Referensi > PO > Edit.");
+    const nilaiDefault = new Decimal(poRow.nilaiItem || "0").greaterThan(0)
+      ? new Decimal(poRow.nilaiItem).toFixed(2)
+      : totalDetail.greaterThan(0)
+        ? totalDetail.toFixed(2)
+        : "1.00";
+    const [lineBaru] = await db
+      .insert(poLineItem)
+      .values({
+        poId: poRow.id,
+        nomorLine: 10,
+        shortText: poRow.namaProyek || `Layanan PO ${poRow.nomorPo}`,
+        qty: 1,
+        hargaSatuan: nilaiDefault,
+      })
+      .returning();
+    daftarLine = [lineBaru];
   }
 
-  const detail = await db.select().from(pengajuanDetail).where(eq(pengajuanDetail.pengajuanId, pengajuanId));
-
+  const defaultLineId = daftarLine[0].id;
   const totalPerLine = new Map<number, Decimal>();
   for (const d of detail) {
-    if (d.poLineItemId == null) continue;
-    const sebelumnya = totalPerLine.get(d.poLineItemId) ?? new Decimal(0);
-    totalPerLine.set(d.poLineItemId, sebelumnya.plus(new Decimal(d.hasilHitung)));
+    const targetLineId = d.poLineItemId ?? defaultLineId;
+    const sebelumnya = totalPerLine.get(targetLineId) ?? new Decimal(0);
+    totalPerLine.set(targetLineId, sebelumnya.plus(new Decimal(d.hasilHitung)));
+    if (d.poLineItemId == null) {
+      await db
+        .update(pengajuanDetail)
+        .set({ poLineItemId: defaultLineId })
+        .where(eq(pengajuanDetail.id, d.id));
+    }
   }
-  const adaTanpaLine = detail.some((d) => d.poLineItemId == null);
+  const adaTanpaLine = false;
   const tanggalRequestGr = ajuan.tanggalRequestGr ?? new Date().toISOString().slice(0, 10);
 
   const barisLine = daftarLine.map((line) => {
-    const qty = line.qty;
-    const harga = new Decimal(line.hargaSatuan);
-    const poValue = harga.times(qty);
+    const qty = line.qty > 0 ? line.qty : 1;
+    const hargaRaw = new Decimal(line.hargaSatuan || "0");
     const valueProposed = totalPerLine.get(line.id) ?? null;
+    const harga = hargaRaw.greaterThan(0)
+      ? hargaRaw
+      : new Decimal(poRow.nilaiItem || "0").greaterThan(0)
+        ? new Decimal(poRow.nilaiItem)
+        : valueProposed ?? new Decimal(1);
+    const poValue = harga.times(qty);
     return { line, qty, harga, poValue, valueProposed };
   });
 

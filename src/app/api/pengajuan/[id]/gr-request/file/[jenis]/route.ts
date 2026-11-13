@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { readFile } from "fs/promises";
+import os from "os";
 import path from "path";
 import { db } from "@/db";
 import { grRequest } from "@/db/schema";
@@ -28,7 +29,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 
   const subPath = pathFile.replace(/^[/\\]*uploads[/\\]*/, "");
-  const buffer = await readFile(path.join(/*turbopackIgnore: true*/ process.cwd(), "uploads", subPath)).catch(() => null);
+  const buffer = await readFile(path.join(/*turbopackIgnore: true*/ process.cwd(), "uploads", subPath))
+    .catch(() => readFile(path.join(os.tmpdir(), "uploads", subPath)))
+    .catch(() => null);
   if (!buffer) return NextResponse.json({ error: "File tidak ditemukan di server." }, { status: 404 });
 
   return new NextResponse(buffer as unknown as BodyInit, {

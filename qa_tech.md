@@ -123,3 +123,4 @@ Endpoint `POST /api/data-referensi/personel/impor-csv` (`src/app/api/data-refere
    - Repositori GitHub (`imamfatah-idstar/Invora`) terhubung langsung ke proyek Vercel (`invora-iota.vercel.app`). Setiap *commit* ke branch `main` otomatis menjalankan *build* produksi (`next build`), validasi TypeScript, dan mempublikasikan pembaruan tanpa *downtime*.
 2. **Resilient File Handling di Serverless (`src/app/api/timesheet/route.ts`):**
    - Pada lingkungan *serverless* seperti Vercel di mana *filesystem* bersifat *ephemeral* (`/tmp` atau *read-only* di luar direktori sementara), fungsi penyimpanan file (`simpanFileTimesheet`) dilengkapi *graceful fallback* sehingga metadata unggahan dan perhitungan *workdays* di database PostgreSQL tetap tersimpan 100% tanpa menyebabkan *error 500*.
+

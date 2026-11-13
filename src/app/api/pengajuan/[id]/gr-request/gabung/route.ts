@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { mkdir, writeFile } from "fs/promises";
+import { mkdir, readFile, writeFile } from "fs/promises";
+import os from "os";
 import path from "path";
 import ExcelJS from "exceljs";
 import { db } from "@/db";
@@ -40,7 +41,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const workbook = new ExcelJS.Workbook();
   try {
     const subPath = row.pathFileBalikanXl.replace(/^[/\\]*uploads[/\\]*/, "");
-    await workbook.xlsx.readFile(path.join(/*turbopackIgnore: true*/ process.cwd(), "uploads", subPath));
+    const localBuf = await readFile(path.join(/*turbopackIgnore: true*/ process.cwd(), "uploads", subPath)).catch(() =>
+      readFile(path.join(os.tmpdir(), "uploads", subPath))
+    );
+    await workbook.xlsx.load(localBuf as unknown as ArrayBuffer);
   } catch {
     return NextResponse.json({ error: "File balikan XL tidak bisa dibaca — pastikan format .xlsx valid." }, { status: 400 });
   }
@@ -52,10 +56,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const buffer = await workbook.xlsx.writeBuffer();
   const namaFile = namaFileGr(data.poRow.nomorPo, data.ajuan.periode, "gabungan");
 
-  await mkdir(DIR_UPLOAD, { recursive: true });
   const namaFileDisimpan = `${pengajuanId}-gabungan-${Date.now()}.xlsx`;
-  const pathDisimpan = path.join(DIR_UPLOAD, namaFileDisimpan);
-  await writeFile(pathDisimpan, Buffer.from(buffer));
+  try {
+    await mkdir(DIR_UPLOAD, { recursive: true });
+    await writeFile(path.join(DIR_UPLOAD, namaFileDisimpan), Buffer.from(buffer));
+  } catch {
+    const tmpDir = path.join(os.tmpdir(), "uploads", "gr-request");
+    await mkdir(tmpDir, { recursive: true }).catch(() => {});
+    await writeFile(path.join(tmpDir, namaFileDisimpan), Buffer.from(buffer)).catch(() => {});
+  }
 
   const waktu = new Date().toISOString();
   const pathRelatif = path.join("uploads", "gr-request", namaFileDisimpan);

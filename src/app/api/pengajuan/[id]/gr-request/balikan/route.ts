@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { mkdir, writeFile } from "fs/promises";
+import os from "os";
 import path from "path";
 import { db } from "@/db";
 import { grRequest, grRequestRiwayat } from "@/db/schema";
@@ -39,11 +40,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (ekstensi !== ".xlsx")
     return NextResponse.json({ error: "Format file harus .xlsx." }, { status: 400 });
 
-  await mkdir(DIR_UPLOAD, { recursive: true });
   const namaFileDisimpan = `${pengajuanId}-balikan-${Date.now()}${ekstensi}`;
-  const pathDisimpan = path.join(DIR_UPLOAD, namaFileDisimpan);
   const buffer = Buffer.from(await file.arrayBuffer());
-  await writeFile(pathDisimpan, buffer);
+  try {
+    await mkdir(DIR_UPLOAD, { recursive: true });
+    await writeFile(path.join(DIR_UPLOAD, namaFileDisimpan), buffer);
+  } catch {
+    const tmpDir = path.join(os.tmpdir(), "uploads", "gr-request");
+    await mkdir(tmpDir, { recursive: true }).catch(() => {});
+    await writeFile(path.join(tmpDir, namaFileDisimpan), buffer).catch(() => {});
+  }
 
   // Riwayat versi (bagian 36) — file balikan & gabungan LAMA sengaja TIDAK
   // dihapus (beda dari perilaku sebelumnya), supaya tetap bisa diunduh lewat
