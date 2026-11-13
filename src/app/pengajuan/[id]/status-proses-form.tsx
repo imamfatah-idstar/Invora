@@ -71,7 +71,7 @@ export default function FormStatusProses({
 
   // Live Invoice calculation
   const rincianInvoice = useMemo(() => {
-    const dasar = nilaiGrDisetujui ? Number(nilaiGrDisetujui) : totalPengajuan;
+    const dasar = nilaiGrDisetujui && nilaiGrDisetujui.trim() !== "" ? nilaiGrDisetujui : totalPengajuan;
     return hitungTotalInvoice(dasar, tarifPpn);
   }, [nilaiGrDisetujui, totalPengajuan, tarifPpn]);
 
@@ -175,7 +175,7 @@ export default function FormStatusProses({
               )}
               {statusDeficiency.kategori === "kekurangan_gr" && (
                 <span style={{ color: "#d97706" }}>
-                  ⚠️ Under-approved / Deficiency of Rp{Number(statusDeficiency.nominalSelisih.abs()).toLocaleString("id-ID", { minimumFractionDigits: 2 })} ({statusDeficiency.persentase}%)
+                  ⚠️ Under-approved / Deficiency of Rp{Number(statusDeficiency.nominalSelisih).toLocaleString("id-ID", { minimumFractionDigits: 2 })} ({statusDeficiency.persentase}%)
                 </span>
               )}
               {statusDeficiency.kategori === "kelebihan_gr" && (

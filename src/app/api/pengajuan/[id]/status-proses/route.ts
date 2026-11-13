@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { pengajuan, pengajuanDetail, grRequest, po } from "@/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import Decimal from "decimal.js";
+import { parseAngkaAman } from "@/lib/deficiency-gr";
 import { wajibRoleApi } from "@/lib/require-role-api";
 import { userSaatIni } from "@/lib/session-server";
 import { catatAudit } from "@/lib/audit";
@@ -80,11 +81,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       patch.nilaiGrDisetujui = null;
       patch.selisihGr = null;
     } else {
-      const valNum = Number(raw.replace(/[^0-9.]/g, ""));
-      if (isNaN(valNum) || valNum < 0) {
-        return NextResponse.json({ error: "Nilai GR disetujui harus berupa angka positif." }, { status: 400 });
+      const grParsed = parseAngkaAman(raw);
+      if (!grParsed || grParsed.isNegative()) {
+        return NextResponse.json({ error: "Nilai GR disetujui harus berupa angka positif (mis. 10000000 atau 10.000.000,00)." }, { status: 400 });
       }
-      const grDec = new Decimal(valNum);
+      const grDec = grParsed;
       patch.nilaiGrDisetujui = grDec.toFixed(2);
 
       // Hitung total pengajuan untuk menentukan Deficiency GR (Selisih)
@@ -93,7 +94,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         .from(pengajuanDetail)
         .where(eq(pengajuanDetail.pengajuanId, pengajuanId));
       const totalPengajuan = detailList.reduce(
-        (acc, d) => acc.plus(new Decimal(d.hasilHitung)),
+        (acc, d) => acc.plus(new Decimal(d.hasilHitung || 0)),
         new Decimal(0)
       );
 
@@ -150,7 +151,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       );
 
       // Cek apakah total realisasi GR sudah mencapai nilai pagu PO (Closing PO)
-      const isClosed = totalGrKumulatif.greaterThanOrEqualTo(new Decimal(poRow.nilaiItem));
+      const isClosed = poRow.nilaiItem ? totalGrKumulatif.greaterThanOrEqualTo(new Decimal(poRow.nilaiItem)) : false;
       await db.update(po).set({
         nilaiGr: totalGrKumulatif.toFixed(2),
         statusPo: isClosed ? "selesai" : "aktif",
