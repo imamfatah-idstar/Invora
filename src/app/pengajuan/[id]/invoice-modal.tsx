@@ -231,10 +231,6 @@ export default function InvoiceModal({
   // Handler Simpan Perubahan Invoice
   async function handleSimpanInvoice(e: React.FormEvent) {
     e.preventDefault();
-    if (!curPathFileFakturPajak && !fileFakturPajak) {
-      setErrorSimpanInvoice("⚠️ Faktur Pajak wajib diunggah sebelum menyimpan dan menerbitkan invoice resmi.");
-      return;
-    }
     setSedangSimpanInvoice(true);
     setErrorSimpanInvoice(null);
     setSuksesSimpanInvoice(null);

@@ -177,23 +177,6 @@ export default function FormStatusProses({
           )}
         </div>
       )}
-              color:
-                statusDeficiency.kategori === "impas"
-                  ? "#15803d"
-                  : statusDeficiency.kategori === "kekurangan_gr"
-                  ? "#b45309"
-                  : "#1d4ed8",
-            }}
-          >
-            <b>Deficiency GR ({statusDeficiency.kategori === "impas" ? "Balanced" : statusDeficiency.kategori === "kekurangan_gr" ? "GR Under-delivery" : "GR Surplus"}):</b> {statusDeficiency.keterangan}
-            {statusDeficiency.selisih && (
-              <div style={{ marginTop: 4, fontWeight: "bold" }}>
-                Variance: {Number(statusDeficiency.selisih) >= 0 ? "+" : ""}Rp{Number(statusDeficiency.selisih).toLocaleString("id-ID", { minimumFractionDigits: 2 })}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
 
       {/* Bagian 2: Invoice & Faktur Pajak Resmi */}
       <div style={{ background: "var(--color-bg-alt, #f8fafc)", padding: "14px 16px", borderRadius: 8, border: "1px solid var(--color-border, #e2e8f0)" }}>

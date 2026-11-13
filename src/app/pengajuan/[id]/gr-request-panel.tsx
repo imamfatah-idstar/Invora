@@ -191,17 +191,15 @@ export default function GrRequestPanel({
               &#10003; Verified by <b>{data.namaDicekOleh}</b> on {formatTanggalJam(data.dicekPada)}
               {data.catatanCek && <><br /><span className="subtitle">Notes: {data.catatanCek}</span></>}
             </p>
-          ) : role === "checker" ? (
+          ) : (
             <div className="toolbar">
               <div className="field" style={{ minWidth: 260 }}>
                 <input placeholder="Notes (optional)" value={catatan} onChange={(e) => setCatatan(e.target.value)} />
               </div>
-              <button type="button" className="btn btn-primary" disabled={loading !== null || !data?.namaFileGabungan} onClick={tandaiDicek}>
+              <button type="button" className="btn btn-primary" disabled={loading !== null} onClick={tandaiDicek}>
                 {loading === "cek" ? "Confirming..." : "Mark as Verified"}
               </button>
             </div>
-          ) : (
-            <p className="subtitle" style={{ margin: 0 }}>Awaiting Checker confirmation.</p>
           )}
         </div>
       </div>

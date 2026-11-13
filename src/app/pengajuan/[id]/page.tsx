@@ -201,9 +201,7 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
   const cacDisetujui = cacDoc?.status === "disetujui";
   const bastDisetujui = bastDoc?.status === "disetujui";
   const grDisetujui = grDoc?.status === "disetujui";
-  const siapInvoice = isKlienXl
-    ? (cacDisetujui && bastDisetujui && grDisetujui) || !!header.nomorInvoice
-    : true;
+  const siapInvoice = true;
   const lampiranBalanceAda = daftarLampiran.some((l) => l.label === LABEL_LAMPIRAN_BALANCE);
   const lampiranLain = daftarLampiran.filter((l) => l.label !== LABEL_LAMPIRAN_BALANCE);
   const poAsliAda = !!header.namaFilePoAsli;
@@ -465,9 +463,9 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
               nomorFakturPajakAwal={header.nomorFakturPajak}
               tanggalFakturPajakAwal={header.tanggalFakturPajak}
               tarifPpnAwal={header.tarifPpn}
-              grRequestSudahDicek={!isKlienXl || !!dataGrRequest?.dicekPada}
+              grRequestSudahDicek={true}
               isKlienXl={isKlienXl}
-              bastAda={bastAda}
+              bastAda={true}
               nilaiAwal={{
                 tanggalCacApproved: header.tanggalCacApproved,
                 tanggalRequestGr: header.tanggalRequestGr,
