@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -42,6 +42,31 @@ export default function DaftarDokumenTable({
   const [loadingId, setLoadingId] = useState<number | null>(null);
   const [bulkLoading, setBulkLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setDaftar(initialDokumen);
+  }, [initialDokumen]);
+
+  async function handleDeleteSingle(doc: DokumenItem) {
+    if (!confirm(`Hapus dokumen ${doc.jenis} (v${doc.versi}) dari sistem?`)) return;
+    setLoadingId(doc.id);
+    setError(null);
+    try {
+      const res = await fetch(`/api/pengajuan/${pengajuanId}/dokumen/${doc.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Gagal menghapus dokumen");
+      }
+      setDaftar((prev) => prev.filter((d) => d.id !== doc.id));
+      router.refresh();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Terjadi kesalahan saat menghapus dokumen");
+    } finally {
+      setLoadingId(null);
+    }
+  }
 
   // Modal revisi per dokumen
   const [modalRevisiDoc, setModalRevisiDoc] = useState<DokumenItem | null>(null);
@@ -221,7 +246,7 @@ export default function DaftarDokumenTable({
               <th>Status Approval</th>
               <th>Pemeriksa / Checker</th>
               <th>Dibuat Pada</th>
-              <th style={{ textAlign: "right" }}>Aksi</th>
+              <th style={{ textAlign: "right" }}>Aksi Sistem</th>
             </tr>
           </thead>
           <tbody>
@@ -353,6 +378,25 @@ export default function DaftarDokumenTable({
                           </button>
                         </>
                       )}
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteSingle(d)}
+                        disabled={isLoading}
+                        style={{
+                          backgroundColor: "#fee2e2",
+                          color: "#dc2626",
+                          border: "1px solid #fecaca",
+                          borderRadius: 4,
+                          padding: "3px 8px",
+                          fontSize: 11.5,
+                          fontWeight: 600,
+                          cursor: isLoading ? "not-allowed" : "pointer",
+                        }}
+                        title={`Hapus dokumen ${d.jenis} dari sistem`}
+                      >
+                        {isLoading ? "..." : "🗑️ Delete"}
+                      </button>
                     </div>
                   </td>
                 </tr>

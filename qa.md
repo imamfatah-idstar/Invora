@@ -137,3 +137,4 @@ Pada panel **Payment Settlement (Pencatatan Pelunasan Pembayaran)**:
 - Sistem menghitung total pelunasan efektif sebagai:
   $$\text{Total Terbayar} = \text{Nominal Diterima} + \text{Potongan PPh 23} + \text{Biaya Admin Bank}$$
 - **Checker** kemudian melakukan verifikasi atas pencatatan pembayaran tersebut hingga status tagihan dinyatakan **Lunas (Verified)**.
+
