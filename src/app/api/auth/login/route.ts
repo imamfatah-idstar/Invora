@@ -4,9 +4,50 @@ import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { cekKataSandi, buatSesi, hashKataSandi } from "@/lib/auth";
 import { getAllUserRoles, getAuthorizedProfile, getCleanDisplayName } from "@/lib/user-roles";
+import {
+  checkDdosRateLimit,
+  clearFailedLogins,
+  getClientIp,
+  recordFailedLogin,
+  verifyRecaptchaToken,
+} from "@/lib/recaptcha";
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request.headers);
+  const userAgent = request.headers.get("user-agent") || "unknown";
+
+  // 1. Proteksi Anti-DDoS & Brute-Force Rate Limiting
+  const rateCheck = checkDdosRateLimit(ip);
+  if (!rateCheck.allowed) {
+    return NextResponse.json(
+      { error: rateCheck.reason || "Terlalu banyak permintaan login. Silakan coba lagi nanti." },
+      {
+        status: 429,
+        headers: rateCheck.retryAfterSec ? { "Retry-After": String(rateCheck.retryAfterSec) } : undefined,
+      }
+    );
+  }
+
   const body = await request.json().catch(() => null);
+
+  // 2. Honeypot Anti-Bot Trap
+  if (body?.honeypot) {
+    recordFailedLogin(ip);
+    return NextResponse.json(
+      { error: "Aktivitas mencurigakan (Bot) terdeteksi." },
+      { status: 403 }
+    );
+  }
+
+  // 3. Verifikasi Token Keamanan reCAPTCHA
+  const recaptchaCheck = await verifyRecaptchaToken(body?.recaptchaToken, ip, userAgent);
+  if (!recaptchaCheck.valid) {
+    return NextResponse.json(
+      { error: recaptchaCheck.error || "Verifikasi reCAPTCHA gagal.", resetRecaptcha: true },
+      { status: 400 }
+    );
+  }
+
   const emailRaw = body?.email;
   const kataSandi = body?.kataSandi;
 
@@ -47,8 +88,9 @@ export async function POST(request: NextRequest) {
 
   // Pesan error sengaja disamakan
   if (!user || !user.aktif) {
+    recordFailedLogin(ip);
     return NextResponse.json(
-      { error: "Email atau kata sandi salah." },
+      { error: "Email atau kata sandi salah.", resetRecaptcha: true },
       { status: 401 }
     );
   }
@@ -56,11 +98,14 @@ export async function POST(request: NextRequest) {
   const isDefaultPassword = kataSandi === "idstar123" || kataSandi === "contoh123";
   const cocok = isDefaultPassword || (await cekKataSandi(kataSandi, user.passwordHash));
   if (!cocok) {
+    recordFailedLogin(ip);
     return NextResponse.json(
-      { error: "Email atau kata sandi salah." },
+      { error: "Email atau kata sandi salah.", resetRecaptcha: true },
       { status: 401 }
     );
   }
+
+  clearFailedLogins(ip);
 
   // Update nama jika masih mengandung 'Contoh'
   if (authProfile && (user.nama !== authProfile.nama || user.nama.includes("Contoh"))) {

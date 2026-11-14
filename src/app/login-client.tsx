@@ -55,9 +55,17 @@ export default function LoginClient() {
   const [kataSandi, setKataSandi] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [demoLoading, setDemoLoading] = useState<string | null>(null);
-  const [demoDropdownOpen, setDemoDropdownOpen] = useState(false);
-  const demoDropdownRef = useRef<HTMLDivElement>(null);
+
+  // State reCAPTCHA & Anti-DDoS Protection
+  const [recaptchaStatus, setRecaptchaStatus] = useState<
+    "idle" | "verifying" | "challenge" | "verified" | "expired"
+  >("idle");
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+  const [honeypot, setHoneypot] = useState("");
+  const [challengeQuestion, setChallengeQuestion] = useState<{ a: number; b: number }>({ a: 4, b: 3 });
+  const [challengeInput, setChallengeInput] = useState("");
+  const [challengeError, setChallengeError] = useState<string | null>(null);
+  const expiryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // State Modal Lupa Password via Email
   const [bukaModalLupaPassword, setBukaModalLupaPassword] = useState(false);
@@ -68,23 +76,81 @@ export default function LoginClient() {
   const [notifSukses, setNotifSukses] = useState<string | null>(null);
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (demoDropdownRef.current && !demoDropdownRef.current.contains(event.target as Node)) {
-        setDemoDropdownOpen(false);
-      }
-    }
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setDemoDropdownOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("keydown", handleKeyDown);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleKeyDown);
+      if (expiryTimerRef.current) clearTimeout(expiryTimerRef.current);
     };
   }, []);
+
+  function resetRecaptcha(status: "idle" | "expired" = "idle") {
+    if (expiryTimerRef.current) clearTimeout(expiryTimerRef.current);
+    setRecaptchaToken(null);
+    setRecaptchaStatus(status);
+    setChallengeInput("");
+    setChallengeError(null);
+  }
+
+  function buatSoalBaru() {
+    const a = Math.floor(Math.random() * 8) + 2;
+    const b = Math.floor(Math.random() * 8) + 1;
+    setChallengeQuestion({ a, b });
+    setChallengeInput("");
+    setChallengeError(null);
+  }
+
+  async function handleRecaptchaClick() {
+    if (recaptchaStatus === "verified" || recaptchaStatus === "verifying") return;
+    setError(null);
+    setChallengeError(null);
+    setRecaptchaStatus("verifying");
+
+    try {
+      await new Promise((r) => setTimeout(r, 550));
+      const res = await fetch("/api/auth/recaptcha", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ honeypot }),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok || !data.token) {
+        setRecaptchaStatus("idle");
+        setError(data.error ?? "Gagal memverifikasi keamanan reCAPTCHA.");
+        return;
+      }
+
+      setRecaptchaToken(data.token);
+
+      if (data.requireExtraChallenge) {
+        buatSoalBaru();
+        setRecaptchaStatus("challenge");
+      } else {
+        aktifkanStatusVerified(data.expiresAt);
+      }
+    } catch {
+      setRecaptchaStatus("idle");
+      setError("Gagal terhubung ke layanan keamanan reCAPTCHA.");
+    }
+  }
+
+  function aktifkanStatusVerified(expiresAt?: number) {
+    setRecaptchaStatus("verified");
+    if (expiryTimerRef.current) clearTimeout(expiryTimerRef.current);
+    const ttl = expiresAt ? Math.max(10000, expiresAt - Date.now()) : 120000;
+    expiryTimerRef.current = setTimeout(() => {
+      resetRecaptcha("expired");
+    }, ttl);
+  }
+
+  function handleVerifikasiSoal() {
+    const expected = challengeQuestion.a + challengeQuestion.b;
+    if (Number(challengeInput.trim()) !== expected) {
+      setChallengeError("Jawaban belum tepat, silakan coba lagi.");
+      buatSoalBaru();
+      return;
+    }
+    setChallengeError(null);
+    aktifkanStatusVerified();
+  }
 
   // Tangkap pesan error / sukses dari URL callback
   useEffect(() => {
@@ -103,15 +169,28 @@ export default function LoginClient() {
 
   async function prosesLogin(loginEmail: string, loginPass: string) {
     setError(null);
+    if (recaptchaStatus !== "verified" || !recaptchaToken) {
+      setError("Silakan centang verifikasi keamanan reCAPTCHA ('Saya bukan robot') terlebih dahulu.");
+      return false;
+    }
+
     const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: loginEmail, kataSandi: loginPass }),
+      body: JSON.stringify({
+        email: loginEmail,
+        kataSandi: loginPass,
+        recaptchaToken,
+        honeypot,
+      }),
     });
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       setError(data.error ?? "Failed to sign in.");
+      if (data.resetRecaptcha) {
+        resetRecaptcha("idle");
+      }
       return false;
     }
 
@@ -130,17 +209,6 @@ export default function LoginClient() {
     setLoading(true);
     await prosesLogin(email, kataSandi);
     setLoading(false);
-  }
-
-  async function handleDemoLogin(demoEmail: string) {
-    setDemoLoading(demoEmail);
-    setEmail(demoEmail);
-    setKataSandi("contoh123");
-    if (typeof window !== "undefined") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-    await prosesLogin(demoEmail, "contoh123");
-    setDemoLoading(null);
   }
 
   async function handleMintaResetPassword(e: React.FormEvent) {
@@ -284,11 +352,198 @@ export default function LoginClient() {
               />
             </div>
 
+            {/* Honeypot Trap tersembunyi untuk menangkal Bot DDoS otomatis */}
+            <input
+              type="text"
+              name="website_url"
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
+            />
+
+            {/* Komponen Verifikasi Keamanan reCAPTCHA (Anti-DDoS & Bot Protection) */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {recaptchaStatus === "expired" && (
+                <div style={{ fontSize: 11.5, color: "#dc2626", fontWeight: 600 }}>
+                  Verifikasi telah kedaluwarsa. Centang kotak di bawah ini lagi.
+                </div>
+              )}
+
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "10px 14px",
+                  background: "#f9fafb",
+                  border: `1.5px solid ${
+                    recaptchaStatus === "verified"
+                      ? "#86efac"
+                      : recaptchaStatus === "expired"
+                      ? "#fca5a5"
+                      : "#d1d5db"
+                  }`,
+                  borderRadius: 6,
+                  boxShadow: "0 1px 2px rgba(0, 0, 0, 0.04)",
+                  userSelect: "none",
+                }}
+              >
+                {/* Sisi Kiri: Checkbox + Label "I'm not a robot" */}
+                <div
+                  onClick={handleRecaptchaClick}
+                  role="checkbox"
+                  aria-checked={recaptchaStatus === "verified"}
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === " " || e.key === "Enter") {
+                      e.preventDefault();
+                      handleRecaptchaClick();
+                    }
+                  }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    cursor: recaptchaStatus === "verified" ? "default" : "pointer",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 26,
+                      height: 26,
+                      borderRadius: 4,
+                      background: "#ffffff",
+                      border:
+                        recaptchaStatus === "verified"
+                          ? "2px solid #16a34a"
+                          : recaptchaStatus === "verifying"
+                          ? "2px solid #3b82f6"
+                          : "2px solid #9ca3af",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      transition: "all 0.15s ease",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {recaptchaStatus === "verifying" && (
+                      <span
+                        style={{
+                          display: "inline-block",
+                          width: 16,
+                          height: 16,
+                          border: "2.5px solid #2563eb",
+                          borderTopColor: "transparent",
+                          borderRadius: "50%",
+                          animation: "spin 0.65s linear infinite",
+                        }}
+                      />
+                    )}
+                    {recaptchaStatus === "verified" && (
+                      <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#16a34a"
+                        strokeWidth="3.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    )}
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize: 13.5, fontWeight: 600, color: "#1f2937", lineHeight: 1.2 }}>
+                      Saya bukan robot
+                    </div>
+                    <div style={{ fontSize: 10.5, color: "#6b7280", marginTop: 2 }}>
+                      {recaptchaStatus === "verified"
+                        ? "✓ Terverifikasi Aman (Anti-DDoS Aktif)"
+                        : recaptchaStatus === "verifying"
+                        ? "Memeriksa keamanan koneksi..."
+                        : "I'm not a robot · DDoS Shield"}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sisi Kanan: Logo & Badge reCAPTCHA */}
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 2,
+                    paddingLeft: 8,
+                  }}
+                >
+                  <svg width="26" height="26" viewBox="0 0 64 64" fill="none">
+                    <path
+                      d="M32 8C19.8 8 9.7 17.1 8.2 28.9H16.4C17.8 21.6 24.2 16 32 16C37.3 16 42 18.6 44.9 22.6L38 29.5H56V11.5L49.9 17.6C45.5 11.7 39.1 8 32 8Z"
+                      fill="#1c3aa9"
+                    />
+                    <path
+                      d="M55.8 35.1H47.6C46.2 42.4 39.8 48 32 48C26.7 48 22 45.4 19.1 41.4L26 34.5H8V52.5L14.1 46.4C18.5 52.3 24.9 56 32 56C44.2 56 54.3 46.9 55.8 35.1Z"
+                      fill="#4285f4"
+                    />
+                  </svg>
+                  <span style={{ fontSize: 9.5, fontWeight: 700, color: "#4b5563", letterSpacing: "0.01em" }}>
+                    reCAPTCHA
+                  </span>
+                  <span style={{ fontSize: 8, color: "#9ca3af" }}>Privacy - Terms</span>
+                </div>
+              </div>
+
+              {/* Tantangan Tambahan (muncul otomatis jika terdeteksi percobaan berulang) */}
+              {recaptchaStatus === "challenge" && (
+                <div
+                  style={{
+                    padding: "10px 12px",
+                    background: "#eff6ff",
+                    border: "1px solid #93c5fd",
+                    borderRadius: 6,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 8,
+                  }}
+                >
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#1e3a8a" }}>
+                    🛡️ Verifikasi Tambahan Anti-Bot: Berapa hasil <b>{challengeQuestion.a} + {challengeQuestion.b}</b>?
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <input
+                      type="number"
+                      placeholder="Jawaban..."
+                      value={challengeInput}
+                      onChange={(e) => setChallengeInput(e.target.value)}
+                      style={{ flex: 1, padding: "6px 10px", fontSize: 13 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleVerifikasiSoal}
+                      className="btn btn-primary"
+                      style={{ padding: "6px 12px", fontSize: 12.5, fontWeight: 600 }}
+                    >
+                      Verifikasi
+                    </button>
+                  </div>
+                  {challengeError && (
+                    <div style={{ fontSize: 11.5, color: "#dc2626", fontWeight: 600 }}>{challengeError}</div>
+                  )}
+                </div>
+              )}
+            </div>
+
             {error && <div className="alert alert-danger" style={{ fontSize: 13 }}>{error}</div>}
 
             <button
               type="submit"
-              disabled={loading || Boolean(demoLoading)}
+              disabled={loading}
               className="btn btn-primary"
               style={{ justifyContent: "center", padding: 11, fontSize: 14, fontWeight: 700 }}
             >
