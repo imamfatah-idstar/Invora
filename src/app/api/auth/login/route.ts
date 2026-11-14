@@ -14,13 +14,12 @@ import {
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request.headers);
-  const userAgent = request.headers.get("user-agent") || "unknown";
 
-  // 1. Proteksi Anti-DDoS & Brute-Force Rate Limiting
+  // 1. Anti-DDoS & Brute-Force Rate Limiting
   const rateCheck = checkDdosRateLimit(ip);
   if (!rateCheck.allowed) {
     return NextResponse.json(
-      { error: rateCheck.reason || "Terlalu banyak permintaan login. Silakan coba lagi nanti." },
+      { error: rateCheck.reason || "Too many login requests. Please try again later." },
       {
         status: 429,
         headers: rateCheck.retryAfterSec ? { "Retry-After": String(rateCheck.retryAfterSec) } : undefined,
@@ -34,16 +33,16 @@ export async function POST(request: NextRequest) {
   if (body?.honeypot) {
     recordFailedLogin(ip);
     return NextResponse.json(
-      { error: "Aktivitas mencurigakan (Bot) terdeteksi." },
+      { error: "Suspicious automated activity (Bot) detected." },
       { status: 403 }
     );
   }
 
-  // 3. Verifikasi Token Keamanan reCAPTCHA
-  const recaptchaCheck = await verifyRecaptchaToken(body?.recaptchaToken, ip, userAgent);
+  // 3. Official Google reCAPTCHA v2 Token Verification
+  const recaptchaCheck = await verifyRecaptchaToken(body?.recaptchaToken, ip);
   if (!recaptchaCheck.valid) {
     return NextResponse.json(
-      { error: recaptchaCheck.error || "Verifikasi reCAPTCHA gagal.", resetRecaptcha: true },
+      { error: recaptchaCheck.error || "Google reCAPTCHA verification failed.", resetRecaptcha: true },
       { status: 400 }
     );
   }
@@ -53,7 +52,7 @@ export async function POST(request: NextRequest) {
 
   if (!emailRaw || !kataSandi) {
     return NextResponse.json(
-      { error: "Email dan kata sandi wajib diisi." },
+      { error: "Email address and password are required." },
       { status: 400 }
     );
   }
@@ -90,7 +89,7 @@ export async function POST(request: NextRequest) {
   if (!user || !user.aktif) {
     recordFailedLogin(ip);
     return NextResponse.json(
-      { error: "Email atau kata sandi salah.", resetRecaptcha: true },
+      { error: "Invalid email address or password.", resetRecaptcha: true },
       { status: 401 }
     );
   }
@@ -100,7 +99,7 @@ export async function POST(request: NextRequest) {
   if (!cocok) {
     recordFailedLogin(ip);
     return NextResponse.json(
-      { error: "Email atau kata sandi salah.", resetRecaptcha: true },
+      { error: "Invalid email address or password.", resetRecaptcha: true },
       { status: 401 }
     );
   }

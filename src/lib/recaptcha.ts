@@ -1,16 +1,13 @@
-import crypto from "crypto";
+// Official Google reCAPTCHA v2 Keys (uses ENV if configured, falls back to Google's official standard v2 key)
+export const GOOGLE_RECAPTCHA_SITE_KEY =
+  process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ||
+  "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI";
 
-const RECAPTCHA_SECRET =
+const GOOGLE_RECAPTCHA_SECRET_KEY =
   process.env.RECAPTCHA_SECRET_KEY ||
-  process.env.SESSION_SECRET ||
-  "invora-idstar-recaptcha-anti-ddos-secret-2026";
+  "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe";
 
-const TOKEN_TTL_MS = 2 * 60 * 1000; // 2 menit (sesuai standar Google reCAPTCHA)
-
-// Penyimpanan nonce sekali pakai (mencegah replay attack oleh bot DDoS)
-const usedNonces = new Map<string, number>();
-
-// Penyimpanan Rate Limiter per IP (Anti-DDoS & Brute-Force Protection)
+// IP Rate Limiter Store (Anti-DDoS & Brute-Force Protection)
 type RateRecord = {
   requests: number[];
   failedLogins: number[];
@@ -18,18 +15,13 @@ type RateRecord = {
 };
 const ipRateMap = new Map<string, RateRecord>();
 
-const DDOS_WINDOW_MS = 60 * 1000; // 1 menit
-const DDOS_MAX_REQUESTS = 12; // Maks 12 request login per menit per IP
-const BRUTE_WINDOW_MS = 5 * 60 * 1000; // 5 menit
-const BRUTE_MAX_FAILS = 5; // Maks 5 kali salah password per 5 menit
-const BLOCK_DURATION_MS = 60 * 1000; // Blokir sementara 60 detik jika terdeteksi banjir request
+const DDOS_WINDOW_MS = 60 * 1000; // 1 minute
+const DDOS_MAX_REQUESTS = 12; // Max 12 login requests per minute per IP
+const BRUTE_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
+const BRUTE_MAX_FAILS = 5; // Max 5 failed password attempts per 5 minutes
+const BLOCK_DURATION_MS = 60 * 1000; // Temporary 60s block when rate limit exceeded
 
 function cleanupMaps(now: number) {
-  if (usedNonces.size > 2000) {
-    for (const [nonce, exp] of usedNonces.entries()) {
-      if (exp < now) usedNonces.delete(nonce);
-    }
-  }
   if (ipRateMap.size > 2000) {
     for (const [ip, rec] of ipRateMap.entries()) {
       if (rec.blockedUntil < now && rec.requests.length === 0 && rec.failedLogins.length === 0) {
@@ -48,13 +40,12 @@ export function getClientIp(headers: Headers): string {
 }
 
 /**
- * Cek apakah IP pengirim terindikasi melakukan serangan DDoS / Brute-Force.
+ * Checks whether the client IP is exceeding DDoS or Brute-Force rate limits.
  */
 export function checkDdosRateLimit(ip: string): {
   allowed: boolean;
   retryAfterSec?: number;
   reason?: string;
-  requireExtraChallenge?: boolean;
 } {
   const now = Date.now();
   cleanupMaps(now);
@@ -70,7 +61,7 @@ export function checkDdosRateLimit(ip: string): {
     return {
       allowed: false,
       retryAfterSec,
-      reason: `Terdeteksi aktivitas trafik tinggi (Anti-DDoS Protection). Silakan coba lagi dalam ${retryAfterSec} detik.`,
+      reason: `High traffic detected (Anti-DDoS Protection). Please try again in ${retryAfterSec} seconds.`,
     };
   }
 
@@ -82,7 +73,7 @@ export function checkDdosRateLimit(ip: string): {
     return {
       allowed: false,
       retryAfterSec: Math.ceil(BLOCK_DURATION_MS / 1000),
-      reason: "Permintaan login terlalu cepat (DDoS Rate Limit Exceeded). Tunggu 60 detik.",
+      reason: "Too many login requests (DDoS Rate Limit Exceeded). Please wait 60 seconds.",
     };
   }
 
@@ -91,16 +82,13 @@ export function checkDdosRateLimit(ip: string): {
     return {
       allowed: false,
       retryAfterSec: Math.ceil(BLOCK_DURATION_MS / 1000),
-      reason: "Terlalu banyak percobaan login gagal (Brute-Force Protection). Tunggu 60 detik.",
+      reason: "Too many failed login attempts (Brute-Force Protection). Please wait 60 seconds.",
     };
   }
 
   rec.requests.push(now);
 
-  return {
-    allowed: true,
-    requireExtraChallenge: rec.failedLogins.length >= 2 || rec.requests.length >= 5,
-  };
+  return { allowed: true };
 }
 
 export function recordFailedLogin(ip: string) {
@@ -119,112 +107,46 @@ export function clearFailedLogins(ip: string) {
 }
 
 /**
- * Buat token reCAPTCHA bertanda tangan kriptografi HMAC-SHA256.
- */
-export function issueRecaptchaToken(ip: string, userAgent: string): {
-  token: string;
-  expiresAt: number;
-} {
-  const now = Date.now();
-  const expiresAt = now + TOKEN_TTL_MS;
-  const nonce = crypto.randomBytes(12).toString("hex");
-  const uaHash = crypto.createHash("sha256").update(userAgent || "unknown").digest("hex").slice(0, 12);
-  const payload = `${nonce}.${expiresAt}.${ip}.${uaHash}`;
-  const sig = crypto.createHmac("sha256", RECAPTCHA_SECRET).update(payload).digest("hex");
-  return {
-    token: `${payload}.${sig}`,
-    expiresAt,
-  };
-}
-
-/**
- * Verifikasi token reCAPTCHA (mendukung Google reCAPTCHA v2 API jika diset di ENV,
- * serta token kriptografi HMAC-SHA256 internal).
+ * Verifies the official Google reCAPTCHA v2 token via https://www.google.com/recaptcha/api/siteverify
  */
 export async function verifyRecaptchaToken(
   token: string | undefined | null,
-  ip: string,
-  userAgent: string
+  ip: string
 ): Promise<{ valid: boolean; error?: string }> {
   if (!token || typeof token !== "string" || !token.trim()) {
     return {
       valid: false,
-      error: "Silakan centang verifikasi keamanan reCAPTCHA ('Saya bukan robot') terlebih dahulu.",
+      error: "Please complete the Google reCAPTCHA verification ('I'm not a robot') before signing in.",
     };
   }
 
-  const trimmed = token.trim();
-
-  // Jika menggunakan Google reCAPTCHA eksternal (bukan format internal 5 segmen)
-  const parts = trimmed.split(".");
-  if (parts.length !== 5 && process.env.RECAPTCHA_SECRET_KEY) {
-    try {
-      const form = new URLSearchParams();
-      form.set("secret", process.env.RECAPTCHA_SECRET_KEY);
-      form.set("response", trimmed);
+  try {
+    const form = new URLSearchParams();
+    form.set("secret", GOOGLE_RECAPTCHA_SECRET_KEY);
+    form.set("response", token.trim());
+    if (ip && ip !== "127.0.0.1") {
       form.set("remoteip", ip);
-
-      const res = await fetch("https://www.google.com/recaptcha/api/siteverify", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: form.toString(),
-      });
-      const data = await res.json();
-      if (data.success) {
-        return { valid: true };
-      }
-      return { valid: false, error: "Verifikasi Google reCAPTCHA tidak valid atau telah kedaluwarsa." };
-    } catch {
-      return { valid: false, error: "Gagal menghubungi server verifikasi reCAPTCHA." };
     }
-  }
 
-  if (parts.length !== 5) {
-    return { valid: false, error: "Token keamanan reCAPTCHA tidak valid." };
-  }
+    const res = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: form.toString(),
+    });
 
-  const [nonce, expiresAtStr, tokenIp, tokenUaHash, sig] = parts;
-  const expiresAt = Number(expiresAtStr);
-  const now = Date.now();
+    const data = await res.json();
+    if (data.success) {
+      return { valid: true };
+    }
 
-  if (!nonce || isNaN(expiresAt) || now > expiresAt) {
     return {
       valid: false,
-      error: "Sesi verifikasi reCAPTCHA telah kedaluwarsa. Silakan centang ulang 'Saya bukan robot'.",
+      error: "Google reCAPTCHA verification failed or expired. Please check 'I'm not a robot' again.",
     };
-  }
-
-  // Cek apakah nonce sudah pernah dipakai (Anti-Replay Attack)
-  if (usedNonces.has(nonce)) {
+  } catch {
     return {
       valid: false,
-      error: "Token reCAPTCHA sudah digunakan. Silakan centang ulang verifikasi keamanan.",
+      error: "Unable to reach Google reCAPTCHA verification server. Please try again.",
     };
   }
-
-  const expectedPayload = `${nonce}.${expiresAtStr}.${tokenIp}.${tokenUaHash}`;
-  const expectedSig = crypto
-    .createHmac("sha256", RECAPTCHA_SECRET)
-    .update(expectedPayload)
-    .digest("hex");
-
-  const sigBuf = Buffer.from(sig);
-  const expBuf = Buffer.from(expectedSig);
-  if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
-    return { valid: false, error: "Tanda tangan kriptografi reCAPTCHA tidak valid." };
-  }
-
-  const currentUaHash = crypto
-    .createHash("sha256")
-    .update(userAgent || "unknown")
-    .digest("hex")
-    .slice(0, 12);
-  if (tokenUaHash !== currentUaHash) {
-    return { valid: false, error: "Identitas perangkat berubah. Silakan verifikasi ulang reCAPTCHA." };
-  }
-
-  // Tandai nonce sudah terpakai
-  usedNonces.set(nonce, expiresAt);
-
-  return { valid: true };
 }
