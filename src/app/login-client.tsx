@@ -331,27 +331,21 @@ export default function LoginClient() {
             <div className="field">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <label style={{ fontSize: 13, fontWeight: 600 }}>Password</label>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmailLupa(email.trim());
-                    setLupaError(null);
-                    setLupaSukses(null);
-                    setBukaModalLupaPassword(true);
-                  }}
+                <a
+                  href={
+                    email.trim()
+                      ? `/forgot-password?email=${encodeURIComponent(email.trim())}`
+                      : "/forgot-password"
+                  }
                   style={{
-                    background: "none",
-                    border: "none",
-                    padding: 0,
                     fontSize: 12,
                     color: "var(--color-primary, #ea242a)",
-                    cursor: "pointer",
                     fontWeight: 600,
                     textDecoration: "underline",
                   }}
                 >
                   Forgot Password?
-                </button>
+                </a>
               </div>
               <input
                 type="password"

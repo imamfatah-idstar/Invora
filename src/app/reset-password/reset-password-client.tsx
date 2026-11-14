@@ -23,11 +23,11 @@ export default function ResetPasswordClient() {
   const [error, setError] = useState<string | null>(null);
   const [sukses, setSukses] = useState(false);
 
-  // Verifikasi token saat halaman dibuka
+  // Verify token on page load
   useEffect(() => {
     if (!token) {
       setVerifikasiLoading(false);
-      setPesanTokenError("Tautan reset tidak memiliki token yang valid.");
+      setPesanTokenError("Missing or invalid password reset token.");
       return;
     }
 
@@ -38,14 +38,14 @@ export default function ResetPasswordClient() {
 
         if (!res.ok || !data.valid) {
           setTokenValid(false);
-          setPesanTokenError(data.error ?? "Tautan reset kata sandi tidak valid atau telah kedaluwarsa.");
+          setPesanTokenError(data.error ?? "This password reset link is invalid or has expired.");
         } else {
           setTokenValid(true);
           setEmailUser(data.email);
         }
       } catch {
         setTokenValid(false);
-        setPesanTokenError("Gagal memeriksa keabsahan tautan verifikasi.");
+        setPesanTokenError("Unable to verify reset token.");
       } finally {
         setVerifikasiLoading(false);
       }
@@ -59,12 +59,12 @@ export default function ResetPasswordClient() {
     setError(null);
 
     if (kataSandiBaru.length < 8) {
-      setError("Kata sandi baru minimal 8 karakter.");
+      setError("New password must be at least 8 characters.");
       return;
     }
 
     if (kataSandiBaru !== konfirmasiKataSandi) {
-      setError("Konfirmasi kata sandi tidak cocok dengan kata sandi baru.");
+      setError("Password confirmation does not match.");
       return;
     }
 
@@ -82,7 +82,7 @@ export default function ResetPasswordClient() {
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error ?? "Gagal mengatur ulang kata sandi.");
+        setError(data.error ?? "Failed to reset password.");
         setLoading(false);
         return;
       }
@@ -91,119 +91,163 @@ export default function ResetPasswordClient() {
       setLoading(false);
       setTimeout(() => {
         router.push("/?resetSuccess=true");
-      }, 2500);
+      }, 2200);
     } catch {
-      setError("Terjadi kesalahan jaringan.");
+      setError("Network error occurred.");
       setLoading(false);
     }
   }
 
   return (
-    <main className="login-shell" style={{ display: "flex", minHeight: "100vh", position: "relative" }}>
-      <LoginBackground />
+    <main className="login-shell">
+      {/* Left Brand Panel */}
+      <aside className="login-aside">
+        <div className="login-aside-brand">
+          <Logo height={32} variant="white" />
+        </div>
 
-      <div style={{
-        position: "relative",
-        zIndex: 1,
-        width: "100%",
-        maxWidth: 440,
-        margin: "auto",
-        padding: "30px 16px",
-      }}>
-        <div style={{
-          background: "#ffffff",
-          borderRadius: 16,
-          boxShadow: "0 10px 25px -5px rgba(0,0,0,0.08), 0 8px 10px -6px rgba(0,0,0,0.04)",
-          border: "1px solid var(--color-border, #e2e8f0)",
-          padding: "32px 28px",
-        }}>
-          {/* Header */}
-          <div style={{ textAlign: "center", marginBottom: 24 }}>
-            <div style={{ display: "inline-flex", justifyContent: "center", marginBottom: 12 }}>
-              <Logo height={44} variant="color" />
+        <div className="login-aside-values">
+          <div className="login-aside-value-item">
+            <div className="login-aside-value-label">Vision</div>
+            <div className="login-aside-value-desc">
+              We aspire to see a digital-ready generation that innovates and leads smart businesses across asia.
             </div>
-            <h1 style={{ fontSize: 20, fontWeight: 800, margin: "0 0 6px", color: "#111827" }}>
-              Atur Kata Sandi Baru
-            </h1>
-            <p style={{ fontSize: 13, color: "#64748b", margin: 0 }}>
-              {emailUser ? (
-                <>Untuk akun: <b style={{ color: "#1e293b" }}>{emailUser}</b></>
-              ) : (
-                "Masukkan kata sandi baru untuk akun INVORA Anda"
-              )}
-            </p>
+          </div>
+          <div className="login-aside-value-item">
+            <div className="login-aside-value-label">Mission</div>
+            <div className="login-aside-value-desc">
+              To Build, Accelerate, Support, and Empower every organization business transformation.
+            </div>
+          </div>
+        </div>
+
+        <div className="login-aside-address">
+          <div style={{ fontWeight: 600, color: "#ffffff", marginBottom: 4 }}>IDStar Head Office:</div>
+          <div>The Bellagio Mansion, Ground floor</div>
+          <div>Mega Kuningan Timur II, Setiabudi</div>
+          <div>Jakarta Selatan, DKI Jakarta 12950</div>
+        </div>
+      </aside>
+
+      {/* Main Reset Password Area */}
+      <div className="login-main">
+        <LoginBackground />
+
+        <div className="card login-card">
+          {/* Header */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginBottom: 20 }}>
+            <Logo height={44} variant="color" />
+            <div style={{ textAlign: "center" }}>
+              <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0, color: "#111827" }}>
+                SET NEW PASSWORD
+              </h1>
+              <p className="subtitle" style={{ marginBottom: 0, fontSize: 13, fontWeight: 500 }}>
+                {emailUser ? (
+                  <>Account: <b style={{ color: "#1e293b" }}>{emailUser}</b></>
+                ) : (
+                  "Create a new password for your INVORA account"
+                )}
+              </p>
+            </div>
           </div>
 
           {verifikasiLoading && (
             <div style={{ textAlign: "center", padding: "30px 0", color: "#64748b", fontSize: 13.5 }}>
-              <div style={{
-                display: "inline-block",
-                width: 22,
-                height: 22,
-                border: "2px solid #ea242a",
-                borderTopColor: "transparent",
-                borderRadius: "50%",
-                animation: "spin 0.6s linear infinite",
-                marginBottom: 8,
-              }} />
-              <div>Memverifikasi tautan keamanan...</div>
+              <div
+                style={{
+                  display: "inline-block",
+                  width: 22,
+                  height: 22,
+                  border: "2px solid #ea242a",
+                  borderTopColor: "transparent",
+                  borderRadius: "50%",
+                  animation: "spin 0.6s linear infinite",
+                  marginBottom: 8,
+                }}
+              />
+              <div>Verifying security token...</div>
             </div>
           )}
 
           {!verifikasiLoading && !tokenValid && (
             <div style={{ textAlign: "center", padding: "10px 0" }}>
-              <div style={{ fontSize: 36, marginBottom: 10 }}>⚠️</div>
-              <div className="alert alert-danger" style={{ fontSize: 13, marginBottom: 20, textAlign: "left" }}>
+              <div className="alert alert-danger" style={{ fontSize: 13, marginBottom: 16, textAlign: "left" }}>
                 {pesanTokenError}
               </div>
-              <a href="/" className="btn btn-primary" style={{ display: "inline-flex", textDecoration: "none" }}>
-                ← Kembali ke Halaman Masuk
-              </a>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <a
+                  href="/forgot-password"
+                  className="btn btn-primary"
+                  style={{ justifyContent: "center", textDecoration: "none", padding: 10, fontWeight: 700 }}
+                >
+                  Request New Reset Link &rarr;
+                </a>
+                <a
+                  href="/"
+                  style={{ fontSize: 13, fontWeight: 600, color: "#475569", textDecoration: "none" }}
+                >
+                  &larr; Back to Sign In
+                </a>
+              </div>
             </div>
           )}
 
           {!verifikasiLoading && tokenValid && (
             <>
               {sukses ? (
-                <div style={{ textAlign: "center", padding: "20px 0" }}>
-                  <div style={{ fontSize: 42, marginBottom: 12 }}>🎉</div>
-                  <h3 style={{ fontSize: 17, fontWeight: 700, color: "#065f46", margin: "0 0 8px" }}>
-                    Kata Sandi Berhasil Diperbarui!
-                  </h3>
-                  <p style={{ fontSize: 13, color: "#475569", marginBottom: 20 }}>
-                    Mengalihkan Anda ke halaman masuk dalam beberapa detik...
-                  </p>
-                  <a href="/" className="btn btn-primary" style={{ display: "inline-flex", textDecoration: "none" }}>
-                    Masuk Sekarang &rarr;
+                <div style={{ textAlign: "center", padding: "16px 0" }}>
+                  <div
+                    style={{
+                      padding: "14px 16px",
+                      borderRadius: 10,
+                      background: "#ecfdf5",
+                      border: "1px solid #a7f3d0",
+                      color: "#065f46",
+                      marginBottom: 16,
+                    }}
+                  >
+                    <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>
+                      ✓ Password Successfully Updated!
+                    </div>
+                    <div style={{ fontSize: 13 }}>
+                      Redirecting you to the Sign In page...
+                    </div>
+                  </div>
+                  <a
+                    href="/?resetSuccess=true"
+                    className="btn btn-primary"
+                    style={{ display: "inline-flex", textDecoration: "none", fontWeight: 700 }}
+                  >
+                    Sign In Now &rarr;
                   </a>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                   {error && (
-                    <div className="alert alert-danger" style={{ margin: 0, fontSize: 12.5, padding: "8px 12px" }}>
+                    <div className="alert alert-danger" style={{ margin: 0, fontSize: 13 }}>
                       {error}
                     </div>
                   )}
 
                   <div className="field">
-                    <label style={{ fontSize: 12.5, fontWeight: 600 }}>Kata Sandi Baru</label>
+                    <label style={{ fontSize: 13, fontWeight: 600 }}>New Password</label>
                     <input
                       type={lihatPassword ? "text" : "password"}
                       value={kataSandiBaru}
                       onChange={(e) => setKataSandiBaru(e.target.value)}
-                      placeholder="Minimal 8 karakter"
+                      placeholder="At least 8 characters"
                       required
                       minLength={8}
                     />
                   </div>
 
                   <div className="field">
-                    <label style={{ fontSize: 12.5, fontWeight: 600 }}>Konfirmasi Kata Sandi Baru</label>
+                    <label style={{ fontSize: 13, fontWeight: 600 }}>Confirm New Password</label>
                     <input
                       type={lihatPassword ? "text" : "password"}
                       value={konfirmasiKataSandi}
                       onChange={(e) => setKonfirmasiKataSandi(e.target.value)}
-                      placeholder="Ulangi kata sandi baru"
+                      placeholder="Re-enter new password"
                       required
                       minLength={8}
                     />
@@ -218,7 +262,7 @@ export default function ResetPasswordClient() {
                       style={{ cursor: "pointer" }}
                     />
                     <label htmlFor="showPass" style={{ fontSize: 12, color: "#64748b", cursor: "pointer", userSelect: "none" }}>
-                      Tampilkan karakter kata sandi
+                      Show password characters
                     </label>
                   </div>
 
@@ -226,14 +270,14 @@ export default function ResetPasswordClient() {
                     type="submit"
                     disabled={loading}
                     className="btn btn-primary"
-                    style={{ padding: 11, fontSize: 14, fontWeight: 700, marginTop: 6 }}
+                    style={{ justifyContent: "center", padding: 11, fontSize: 14, fontWeight: 700, marginTop: 4 }}
                   >
-                    {loading ? "Menyimpan Kata Sandi..." : "Simpan & Masuk ke Akun"}
+                    {loading ? "Saving New Password..." : "Save New Password"}
                   </button>
 
-                  <div style={{ textAlign: "center", marginTop: 8 }}>
-                    <a href="/" style={{ fontSize: 12.5, color: "#64748b", textDecoration: "none" }}>
-                      ← Batal, kembali ke halaman masuk
+                  <div style={{ textAlign: "center", marginTop: 6 }}>
+                    <a href="/" style={{ fontSize: 13, fontWeight: 600, color: "#475569", textDecoration: "none" }}>
+                      &larr; Back to Sign In
                     </a>
                   </div>
                 </form>
@@ -245,4 +289,3 @@ export default function ResetPasswordClient() {
     </main>
   );
 }
-
