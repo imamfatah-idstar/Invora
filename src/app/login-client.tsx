@@ -51,7 +51,7 @@ const DAFTAR_AKUN_DEMO: AkunDemo[] = [
 
 const OFFICIAL_RECAPTCHA_SITE_KEY =
   process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ||
-  "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI";
+  "6Ldq9x8uAAAAANgGCK-NHNf8B72lCbJ8eke1o7x3";
 
 declare global {
   interface Window {

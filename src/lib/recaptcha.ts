@@ -1,11 +1,11 @@
 // Official Google reCAPTCHA v2 Keys (uses ENV if configured, falls back to Google's official standard v2 key)
 export const GOOGLE_RECAPTCHA_SITE_KEY =
   process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ||
-  "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI";
+  "6Ldq9x8uAAAAANgGCK-NHNf8B72lCbJ8eke1o7x3";
 
 const GOOGLE_RECAPTCHA_SECRET_KEY =
   process.env.RECAPTCHA_SECRET_KEY ||
-  "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe";
+  "6Ldq9x8uAAAAAJAym7omia_IJvKwnZ4T6CBU16XP";
 
 // IP Rate Limiter Store (Anti-DDoS & Brute-Force Protection)
 type RateRecord = {
