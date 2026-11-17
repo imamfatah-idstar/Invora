@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { userSaatIni } from "@/lib/session-server";
 import Topbar from "@/components/topbar";
 import DashboardView, { MenuItem } from "./dashboard-view";
-import { isAuthorizedForRole } from "@/lib/user-roles";
+import { getDashboardArAnalytics } from "@/lib/ar-analytics";
 
 export default async function Dashboard() {
   const user = await userSaatIni();
@@ -11,6 +11,8 @@ export default async function Dashboard() {
   const canAdmin = user.role === "admin";
   const canPetugas = user.role === "petugas";
   const canChecker = user.role === "checker";
+
+  const arAnalytics = await getDashboardArAnalytics(30);
 
   const menu: MenuItem[] = [
     ...(canPetugas || canChecker ? [{
@@ -25,8 +27,18 @@ export default async function Dashboard() {
       deskripsi: "Summary of PO value, GR value, and remaining balance per year.",
       icon: "📊"
     }] : []),
-    // Outstanding & Aging temporarily disabled / hidden
-    // Cash-in Forecasting temporarily disabled
+    ...(canPetugas || canChecker || canAdmin ? [{
+      href: "/dashboard/outstanding",
+      label: "Outstanding & Aging AR",
+      deskripsi: "Monitor unpaid receivables, aging buckets (0-30, 31-60, 61-90, >90d), and overdue alerts.",
+      icon: "💰"
+    }] : []),
+    ...(canPetugas || canChecker || canAdmin ? [{
+      href: "/dashboard/plan-vs-actual",
+      label: "Inv Plan vs Actual",
+      deskripsi: "Compare planned invoicing targets against actual issued invoices & verified collections.",
+      icon: "📈"
+    }] : []),
     ...(canPetugas ? [{
       href: "/data-referensi/personel",
       label: "Reference Data",
@@ -56,7 +68,11 @@ export default async function Dashboard() {
   return (
     <>
       <Topbar nama={user.nama} role={user.role} email={user.email} roles={user.roles} />
-      <DashboardView user={{ nama: user.nama, role: user.role, email: user.email }} menu={menu} />
+      <DashboardView
+        user={{ nama: user.nama, role: user.role, email: user.email }}
+        menu={menu}
+        arAnalytics={arAnalytics}
+      />
     </>
   );
 }

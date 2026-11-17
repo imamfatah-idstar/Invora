@@ -1,26 +1,22 @@
 import { wajibRole } from "@/lib/require-role";
-import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { pengajuan, po, userXl, pengajuanDetail, pembayaran } from "@/db/schema";
 import { eq, or, isNotNull, desc } from "drizzle-orm";
 import Topbar from "@/components/topbar";
 import OutstandingView from "./outstanding-view";
 import Decimal from "decimal.js";
+import { formatDefaultNomorInvoice } from "@/lib/idstar-mail-template";
 
 export const metadata = {
-  title: "Monitoring Outstanding & Aging Schedule | INVORA",
-  description: "Dashboard monitoring piutang invoice dan jadwal jatuh tempo klien",
+  title: "Outstanding AR & Aging Schedule | INVORA",
+  description: "Dashboard monitoring piutang invoice (Outstanding AR) dan jadwal umur piutang (Aging AR)",
 };
 
 export default async function HalamanOutstanding() {
   const user = await wajibRole(["petugas", "checker", "admin"]);
-  const FITUR_OUTSTANDING_DISEMBUNYIKAN = process.env.NEXT_PUBLIC_ENABLE_OUTSTANDING !== "true";
-  if (FITUR_OUTSTANDING_DISEMBUNYIKAN) {
-    redirect("/dashboard");
-  }
 
   // Ambil semua pengajuan yang sudah masuk tahap invoicing
-  // (punya nomor invoice ATAU tanggal submit invoice ATAU tanggal approve invoice)
+  // (punya nomor invoice ATAU tanggal submit invoice ATAU tanggal approve invoice ATAU nilai GR)
   const daftarPengajuan = await db
     .select({
       id: pengajuan.id,
@@ -46,7 +42,8 @@ export default async function HalamanOutstanding() {
         isNotNull(pengajuan.nomorInvoice),
         isNotNull(pengajuan.tanggalSubmitInvoice),
         isNotNull(pengajuan.tanggalApproveInvoice),
-        isNotNull(pengajuan.nomorFakturPajak)
+        isNotNull(pengajuan.nomorFakturPajak),
+        isNotNull(pengajuan.nilaiGrDisetujui)
       )
     )
     .orderBy(desc(pengajuan.id));
@@ -111,7 +108,7 @@ export default async function HalamanOutstanding() {
   const dataOlahan = daftarPengajuan.map((p) => {
     return {
       id: p.id,
-      nomorInvoice: p.nomorInvoice || `DRAFT-INV-${p.id}`,
+      nomorInvoice: p.nomorInvoice || formatDefaultNomorInvoice(p.id, p.periode),
       nomorFakturPajak: p.nomorFakturPajak,
       tanggalFakturPajak: p.tanggalFakturPajak,
       nomorPo: p.nomorPo,
